@@ -14,8 +14,34 @@ import DistrictHelp from './district/DistrictHelp';
 
 const DistrictDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [districtName, setDistrictName] = useState('Loading...');
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+
+    // Fetch district name from user profile
+    React.useEffect(() => {
+        const fetchDistrictName = async () => {
+            if (user?.id) {
+                try {
+                    const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
+                        headers: {
+                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data[0]?.full_name) {
+                        // Extract district name (e.g., "Pune District Admin" -> "Pune")
+                        const name = data[0].full_name.replace(' District Admin', '').replace(' Admin', '');
+                        setDistrictName(name);
+                    }
+                } catch (error) {
+                    console.error('Error fetching district name:', error);
+                    setDistrictName('District');
+                }
+            }
+        };
+        fetchDistrictName();
+    }, [user?.id, user?.email]);
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
@@ -77,7 +103,7 @@ const DistrictDashboard = () => {
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
-                        <h1>District Dashboard - Pune</h1>
+                        <h1>District Dashboard - {districtName}</h1>
                         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
                             {getBreadcrumb()}
                         </p>
