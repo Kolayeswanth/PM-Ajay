@@ -1,31 +1,49 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
 # Environment variables
 .env
 .env.local
-.env.*.local
-backend/.env
-backend/.env.local
+.env.production
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Credentials (NEVER commit these!)
+CREDENTIALS_REFERENCE.md
+*credentials*.txt
+*passwords*.txt
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# CSV files with sensitive data
+CSV_IMPORTS/*.csv
+
+# Logs
+logs/
+*.log
+
+# OS files
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Database dumps
+*.sql.backup
+*.dump
