@@ -1107,7 +1107,7 @@ textarea.form-control {
   position: sticky;
   top: 0;
   height: calc(100vh - 200px);
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 .dashboard-sidebar-nav {
@@ -1534,26 +1534,30 @@ textarea.form-control {
 }
 
 /* Map Labels */
-.state-label, .district-label {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-weight: bold;
-    color: #333;
-    font-size: 10px;
-    text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white;
-    text-align: center;
+.state-label,
+.district-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: bold;
+  color: #333;
+  font-size: 10px;
+  text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white;
+  text-align: center;
 }
 
-.state-label::before, .district-label::before {
-    display: none;
+.state-label::before,
+.district-label::before {
+  display: none;
 }
+
 /* Fixed Sidebar Override Removed */
 .dashboard-sidebar {
   /* Ensure it sticks below the header */
-  top: 180px; 
+  top: 180px;
   height: calc(100vh - 180px);
 }
+
 .dashboard-main {
   /* Reset margin since sidebar is no longer fixed out of flow */
   margin-left: 0 !important;

@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import DashboardRouter from './pages/dashboards/DashboardRouter';
+import PublicDashboard from './pages/dashboards/PublicDashboard';
 import './index.css';
 
 // Protected Route Component
@@ -69,7 +70,7 @@ function App() {
                         />
 
                         {/* Placeholder routes for future implementation */}
-                        <Route path="/public-dashboard" element={<Home />} />
+                        <Route path="/public-dashboard" element={<PublicDashboard />} />
                         <Route path="/reports" element={<ProtectedRoute><div className="container" style={{ padding: 'var(--space-8)' }}><h1>Reports (Coming Soon)</h1></div></ProtectedRoute>} />
                         <Route path="/fund-allocation" element={<ProtectedRoute><div className="container" style={{ padding: 'var(--space-8)' }}><h1>Fund Allocation (Coming Soon)</h1></div></ProtectedRoute>} />
                         <Route path="/districts" element={<ProtectedRoute><div className="container" style={{ padding: 'var(--space-8)' }}><h1>Districts Management (Coming Soon)</h1></div></ProtectedRoute>} />

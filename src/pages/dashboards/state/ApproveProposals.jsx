@@ -266,19 +266,20 @@ const ApproveProposals = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            onClick={() => handleViewPDF(proposal)}
-                                            style={{ marginRight: '5px' }}
-                                        >
-                                            View
-                                        </button>
-                                        {proposal.status === 'Pending' && (
-                                            <>
-                                                <button className="btn btn-primary btn-sm" onClick={() => handleApproveClick(proposal)} style={{ marginRight: '5px' }}>Approve</button>
-                                                <button className="btn btn-outline btn-sm" onClick={() => handleRejectClick(proposal)}>Reject</button>
-                                            </>
-                                        )}
+                                        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => handleViewPDF(proposal)}
+                                            >
+                                                View
+                                            </button>
+                                            {proposal.status === 'Pending' && (
+                                                <>
+                                                    <button className="btn btn-primary btn-sm" onClick={() => handleApproveClick(proposal)}>Approve</button>
+                                                    <button className="btn btn-outline btn-sm" onClick={() => handleRejectClick(proposal)}>Reject</button>
+                                                </>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))

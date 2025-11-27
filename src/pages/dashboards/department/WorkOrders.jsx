@@ -144,8 +144,10 @@ const WorkOrders = ({ orders, onUpdateOrder }) => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(order)} style={{ marginRight: '5px' }}>View</button>
-                                        <button className="btn btn-primary btn-sm" onClick={() => openUpdateModal(order)}>Update</button>
+                                        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(order)}>View</button>
+                                            <button className="btn btn-primary btn-sm" onClick={() => openUpdateModal(order)}>Update</button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
