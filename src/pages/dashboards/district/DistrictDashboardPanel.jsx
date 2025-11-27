@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import { districtStats, mockProjects } from '../../../data/mockData';
@@ -6,6 +6,14 @@ import { districtStats, mockProjects } from '../../../data/mockData';
 const DistrictDashboardPanel = ({ formatCurrency }) => {
     const stats = districtStats.Pune;
     const districtProjects = mockProjects.filter(p => p.district === 'Pune');
+    const [showAddLocationModal, setShowAddLocationModal] = useState(false);
+    const [newLocation, setNewLocation] = useState({
+        name: '',
+        gp: '',
+        component: 'Adarsh Gram',
+        estimatedCost: '',
+        description: ''
+    });
 
     const getStatusBadge = (status) => {
         const badges = {
@@ -16,6 +24,19 @@ const DistrictDashboardPanel = ({ formatCurrency }) => {
             'DELAYED': 'badge-error'
         };
         return badges[status] || 'badge-info';
+    };
+
+    const handleAddLocation = () => {
+        console.log('Adding new location:', newLocation);
+        // Here you would typically send this to your backend
+        setShowAddLocationModal(false);
+        setNewLocation({
+            name: '',
+            gp: '',
+            component: 'Adarsh Gram',
+            estimatedCost: '',
+            description: ''
+        });
     };
 
     return (
@@ -51,13 +72,96 @@ const DistrictDashboardPanel = ({ formatCurrency }) => {
             </div>
 
             {/* GIS Map */}
-            <div className="dashboard-section">
-                <div className="section-header">
+            <div className="dashboard-section" style={{ marginBottom: 'var(--space-6)' }}>
+                <div className="section-header" style={{ marginBottom: 'var(--space-4)' }}>
                     <h2 className="section-title">Project Locations (GIS View)</h2>
-                    <button className="btn btn-primary btn-sm">📍 Add New Location</button>
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowAddLocationModal(true)}>
+                        📍 Add New Location
+                    </button>
                 </div>
-                <DistrictMap state="Maharashtra" />
+                <div style={{ height: '500px', width: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                    <DistrictMap state="Maharashtra" />
+                </div>
             </div>
+
+            {/* Add New Location Modal */}
+            {showAddLocationModal && (
+                <div className="modal-overlay" onClick={() => setShowAddLocationModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%' }}>
+                        <h2 style={{ marginBottom: 'var(--space-4)', color: 'var(--color-navy)' }}>Add New Project Location</h2>
+
+                        <div style={{ marginBottom: 'var(--space-4)' }}>
+                            <label className="form-label">Project Name</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={newLocation.name}
+                                onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
+                                placeholder="Enter project name"
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: 'var(--space-4)' }}>
+                            <label className="form-label">Gram Panchayat</label>
+                            <select
+                                className="form-control"
+                                value={newLocation.gp}
+                                onChange={(e) => setNewLocation({ ...newLocation, gp: e.target.value })}
+                            >
+                                <option value="">Select GP</option>
+                                <option value="Shirur GP">Shirur GP</option>
+                                <option value="Khed GP">Khed GP</option>
+                                <option value="Baramati GP">Baramati GP</option>
+                                <option value="Junnar GP">Junnar GP</option>
+                            </select>
+                        </div>
+
+                        <div style={{ marginBottom: 'var(--space-4)' }}>
+                            <label className="form-label">Component</label>
+                            <select
+                                className="form-control"
+                                value={newLocation.component}
+                                onChange={(e) => setNewLocation({ ...newLocation, component: e.target.value })}
+                            >
+                                <option value="Adarsh Gram">Adarsh Gram</option>
+                                <option value="GIA (Grant-in-Aid)">GIA (Grant-in-Aid)</option>
+                                <option value="Hostel">Hostel</option>
+                            </select>
+                        </div>
+
+                        <div style={{ marginBottom: 'var(--space-4)' }}>
+                            <label className="form-label">Estimated Cost (in Lakhs)</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                value={newLocation.estimatedCost}
+                                onChange={(e) => setNewLocation({ ...newLocation, estimatedCost: e.target.value })}
+                                placeholder="Enter estimated cost"
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: 'var(--space-6)' }}>
+                            <label className="form-label">Description</label>
+                            <textarea
+                                className="form-control"
+                                value={newLocation.description}
+                                onChange={(e) => setNewLocation({ ...newLocation, description: e.target.value })}
+                                placeholder="Enter project description"
+                                rows="3"
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+                            <button className="btn btn-outline" onClick={() => setShowAddLocationModal(false)}>
+                                Cancel
+                            </button>
+                            <button className="btn btn-primary" onClick={handleAddLocation}>
+                                Add Location
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* GP Proposals Pending */}
             <div className="dashboard-section">

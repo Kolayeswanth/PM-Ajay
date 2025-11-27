@@ -56,9 +56,70 @@ const UploadUCs = () => {
         }
     };
 
-    const handleViewFile = (filename) => {
-        showToast(`Opening ${filename}...`);
-        // In a real app, this would open the file URL
+    const handleViewFile = (uc) => {
+        try {
+            const printWindow = window.open('', '_blank');
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Utilization Certificate - ${uc.gp}</title>
+                    <style>
+                        body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; border: 5px double #333; height: 90vh; position: relative; }
+                        .header { text-align: center; margin-bottom: 40px; }
+                        h1 { font-size: 28px; text-transform: uppercase; margin-bottom: 10px; text-decoration: underline; }
+                        h2 { font-size: 20px; font-weight: normal; margin-top: 0; }
+                        .content { line-height: 2; font-size: 18px; text-align: justify; margin-bottom: 50px; }
+                        .signature-section { display: flex; justify-content: space-between; margin-top: 100px; }
+                        .signature { text-align: center; border-top: 1px solid #333; width: 200px; padding-top: 10px; }
+                        .footer { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; font-size: 12px; color: #666; }
+                        @media print { body { border: none; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Utilization Certificate</h1>
+                        <h2>Gram Panchayat: ${uc.gp}</h2>
+                    </div>
+                    
+                    <div class="content">
+                        <p>
+                            Certified that out of the total fund allocated to <strong>${uc.gp} Gram Panchayat</strong> 
+                            under the <strong>${uc.component}</strong> component of PM-AJAY scheme, 
+                            an amount of <strong>${uc.amount}</strong> has been utilized for the approved projects 
+                            and purposes for which it was sanctioned.
+                        </p>
+                        <p>
+                            It is further certified that the physical and financial progress reports have been 
+                            verified and found to be correct. The balance amount remaining unutilized at the 
+                            end of the year has been surrendered to the Government.
+                        </p>
+                    </div>
+
+                    <div class="signature-section">
+                        <div class="signature">
+                            <strong>Sarpanch / Gram Sevak</strong><br>
+                            ${uc.gp} Gram Panchayat
+                        </div>
+                        <div class="signature">
+                            <strong>Block Development Officer</strong><br>
+                            Panchayat Samiti
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        Generated on: ${new Date().toLocaleString()} | Document ID: UC-${uc.id}-${new Date().getFullYear()}
+                    </div>
+                </body>
+                </html>
+            `;
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+            showToast(`Opening UC for ${uc.gp}...`);
+        } catch (error) {
+            console.error('Error opening file:', error);
+            showToast('Error opening file');
+        }
     };
 
     return (
@@ -101,7 +162,7 @@ const UploadUCs = () => {
                                 </td>
                                 <td>{uc.file}</td>
                                 <td>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleViewFile(uc.file)}>View File</button>
+                                    <button className="btn btn-secondary btn-sm" onClick={() => handleViewFile(uc)}>View File</button>
                                 </td>
                             </tr>
                         ))}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
@@ -42,6 +42,10 @@ const DistrictDashboard = () => {
         };
         fetchDistrictName();
     }, [user?.id, user?.email]);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },

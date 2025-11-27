@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import { indiaGeoJSON } from '../../data/geoData';
-import { states } from '../../data/mockData';
+import { states, districts } from '../../data/mockData';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -15,6 +15,8 @@ L.Icon.Default.mergeOptions({
 
 const IndiaMap = ({ onStateSelect }) => {
   const [selectedState, setSelectedState] = useState(null);
+  const [showDistrictModal, setShowDistrictModal] = useState(false);
+  const [districtModalState, setDistrictModalState] = useState(null);
 
   const getStateColor = (stateName) => {
     // Uniform color to match the requested style (Light Blue/Purple)
@@ -33,7 +35,10 @@ const IndiaMap = ({ onStateSelect }) => {
     return nameMapping[geoJsonName] || geoJsonName;
   };
 
-  // Removed window.handleStateDrillDown useEffect as we are using direct DOM event listeners now
+  const handleViewDistricts = (stateName) => {
+    setDistrictModalState(stateName);
+    setShowDistrictModal(true);
+  };
 
   const onEachState = (feature, layer) => {
     const geoJsonName = feature.properties.NAME_1;
@@ -76,7 +81,7 @@ const IndiaMap = ({ onStateSelect }) => {
       }
     });
 
-    // Create Popup Content using DOM elements to avoid inline onclick issues
+    // Create Popup Content using DOM elements
     const container = document.createElement('div');
     container.style.fontFamily = 'var(--font-primary)';
     container.style.padding = '8px';
@@ -127,15 +132,11 @@ const IndiaMap = ({ onStateSelect }) => {
     button.style.fontWeight = '500';
 
     button.onclick = (e) => {
-      e.stopPropagation(); // Prevent map click
-      setSelectedState(stateName);
-      if (onStateSelect) {
-        onStateSelect(stateName);
-      }
+      e.stopPropagation();
+      handleViewDistricts(stateName);
     };
 
     container.appendChild(button);
-
     layer.bindPopup(container);
 
     // Add Label using Tooltip
@@ -147,31 +148,83 @@ const IndiaMap = ({ onStateSelect }) => {
     });
   };
 
-
+  const stateDistricts = districtModalState ? (districts[districtModalState] || []) : [];
 
   return (
-    <div className="map-container">
-      <MapContainer
-        center={[22.5, 78.9]}
-        zoom={5}
-        style={{ height: '100%', width: '100%', backgroundColor: '#F3F4F6' }}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        dragging={false}
-        touchZoom={false}
-        zoomControl={false}
-        keyboard={false}
-      >
-        {/* TileLayer removed for clean vector map look */}
+    <>
+      <div className="map-container">
+        <MapContainer
+          center={[22.5, 78.9]}
+          zoom={5}
+          style={{ height: '100%', width: '100%', backgroundColor: '#F3F4F6' }}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          dragging={false}
+          touchZoom={false}
+          zoomControl={false}
+          keyboard={false}
+        >
+          <GeoJSON
+            data={indiaGeoJSON}
+            onEachFeature={onEachState}
+          />
+        </MapContainer>
+      </div>
 
-        <GeoJSON
-          data={indiaGeoJSON}
-          onEachFeature={onEachState}
-        />
-      </MapContainer>
+      {/* District Modal */}
+      {showDistrictModal && (
+        <div className="modal-overlay" onClick={() => setShowDistrictModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%', maxHeight: '80vh', overflow: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+              <h2 style={{ margin: 0, color: 'var(--color-navy)' }}>Districts in {districtModalState}</h2>
+              <button onClick={() => setShowDistrictModal(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666' }}>×</button>
+            </div>
 
-      {/* Legend Removed as per new uniform styling */}
-    </div>
+            {stateDistricts.length > 0 ? (
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>District Name</th>
+                      <th>Projects</th>
+                      <th>Progress</th>
+                      <th>Fund Allocated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stateDistricts.map((district, index) => (
+                      <tr key={index}>
+                        <td><strong>{district.name}</strong></td>
+                        <td>{district.projects}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <div className="progress-bar" style={{ flex: 1, height: '6px', minWidth: '80px' }}>
+                              <div className="progress-fill" style={{ width: `${district.progress}%` }}></div>
+                            </div>
+                            <span style={{ fontSize: 'var(--text-sm)' }}>{district.progress}%</span>
+                          </div>
+                        </td>
+                        <td>₹{(district.fundAllocated / 10000000).toFixed(2)} Cr</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#666', padding: 'var(--space-6)' }}>
+                No district data available for {districtModalState}
+              </p>
+            )}
+
+            <div style={{ marginTop: 'var(--space-6)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-primary" onClick={() => setShowDistrictModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

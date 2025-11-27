@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
@@ -45,6 +45,10 @@ const StateDashboard = () => {
         };
         fetchStateName();
     }, [user?.id, user?.email]); // Refetch when user changes
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
