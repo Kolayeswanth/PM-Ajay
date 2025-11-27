@@ -40,10 +40,82 @@ const Home = () => {
                                 Streamlining implementation of Adarsh Gram, GIA, and Hostel components across India
                             </p>
                             <div style={{ display: 'flex', gap: 'var(--space-4)', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <button onClick={() => navigate('/login')} className="btn btn-primary btn-lg">
+                                <button
+                                    onClick={() => navigate('/login')}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        color: 'white',
+                                        padding: '1rem 2rem',
+                                        fontSize: '1.125rem',
+                                        fontWeight: 500,
+                                        border: '2px solid white',
+                                        borderRadius: '0.375rem',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        transition: 'none'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.border = '2px solid white';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.border = '2px solid white';
+                                    }}
+                                    onMouseDown={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#FF9933';
+                                        e.currentTarget.style.borderColor = '#FF9933';
+                                        e.currentTarget.style.transform = 'none';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                    onMouseUp={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'white';
+                                    }}
+                                >
                                     Login to Portal
                                 </button>
-                                <button onClick={() => navigate('/public-dashboard')} className="btn btn-outline btn-lg" style={{ borderColor: 'white', color: 'white' }}>
+                                <button
+                                    onClick={() => navigate('/public-dashboard')}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        color: 'white',
+                                        padding: '1rem 2rem',
+                                        fontSize: '1.125rem',
+                                        fontWeight: 500,
+                                        border: '2px solid white',
+                                        borderRadius: '0.375rem',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        transition: 'none'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.border = '2px solid white';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.border = '2px solid white';
+                                    }}
+                                    onMouseDown={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#FF9933';
+                                        e.currentTarget.style.borderColor = '#FF9933';
+                                        e.currentTarget.style.transform = 'none';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                    onMouseUp={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'white';
+                                    }}
+                                >
                                     View Public Dashboard
                                 </button>
                             </div>

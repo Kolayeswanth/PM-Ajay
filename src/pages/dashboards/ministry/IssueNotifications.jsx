@@ -275,10 +275,12 @@ const IssueNotifications = () => {
                                     </span>
                                 </td>
                                 <td>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(notif)} style={{ marginRight: '5px' }}>View</button>
-                                    {notif.status !== 'Deactivated' && (
-                                        <button className="btn btn-outline btn-sm" onClick={() => handleDeactivate(notif.id)}>Deactivate</button>
-                                    )}
+                                    <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(notif)}>View</button>
+                                        {notif.status !== 'Deactivated' && (
+                                            <button className="btn btn-outline btn-sm" onClick={() => handleDeactivate(notif.id)}>Deactivate</button>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}
