@@ -68,7 +68,7 @@ const Login = () => {
                             type="password"
                             className="form-control"
                             placeholder="Enter your password"
-                            defaultValue="demo123"
+                            defaultValue="PMajay@2024#Demo"
                         />
                     </div>
 

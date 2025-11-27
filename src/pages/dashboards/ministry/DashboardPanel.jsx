@@ -1,9 +1,55 @@
 import React from 'react';
 import StatCard from '../../../components/StatCard';
 import IndiaMap from '../../../components/maps/IndiaMap';
-import { nationalStats } from '../../../data/mockData';
+import { nationalStats, states, mockProjects } from '../../../data/mockData';
 
 const DashboardPanel = ({ setSelectedState, formatCurrency }) => {
+    const handleExportMapData = () => {
+        try {
+            // Prepare state-wise project data
+            const stateData = states.map(state => {
+                const stateProjects = mockProjects.filter(p => p.state === state.name);
+                const completedProjects = stateProjects.filter(p => p.status === 'COMPLETED').length;
+                const ongoingProjects = stateProjects.filter(p => p.status === 'ONGOING').length;
+                const totalFunds = stateProjects.reduce((sum, p) => sum + p.fundAllocated, 0);
+
+                return {
+                    'State/UT': state.name,
+                    'Total Projects': stateProjects.length,
+                    'Completed': completedProjects,
+                    'Ongoing': ongoingProjects,
+                    'Approved': stateProjects.filter(p => p.status === 'APPROVED').length,
+                    'Proposed': stateProjects.filter(p => p.status === 'PROPOSED').length,
+                    'Total Fund Allocated (Cr)': (totalFunds / 10000000).toFixed(2),
+                    'Progress (%)': stateProjects.length > 0
+                        ? ((stateProjects.reduce((sum, p) => sum + p.progress, 0) / stateProjects.length).toFixed(1))
+                        : '0'
+                };
+            });
+
+            // Convert to CSV
+            const headers = Object.keys(stateData[0]);
+            const csvContent = [
+                headers.join(','),
+                ...stateData.map(row => headers.map(header => `"${row[header]}"`).join(','))
+            ].join('\n');
+
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `PM-AJAY_State_Data_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error exporting map data:', error);
+            alert('Failed to export data. Please try again.');
+        }
+    };
+
     return (
         <div className="dashboard-panel">
             {/* National Statistics */}
@@ -75,7 +121,9 @@ const DashboardPanel = ({ setSelectedState, formatCurrency }) => {
             <div className="dashboard-section">
                 <div className="section-header">
                     <h2 className="section-title">State-wise Project Distribution</h2>
-                    <button className="btn btn-primary btn-sm">📥 Export Map Data</button>
+                    <button className="btn btn-primary btn-sm" onClick={handleExportMapData}>
+                        📥 Export Map Data
+                    </button>
                 </div>
                 <IndiaMap onStateSelect={setSelectedState} />
             </div>
