@@ -1,64 +1,185 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, ROLES } from '../contexts/AuthContext';
 
 const Login = () => {
-    const [selectedRole, setSelectedRole] = useState('ministry');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [role, setRole] = useState('ministry'); // This is just for UI, actual role comes from DB
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState('checking');
     const navigate = useNavigate();
-    const { login } = useAuth();
+
+    // Check connection on mount
+    React.useEffect(() => {
+        const checkConnection = async () => {
+            try {
+                const response = await fetch('https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/', {
+                    method: 'GET',
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                    }
+                });
+                if (response.ok || response.status === 200 || response.status === 404) {
+                    setConnectionStatus('connected');
+                } else {
+                    setConnectionStatus('error');
+                }
+            } catch (err) {
+                setConnectionStatus('error');
+            }
+        };
+        checkConnection();
+    }, []);
 
     const roles = [
-        { value: 'ministry', label: 'Ministry Admin (MoSJE)', icon: '🏛️' },
-        { value: 'state', label: 'State Admin (SSWD)', icon: '🏢' },
-        { value: 'district', label: 'District Admin', icon: '🏘️' },
-        { value: 'gp', label: 'Gram Panchayat Officer', icon: '🏡' },
-        { value: 'department', label: 'Implementing Department', icon: '🏗️' },
-        { value: 'contractor', label: 'Executing Agency/Contractor', icon: '👷' },
-        { value: 'public', label: 'Public/Beneficiary', icon: '👤' }
+        { id: 'ministry', label: 'Ministry Admin (Centre)' },
+        { id: 'state', label: 'State Admin' },
+        { id: 'district', label: 'District Admin' },
+        { id: 'gram_panchayat', label: 'Gram Panchayat' },
+        { id: 'implementing_agency', label: 'Implementing Agency' },
+        { id: 'executing_agency', label: 'Executing Agency' }
     ];
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        const user = login({ role: selectedRole });
-        navigate('/dashboard');
+        setError('');
+        setLoading(true);
+
+        try {
+            console.log('=== LOGIN ATTEMPT ===');
+            console.log('Email:', email);
+
+            // Step 1: Authenticate
+            const response = await fetch('https://gwfeaubvzjepmmhxgdvc.supabase.co/auth/v1/token?grant_type=password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error_description || 'Invalid credentials');
+            }
+
+            console.log('✅ Login successful! Fetching profile...');
+
+            // Step 2: Fetch user profile to get role
+            let userRole = null;
+
+            try {
+                const profileResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${data.user.id}&select=*`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE',
+                        'Authorization': `Bearer ${data.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (profileResponse.ok) {
+                    const profiles = await profileResponse.json();
+                    console.log('Profile data:', profiles);
+                    if (profiles && profiles.length > 0) {
+                        userRole = profiles[0].role;
+                    } else {
+                        console.warn('No profile found for this user');
+                    }
+                } else {
+                    console.warn('Profile fetch failed:', profileResponse.status);
+                }
+            } catch (profileError) {
+                console.warn('Profile fetch error:', profileError);
+            }
+
+            if (!userRole) {
+                throw new Error('Could not retrieve user role. Please contact support.');
+            }
+
+            console.log('✅ User role:', userRole);
+
+            // Step 3: Clear old session and store new session with role
+            localStorage.removeItem('supabase.auth.token');
+            localStorage.setItem('supabase.auth.token', JSON.stringify({
+                access_token: data.access_token,
+                refresh_token: data.refresh_token,
+                user: {
+                    ...data.user,
+                    role: userRole
+                }
+            }));
+
+            console.log('✅ Navigating to dashboard...');
+            // Force a reload to ensure AuthContext picks up the new localStorage session
+            window.location.href = '/dashboard';
+
+        } catch (err) {
+            console.error('❌ LOGIN ERROR:', err);
+            setError(err.message);
+            setLoading(false);
+        }
     };
 
     return (
         <div className="login-page">
             <div className="login-card">
                 <div className="login-header">
-                    <img src="/logos/pmajay.png" alt="PM-AJAY" className="login-logo" />
+                    <img
+                        src="https://pmajay.dosje.gov.in/assets/images/logo.png"
+                        alt="PM-AJAY"
+                        className="login-logo"
+                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/80?text=PM-AJAY' }}
+                    />
                     <h1 className="login-title">PM-AJAY Portal</h1>
                     <p className="login-subtitle">Ministry of Social Justice & Empowerment</p>
                 </div>
 
+                {error && <div className="alert alert-error" style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+
+                {connectionStatus === 'checking' && (
+                    <div className="alert alert-info" style={{ marginBottom: '1rem', fontSize: '0.8rem', textAlign: 'center' }}>
+                        📡 Checking connection...
+                    </div>
+                )}
+                {connectionStatus === 'error' && (
+                    <div className="alert alert-error" style={{ marginBottom: '1rem', fontSize: '0.8rem', textAlign: 'center', color: 'red' }}>
+                        ❌ Server Unreachable
+                    </div>
+                )}
+                {connectionStatus === 'connected' && (
+                    <div className="alert alert-success" style={{ marginBottom: '1rem', fontSize: '0.8rem', textAlign: 'center', color: 'green' }}>
+                        ✅ Server Connected
+                    </div>
+                )}
+
                 <form onSubmit={handleLogin}>
                     <div className="form-group">
-                        <label className="form-label required">Select Your Role</label>
+                        <label className="form-label">Select User Role</label>
                         <select
-                            className="form-control form-select"
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value)}
-                            required
+                            className="form-control"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                            style={{ backgroundImage: 'none' }}
                         >
-                            {roles.map(role => (
-                                <option key={role.value} value={role.value}>
-                                    {role.icon} {role.label}
-                                </option>
+                            {roles.map((r) => (
+                                <option key={r.id} value={r.id}>{r.label}</option>
                             ))}
                         </select>
-                        <p className="form-helper">
-                            This is a demonstration portal. Select your role to access the respective dashboard.
-                        </p>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Email / Username</label>
+                        <label className="form-label">Email Address</label>
                         <input
-                            type="text"
+                            type="email"
                             className="form-control"
-                            placeholder="Enter your email or username"
-                            defaultValue="demo@pmajay.gov.in"
+                            placeholder="Enter your email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
                         />
                     </div>
 
@@ -68,12 +189,19 @@ const Login = () => {
                             type="password"
                             className="form-control"
                             placeholder="Enter your password"
-                            defaultValue="demo123"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
                         />
                     </div>
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-4)' }}>
-                        Login to Dashboard
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginTop: 'var(--space-4)' }}
+                        disabled={loading}
+                    >
+                        {loading ? 'Logging in...' : 'Login to Dashboard'}
                     </button>
                 </form>
 

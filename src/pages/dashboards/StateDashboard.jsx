@@ -14,8 +14,37 @@ import StateHelp from './state/StateHelp';
 
 const StateDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [stateName, setStateName] = useState('Loading...');
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+
+    // Fetch state name from user profile
+    React.useEffect(() => {
+        const fetchStateName = async () => {
+            if (user?.id) {
+                console.log('Fetching state name for user:', user.email);
+                try {
+                    const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
+                        headers: {
+                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                        }
+                    });
+                    const data = await response.json();
+                    console.log('State name data:', data);
+                    if (data[0]?.full_name) {
+                        // Extract state name (e.g., "Andaman and Nicobar Islands Admin" -> "Andaman and Nicobar Islands")
+                        const name = data[0].full_name.replace(' Admin', '').replace(' State Admin', '');
+                        console.log('Setting state name to:', name);
+                        setStateName(name);
+                    }
+                } catch (error) {
+                    console.error('Error fetching state name:', error);
+                    setStateName('State');
+                }
+            }
+        };
+        fetchStateName();
+    }, [user?.id, user?.email]); // Refetch when user changes
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
@@ -77,7 +106,7 @@ const StateDashboard = () => {
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
-                        <h1>State Dashboard - Maharashtra</h1>
+                        <h1>State Dashboard - {stateName}</h1>
                         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
                             {getBreadcrumb()}
                         </p>

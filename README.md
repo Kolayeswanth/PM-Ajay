@@ -1,180 +1,384 @@
-# PM-AJAY Portal - Quick Start Guide
+# 🏛️ PM-AJAY Portal - Hierarchical Authentication System
 
-## 🚀 Getting Started
+## 📋 Project Overview
 
-### Start the Portal
-```bash
-cd C:\Users\gayat\OneDrive\Desktop\SIH3
-npm run dev
+Complete **Centre → State → District** hierarchical authentication system for PM-AJAY government portal with **769 pre-configured user accounts** across India.
+
+### System Architecture
+
 ```
-
-Then open your browser to: **http://localhost:5173**
-
-## 🔐 Login Credentials (Demo)
-
-The portal has 7 different user roles. Select any role from the dropdown on the login page:
-
-| Role | What You'll See |
-|------|----------------|
-| **Ministry Admin (MoSJE)** | National dashboard with state-wise data, fund allocation, India map |
-| **State Admin (SSWD)** | State-level dashboard (placeholder) |
-| **District Admin** | District dashboard with GIS map, project table, GP approvals |
-| **GP Officer** | Gram Panchayat interface (placeholder) |
-| **Implementing Department** | Department work orders (placeholder) |
-| **Executing Agency/Contractor** | Contractor portal (placeholder) |
-| **Public/Beneficiary** | Public transparency view (placeholder) |
-
-> **Note**: Email and password fields are pre-filled for demo purposes. Just select a role and click "Login to Dashboard".
-
-## 🗺️ Testing the Maps
-
-### India Map (Homepage & Ministry Dashboard)
-1. **Hover** over states to see them highlight
-2. **Click** on any state to see a popup with statistics
-3. States are **color-coded** by project count:
-   - 🟢 Green: 300+ projects
-   - 🟠 Orange: 200-300 projects
-   - 🔵 Blue: <200 projects
-
-### District Map (District Dashboard)
-1. Login as **District Admin**
-2. Scroll to the "Project Locations (GIS View)" section
-3. **Toggle** "Show Projects" checkbox to show/hide project markers
-4. **Click** on colored markers to see project details:
-   - 🟠 Orange: Adarsh Gram projects
-   - 🟢 Green: GIA projects
-   - 🔵 Blue: Hostel projects
-5. Districts are **color-coded** by progress:
-   - 🟢 Green: ≥70% complete
-   - 🟠 Orange: 50-70% complete
-   - 🔴 Red: <50% complete
-
-## 📊 Key Features to Explore
-
-### Ministry Admin Dashboard
-- **National Statistics**: 6 stat cards showing key metrics
-- **Project Status**: Breakdown of completed, ongoing, approved, proposed
-- **Interactive Map**: Click states to explore
-- **Fund Allocation Table**: See all states with progress bars
-- **Pending Approvals**: Review and approve state annual plans
-- **Quick Actions**: Manage admins, generate reports, send circulars
-
-### District Admin Dashboard
-- **District Overview**: 6 stat cards for Pune district
-- **GIS Map**: Interactive map with project markers
-- **GP Proposals**: Approve or reject proposals from Gram Panchayats
-- **Projects Table**: Complete list with status, progress, and departments
-- **Quick Actions**: Assign work, manage contractors, approve payments
-
-## 🎨 Design Features
-
-### Government Branding
-- **Header**: Government of India emblem, Ministry logo, PM-AJAY logo
-- **Colors**: Saffron, white, green, navy blue (Indian tricolor theme)
-- **Typography**: Professional Inter and Roboto fonts
-- **Bilingual**: Hindi/English toggle in header
-
-### UI Components
-- **Stat Cards**: Hover to see elevation effect
-- **Tables**: Sortable columns with hover states
-- **Buttons**: Primary (orange), Secondary (green), Accent (blue)
-- **Badges**: Color-coded status indicators
-- **Progress Bars**: Visual completion indicators
-- **Notifications**: Bell icon with unread count
-
-## 📱 Responsive Design
-
-The portal works on:
-- 💻 Desktop (1920x1080, 1366x768)
-- 📱 Tablet (768px width)
-- 📱 Mobile (responsive down to 375px)
-
-## 🔄 Switching Roles
-
-1. Click **Logout** in the top navigation
-2. You'll be redirected to the login page
-3. Select a different role from the dropdown
-4. Click **Login to Dashboard**
-5. Explore the new dashboard!
-
-## 📂 Project Files
-
-### Key Files to Explore
-- `src/index.css` - Complete design system with all colors, typography, components
-- `src/components/Header.jsx` - Government-standard header
-- `src/components/maps/IndiaMap.jsx` - Interactive India map
-- `src/components/maps/DistrictMap.jsx` - District-level map with projects
-- `src/pages/dashboards/MinistryDashboard.jsx` - Full ministry dashboard
-- `src/pages/dashboards/DistrictDashboard.jsx` - Full district dashboard
-- `src/data/mockData.js` - All mock data for demonstration
-
-### Generated Logos
-- `public/logos/emblem.png` - Government of India emblem
-- `public/logos/ministry.png` - Ministry of Social Justice & Empowerment logo
-- `public/logos/pmajay.png` - PM-AJAY scheme logo
-
-## 🛠️ Customization
-
-### Change Colors
-Edit `src/index.css` and modify the CSS custom properties:
-```css
-:root {
-  --color-primary: #FF9933;  /* Saffron */
-  --color-secondary: #138808; /* Green */
-  --color-accent: #000080;   /* Navy Blue */
-}
+Centre Admin (1)
+    └── Controls entire country
+        ├── State Admins (36)
+        │   └── Each controls one state/UT
+        │       └── District Admins (732)
+        │           └── Each controls one district
 ```
-
-### Add More Mock Data
-Edit `src/data/mockData.js`:
-- Add more states to `states` array
-- Add more projects to `mockProjects` array
-- Add more notifications to `mockNotifications` array
-
-### Modify Maps
-Edit `src/data/geoData.js` to add more states or districts to the GeoJSON data.
-
-## 🐛 Troubleshooting
-
-### Map Not Loading?
-- Check that Leaflet CSS is loaded in `index.html`
-- Verify internet connection (maps use OpenStreetMap tiles)
-- Check browser console for errors
-
-### Logos Not Showing?
-- Ensure logos are in `public/logos/` directory
-- Check file names match: `emblem.png`, `ministry.png`, `pmajay.png`
-- Clear browser cache and reload
-
-### Styles Not Applied?
-- Verify `src/index.css` is imported in `src/main.jsx`
-- Check for CSS syntax errors
-- Try hard refresh (Ctrl+F5)
-
-## 📚 Next Steps
-
-1. **Test All Features**: Explore both dashboards thoroughly
-2. **Review Code**: Check component structure and design system
-3. **Plan Backend**: Design API endpoints for data integration
-4. **Complete Dashboards**: Implement remaining 5 role dashboards
-5. **Add Workflows**: Build proposal submission, approval flows
-6. **Deploy**: Set up staging environment for testing
-
-## 💡 Tips
-
-- **Use Chrome DevTools**: Inspect elements to see CSS classes
-- **Check Console**: Look for any errors or warnings
-- **Test Responsiveness**: Resize browser window to see mobile view
-- **Explore Navigation**: Click all menu items to see routing
-- **Read Comments**: Code is well-commented for understanding
-
-## 📞 Need Help?
-
-- Check `walkthrough.md` for detailed documentation
-- Review `implementation_plan.md` for architecture details
-- Examine component files for usage examples
-- All mock data is in `src/data/mockData.js`
 
 ---
 
-**Enjoy exploring the PM-AJAY Portal! 🎉**
+## 🎯 What's Included
+
+### ✅ Database Schema
+- Complete Supabase schema with Row Level Security (RLS)
+- 6 tables: `profiles`, `centre_admin`, `states`, `districts`, `state_admins`, `district_admins`
+- Proper foreign key relationships and indexes
+
+### ✅ Pre-configured Data
+- **1 Centre Admin** account
+- **36 State/UT Admin** accounts (all Indian states and UTs)
+- **732 District Admin** accounts (all districts across India)
+- **36 States/UTs** with codes
+- **732 Districts** with state mapping
+
+### ✅ Import Tools
+- SQL schema files
+- CSV data files
+- Automated bulk import script (Node.js)
+- Setup validation script
+
+### ✅ Documentation
+- Step-by-step import guide
+- Complete credentials reference
+- Security best practices
+- Troubleshooting guide
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Supabase account (free tier works)
+- Node.js 16+ installed
+- Git (optional)
+
+### Step 1: Setup Database (5 minutes)
+
+1. **Create Supabase Project**
+   - Go to https://app.supabase.com
+   - Create new project
+   - Wait for database to initialize
+
+2. **Run Schema Setup**
+   - Open Supabase Dashboard → SQL Editor
+   - Copy contents of `02_CENTRE_STATE_DISTRICT_SCHEMA.sql`
+   - Paste and click **Run**
+
+3. **Import States**
+   - In SQL Editor, run `03_INSERT_STATES_DISTRICTS.sql`
+   - Verifies: 36 states imported
+
+4. **Import Districts**
+   - Go to Table Editor → `districts` table
+   - Click Insert → Import CSV
+   - Upload `CSV_IMPORTS/04_districts.csv`
+   - Verifies: 732 districts imported
+
+### Step 2: Configure Environment (2 minutes)
+
+1. **Install Dependencies**
+   ```powershell
+   npm install
+   ```
+
+2. **Setup Environment Variables**
+   ```powershell
+   copy .env.example .env
+   ```
+
+3. **Edit `.env` file** with your Supabase credentials:
+   ```env
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   ```
+
+   Get these from: Supabase Dashboard → Project Settings → API
+
+### Step 3: Import Users (3-5 minutes)
+
+1. **Validate Setup**
+   ```powershell
+   npm run setup-check
+   ```
+
+2. **Run Bulk Import**
+   ```powershell
+   npm run create-users
+   ```
+
+   This creates all 769 user accounts automatically!
+
+### Step 4: Test Login
+
+Test with these credentials:
+
+**Centre Admin:**
+```
+Email: centre@pmajay.gov.in
+Password: Centre@2024!Secure
+```
+
+**State Admin (Maharashtra):**
+```
+Email: mh.admin@pmajay.gov.in
+Password: MH@State2024!
+```
+
+**District Admin (Mumbai):**
+```
+Email: mh-mc.district@pmajay.gov.in
+Password: MH-MC@Dist2024!
+```
+
+---
+
+## 📁 File Structure
+
+```
+PM-Ajay/
+├── 📄 SQL Schema Files
+│   ├── 02_CENTRE_STATE_DISTRICT_SCHEMA.sql    # Database schema
+│   └── 03_INSERT_STATES_DISTRICTS.sql         # States data
+│
+├── 📊 CSV Data Files
+│   └── CSV_IMPORTS/
+│       ├── 01_centre_admin.csv                # 1 centre admin
+│       ├── 02_states.csv                      # 36 states/UTs
+│       ├── 03_state_admins.csv                # 36 state admins
+│       ├── 04_districts.csv                   # 732 districts
+│       ├── 05_district_admins.csv             # 732 district admins
+│       └── generate_district_admins.py        # CSV generator
+│
+├── 🔧 Import Scripts
+│   ├── bulk_create_users.js                   # Automated user creation
+│   ├── setup-check.js                         # Validation script
+│   ├── package.json                           # Node.js config
+│   └── .env.example                           # Environment template
+│
+├── 📚 Documentation
+│   ├── README.md                              # This file
+│   ├── SUPABASE_IMPORT_GUIDE.md              # Detailed import guide
+│   ├── README_SETUP.md                        # Setup instructions
+│   └── CREDENTIALS_REFERENCE.md               # All login credentials
+│
+└── 🔒 Security
+    └── .gitignore                             # Protect sensitive files
+```
+
+---
+
+## 🔐 Login Credentials Pattern
+
+### Centre Admin
+- **Email:** `centre@pmajay.gov.in`
+- **Password:** `Centre@2024!Secure`
+
+### State Admins
+- **Email:** `{state_code}.admin@pmajay.gov.in`
+- **Password:** `{STATE_CODE}@State2024!`
+- **Example:** `mh.admin@pmajay.gov.in` / `MH@State2024!`
+
+### District Admins
+- **Email:** `{district_code}.district@pmajay.gov.in`
+- **Password:** `{DISTRICT_CODE}@Dist2024!`
+- **Example:** `mh-mc.district@pmajay.gov.in` / `MH-MC@Dist2024!`
+
+📖 **See `CREDENTIALS_REFERENCE.md` for complete list**
+
+---
+
+## 📊 Database Schema
+
+### Tables
+
+1. **`profiles`** - Core user profiles
+   - Links to Supabase Auth
+   - Stores role and basic info
+
+2. **`centre_admin`** - Centre administrator (1 record)
+   - Full access to entire system
+
+3. **`states`** - All states and UTs (36 records)
+   - State name and code
+
+4. **`districts`** - All districts (732 records)
+   - District name, code, state mapping
+
+5. **`state_admins`** - State administrators (36 records)
+   - One admin per state
+   - Links to state
+
+6. **`district_admins`** - District administrators (732 records)
+   - One admin per district
+   - Links to district and state
+
+### Relationships
+
+```
+auth.users (Supabase Auth)
+    ↓
+profiles (role, email)
+    ↓
+    ├── centre_admin (1)
+    ├── state_admins (36) → states (36)
+    └── district_admins (732) → districts (732) → states (36)
+```
+
+---
+
+## 🛠️ Available Commands
+
+```powershell
+# Validate setup before import
+npm run setup-check
+
+# Create all 769 user accounts
+npm run create-users
+
+# Test Supabase connection
+npm run test-connection
+```
+
+---
+
+## 📖 Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `README.md` | This file - Quick overview |
+| `SUPABASE_IMPORT_GUIDE.md` | **Detailed step-by-step import instructions** |
+| `README_SETUP.md` | Setup guide and architecture |
+| `CREDENTIALS_REFERENCE.md` | All 769 login credentials |
+
+---
+
+## ✅ Verification Checklist
+
+After import, verify:
+
+- [ ] 6 tables created in Supabase
+- [ ] 36 states in `states` table
+- [ ] 732 districts in `districts` table
+- [ ] 769 users in Authentication
+- [ ] Can login as centre admin
+- [ ] Can login as state admin
+- [ ] Can login as district admin
+- [ ] Each user has correct role
+- [ ] State admins linked to states
+- [ ] District admins linked to districts
+
+---
+
+## 🔒 Security Features
+
+✅ **Row Level Security (RLS)** enabled on all tables  
+✅ **Strong passwords** (12+ chars, mixed case, numbers, symbols)  
+✅ **Email verification** ready (configure in Supabase)  
+✅ **Service role key** required for bulk operations  
+✅ **Secure credential storage** (`.env` not committed)  
+✅ **Role-based access control** built-in  
+
+---
+
+## 🎯 Next Steps
+
+After completing the import:
+
+1. **Implement Frontend Login**
+   - Use Supabase Auth in your React/Next.js app
+   - Add role-based routing
+
+2. **Create Dashboards**
+   - Centre Dashboard (all states overview)
+   - State Dashboard (districts in state)
+   - District Dashboard (district data)
+
+3. **Add Features**
+   - Password reset flow
+   - Change password on first login
+   - Email verification
+   - Multi-factor authentication (MFA)
+
+4. **Security Enhancements**
+   - Force password change on first login
+   - Implement session timeout
+   - Add activity logging
+   - Enable MFA for admins
+
+---
+
+## 🐛 Troubleshooting
+
+### "Cannot connect to Supabase"
+- Check your `.env` file has correct credentials
+- Ensure you're using `service_role` key, not `anon` key
+- Verify Supabase project is active
+
+### "Duplicate key error"
+- Users already exist
+- Either skip duplicates or delete existing users first
+
+### "Permission denied"
+- Using wrong API key (use `service_role` for bulk operations)
+- RLS policies may be blocking access
+
+### "CSV import fails"
+- Check file encoding (should be UTF-8)
+- Verify column names match exactly
+- Try SQL import method instead
+
+📖 **See `SUPABASE_IMPORT_GUIDE.md` for detailed troubleshooting**
+
+---
+
+## 📞 Support
+
+For issues:
+1. Check Supabase Dashboard → Logs
+2. Run `npm run setup-check` to validate setup
+3. Review `SUPABASE_IMPORT_GUIDE.md`
+4. Check `.env` configuration
+
+---
+
+## 📊 Statistics
+
+- **Total Users:** 769
+  - 1 Centre Admin
+  - 36 State Admins
+  - 732 District Admins
+- **Total States/UTs:** 36
+- **Total Districts:** 732
+- **Total Database Records:** 1,537+
+- **Import Time:** ~5 minutes (automated)
+
+---
+
+## 🎉 Success Criteria
+
+Your setup is complete when:
+
+✅ All 769 users can login  
+✅ Centre admin sees all states  
+✅ State admins see only their state  
+✅ District admins see only their district  
+✅ Roles are correctly assigned  
+✅ Data relationships are intact  
+
+---
+
+## 📝 License
+
+This is a government project setup for PM-AJAY scheme.
+
+---
+
+## 🙏 Credits
+
+**Generated for:** PM-AJAY Portal  
+**Date:** November 27, 2024  
+**Version:** 1.0  
+
+---
+
+**🚀 Ready to import? Start with `SUPABASE_IMPORT_GUIDE.md`**
