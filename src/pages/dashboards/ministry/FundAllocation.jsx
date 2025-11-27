@@ -3,10 +3,10 @@ import Modal from '../../../components/Modal';
 import { states as initialStates } from '../../../data/mockData';
 
 /**
- * FundAllocation (state dropdown)
- * - Removes previous "Target / state id" UI
- * - Adds a single "State Name" dropdown with all India states & union territories
- * - Selecting a state will top-up allocation if that state exists in fundStates, otherwise a new record is created
+ * FundAllocation with WhatsApp Integration
+ * - State dropdown for fund allocation
+ * - Allocator information fields (name, role, phone)
+ * - WhatsApp notification on "Allocate & Notify" button
  * - Persists fundStates to localStorage and updates table in real-time
  */
 
@@ -31,10 +31,14 @@ const FundAllocation = ({ formatCurrency }) => {
         amount: '',
         date: '',
         officerId: '',
+        allocatorName: '',
+        allocatorRole: '',
+        allocatorPhone: '',
     });
     const [fundStates, setFundStates] = useState([]);
     const [errors, setErrors] = useState({});
     const [toast, setToast] = useState(null);
+    const [isNotifying, setIsNotifying] = useState(false);
 
     // Load from localStorage (or fallback to initialStates) on mount
     useEffect(() => {
@@ -62,7 +66,7 @@ const FundAllocation = ({ formatCurrency }) => {
     // small helper to show transient messages
     const showToast = (message) => {
         setToast(message);
-        setTimeout(() => setToast(null), 3000);
+        setTimeout(() => setToast(null), 4000);
     };
 
     // Open Add Allocation modal
@@ -73,6 +77,9 @@ const FundAllocation = ({ formatCurrency }) => {
             amount: '',
             date: new Date().toISOString().slice(0, 10),
             officerId: '',
+            allocatorName: '',
+            allocatorRole: '',
+            allocatorPhone: '',
         });
         setErrors({});
         setIsModalOpen(true);
@@ -91,20 +98,56 @@ const FundAllocation = ({ formatCurrency }) => {
         });
     };
 
-    // Basic validation
+    // Enhanced validation including allocator fields
     const validate = () => {
         const errs = {};
         if (!allocationData.stateName) errs.stateName = 'Please select a state/UT.';
         const amountCr = parseFloat(allocationData.amount);
         if (isNaN(amountCr) || amountCr <= 0) errs.amount = 'Enter a valid amount (> 0).';
         if (!allocationData.officerId.trim()) errs.officerId = 'Enter Allocation Officer ID.';
+
+        // Validate allocator information
+        if (!allocationData.allocatorName.trim()) errs.allocatorName = 'Enter allocator name.';
+        if (!allocationData.allocatorRole.trim()) errs.allocatorRole = 'Enter allocator role.';
+        if (!allocationData.allocatorPhone.trim()) {
+            errs.allocatorPhone = 'Enter allocator WhatsApp number.';
+        } else {
+            // Phone number validation (10 digits)
+            const cleanNumber = allocationData.allocatorPhone.replace(/\D/g, '');
+            if (cleanNumber.length !== 10) {
+                errs.allocatorPhone = 'Enter valid 10-digit phone number.';
+            }
+        }
+
         setErrors(errs);
         return Object.keys(errs).length === 0;
     };
 
-    // Perform allocation (persisted + immediate update)
-    const handleAllocateSubmit = () => {
+    // Send WhatsApp notification via backend API
+    const sendWhatsAppNotification = async (data) => {
+        try {
+            const response = await fetch('http://localhost:5001/api/notifications/send-allocation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            console.log(result);
+            return result;
+        } catch (error) {
+            console.error('Error sending WhatsApp:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    // Perform allocation with WhatsApp notification
+    const handleAllocateAndNotify = async () => {
         if (!validate()) return;
+
+        setIsNotifying(true);
 
         const amountCr = parseFloat(allocationData.amount);
         const amountInRupees = Math.round(amountCr * 10000000); // 1 Cr = 10,000,000
@@ -120,6 +163,9 @@ const FundAllocation = ({ formatCurrency }) => {
             date: allocationData.date,
             officerId: allocationData.officerId,
             component: allocationData.component,
+            allocatorName: allocationData.allocatorName,
+            allocatorRole: allocationData.allocatorRole,
+            allocatorPhone: allocationData.allocatorPhone,
         };
 
         if (idx >= 0) {
@@ -133,10 +179,10 @@ const FundAllocation = ({ formatCurrency }) => {
                 lastAllocation: allocationRecord,
             };
         } else {
-            // Create a new state record (no code available here)
+            // Create a new state record
             const newState = {
                 name: allocationData.stateName,
-                code: '', // code not provided in dropdown; you can fill if you want
+                code: '',
                 component: allocationData.component,
                 fundAllocated: amountInRupees,
                 amountReleased: 0,
@@ -147,7 +193,58 @@ const FundAllocation = ({ formatCurrency }) => {
 
         // Update state immediately so UI reflects change in real-time
         setFundStates(updatedStates);
-        showToast(`Allocation of ${amountCr} Cr recorded for ${allocationData.stateName}`);
+
+        // Send WhatsApp notification
+        const notificationData = {
+            allocatorPhone: allocationData.allocatorPhone,
+            allocatorName: allocationData.allocatorName,
+            allocatorRole: allocationData.allocatorRole,
+            stateName: allocationData.stateName,
+            amount: amountCr,
+            component: allocationData.component,
+            date: allocationData.date,
+            officerId: allocationData.officerId,
+        };
+
+        const result = await sendWhatsAppNotification(notificationData);
+
+        setIsNotifying(false);
+
+        if (result.success) {
+            // Success popup with details
+            const successMessage =
+                `✅ FUND ALLOCATION SUCCESSFUL!\n\n` +
+                `📊 Allocation Details:\n` +
+                `• State: ${allocationData.stateName}\n` +
+                `• Amount: ₹${amountInRupees.toLocaleString()} (${amountCr} Cr)\n` +
+                `• Component: ${allocationData.component.join(', ') || 'N/A'}\n` +
+                `• Date: ${allocationData.date}\n` +
+                `• Officer ID: ${allocationData.officerId}\n\n` +
+                `📱 WhatsApp Notification: SENT ✅\n` +
+                `• Recipient: ${allocationData.allocatorName}\n` +
+                `• Role: ${allocationData.allocatorRole}\n` +
+                `• Phone: +91${allocationData.allocatorPhone}\n\n` +
+                `The allocator has been notified via WhatsApp!`;
+
+            alert(successMessage);
+            showToast(`✅ Allocation of ${amountCr} Cr recorded and WhatsApp notification sent to ${allocationData.allocatorName}!`);
+        } else {
+            // Error popup with details
+            const errorMessage =
+                `⚠️ ALLOCATION SAVED BUT WHATSAPP FAILED!\n\n` +
+                `📊 Allocation Details:\n` +
+                `• State: ${allocationData.stateName}\n` +
+                `• Amount: ₹${amountInRupees.toLocaleString()} (${amountCr} Cr)\n` +
+                `• Component: ${allocationData.component.join(', ') || 'N/A'}\n\n` +
+                `❌ WhatsApp Error:\n` +
+                `${result.error || 'Unknown error'}\n\n` +
+                `The allocation has been saved to the system, but the WhatsApp notification could not be sent.\n\n` +
+                `Please contact ${allocationData.allocatorName} manually at +91${allocationData.allocatorPhone}`;
+
+            alert(errorMessage);
+            showToast(`⚠️ Allocation saved but WhatsApp notification failed: ${result.error || 'Unknown error'}`);
+        }
+
         closeModal();
     };
 
@@ -202,6 +299,13 @@ const FundAllocation = ({ formatCurrency }) => {
                                             <div>₹{(s.lastAllocation.amountInRupees || 0).toLocaleString()} ({s.lastAllocation.amountCr} Cr)</div>
                                             <div style={{ color: '#666' }}>{s.lastAllocation.date || '-'}</div>
                                             <div style={{ color: '#666' }}>Officer: {s.lastAllocation.officerId || '-'}</div>
+                                            {s.lastAllocation.allocatorName && (
+                                                <>
+                                                    <div style={{ color: '#666', marginTop: 4 }}>Allocator: {s.lastAllocation.allocatorName}</div>
+                                                    <div style={{ color: '#666' }}>{s.lastAllocation.allocatorRole || '-'}</div>
+                                                    <div style={{ color: '#666' }}>📱 {s.lastAllocation.allocatorPhone || '-'}</div>
+                                                </>
+                                            )}
                                         </div>
                                     ) : (
                                         <div style={{ color: '#999' }}>No allocation yet</div>
@@ -222,14 +326,19 @@ const FundAllocation = ({ formatCurrency }) => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={closeModal}
-                title="Add Allocation"
+                title="Add Allocation & Notify"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button onClick={closeModal} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
                             Cancel
                         </button>
-                        <button onClick={handleAllocateSubmit} className="btn btn-primary" style={{ padding: '8px 14px' }}>
-                            Allocate
+                        <button
+                            onClick={handleAllocateAndNotify}
+                            className="btn btn-primary"
+                            style={{ padding: '8px 14px' }}
+                            disabled={isNotifying}
+                        >
+                            {isNotifying ? 'Sending...' : 'Allocate & Notify'}
                         </button>
                     </div>
                 }
@@ -304,8 +413,48 @@ const FundAllocation = ({ formatCurrency }) => {
                         {errors.officerId && <div className="form-error">{errors.officerId}</div>}
                     </div>
 
-                    <div style={{ fontSize: 13, color: '#555' }}>
-                        <strong>Note:</strong> Select a state/UT from the list. If the state does not exist in the table it will be added.
+                    <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #ddd' }} />
+                    <h4 style={{ margin: '8px 0', fontSize: 16 }}>State Allocator Information</h4>
+
+                    <div className="form-group">
+                        <label className="form-label">Allocator Name</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g. Rajesh Kumar"
+                            value={allocationData.allocatorName}
+                            onChange={(e) => setAllocationData({ ...allocationData, allocatorName: e.target.value })}
+                        />
+                        {errors.allocatorName && <div className="form-error">{errors.allocatorName}</div>}
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Allocator Role in State Government</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g. State Finance Secretary"
+                            value={allocationData.allocatorRole}
+                            onChange={(e) => setAllocationData({ ...allocationData, allocatorRole: e.target.value })}
+                        />
+                        {errors.allocatorRole && <div className="form-error">{errors.allocatorRole}</div>}
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Allocator WhatsApp Number</label>
+                        <input
+                            type="tel"
+                            className="form-control"
+                            placeholder="e.g. 9876543210"
+                            value={allocationData.allocatorPhone}
+                            onChange={(e) => setAllocationData({ ...allocationData, allocatorPhone: e.target.value })}
+                        />
+                        {errors.allocatorPhone && <div className="form-error">{errors.allocatorPhone}</div>}
+                        <div className="form-helper">Enter 10-digit mobile number (without +91)</div>
+                    </div>
+
+                    <div style={{ fontSize: 13, color: '#555', background: '#f0f8ff', padding: 12, borderRadius: 6 }}>
+                        <strong>📱 Note:</strong> When you click "Allocate & Notify", a WhatsApp message will be sent to the allocator with the fund allocation details.
                     </div>
                 </div>
             </Modal>

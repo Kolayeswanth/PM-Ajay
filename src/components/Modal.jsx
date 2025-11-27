@@ -17,16 +17,18 @@ import ReactDOM from 'react-dom';
  *  - Closes when clicking overlay or clicking the close button
  */
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
-    if (!isOpen) return null;
-
     // Prevent body scroll while modal is open
     useEffect(() => {
+        if (!isOpen) return;
+
         const originalOverflow = typeof document !== 'undefined' ? document.body.style.overflow : '';
         if (typeof document !== 'undefined') document.body.style.overflow = 'hidden';
         return () => {
             if (typeof document !== 'undefined') document.body.style.overflow = originalOverflow || '';
         };
-    }, []);
+    }, [isOpen]);
+
+    if (!isOpen) return null;
 
     const modalElement = (
         <div
