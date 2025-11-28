@@ -92,7 +92,6 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
     // Trigger animation on mount or data change
     useEffect(() => {
         setAnimate(false);
-        // Small delay to allow react to render the initial state before animating
         const timer = setTimeout(() => setAnimate(true), 50);
         return () => clearTimeout(timer);
     }, [data]);
@@ -112,7 +111,6 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
 
         if (points.length === 0) return '';
 
-        // Smooth Curve (Catmull-Rom to Cubic Bezier)
         let d = `M ${points[0]}`;
         for (let i = 0; i < points.length - 1; i++) {
             const [x0, y0] = points[Math.max(i - 1, 0)].split(',').map(Number);
@@ -133,7 +131,6 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
     return (
         <div style={{ width: '100%', position: 'relative' }}>
             <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
-                {/* Grid & Y-Axis */}
                 {[0, 25, 50, 75, 100].map((tick, i) => {
                     const y = height - padding - (tick / maxY) * graphHeight;
                     return (
@@ -144,10 +141,9 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
                     );
                 })}
 
-                {/* Lines with Animation */}
                 {data.datasets.map((dataset, idx) => {
                     const pathD = generatePath(dataset.values);
-                    const pathLength = 1500; // Increased length for smoother animation
+                    const pathLength = 1500;
 
                     return (
                         <g key={idx}>
@@ -167,7 +163,6 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
                                 onMouseEnter={() => setHoveredIndex(idx)}
                                 onMouseLeave={() => setHoveredIndex(null)}
                             />
-                            {/* Line Label at the end */}
                             <text
                                 x={width - padding + 10}
                                 y={height - padding - (dataset.values[dataset.values.length - 1] / maxY) * graphHeight}
@@ -183,7 +178,6 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
                     );
                 })}
 
-                {/* Interactive Points & Tooltips */}
                 {data.datasets.map((dataset, idx) => (
                     <g key={`points-${idx}`} style={{ opacity: (hoveredIndex === null || hoveredIndex === idx) ? 1 : 0.1 }}>
                         {dataset.values.map((val, i) => {
@@ -200,7 +194,6 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
                                         strokeWidth="2"
                                         style={{ transition: 'r 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1.2s' }}
                                     />
-                                    {/* Tooltip Value */}
                                     <text
                                         x={x}
                                         y={y - 10}
@@ -218,7 +211,6 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
                     </g>
                 ))}
 
-                {/* X-Axis Labels */}
                 {data.months.map((month, i) => {
                     const x = padding + (i / (data.months.length - 1)) * graphWidth;
                     return (
@@ -236,7 +228,7 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
     );
 };
 
-// Donut Chart (Unchanged)
+// Donut Chart
 const DonutChart = ({ value, total, color, label, size = 160 }) => {
     const radius = size / 2;
     const strokeWidth = 15;
@@ -333,7 +325,6 @@ const MonitorProgress = () => {
                 </div>
             </div>
 
-            {/* KPI Cards */}
             <div className="dashboard-section">
                 <div className="kpi-row">
                     <StatCard icon="📈" value="78%" label="National Utilization" color={THEME.primary} />
@@ -343,7 +334,6 @@ const MonitorProgress = () => {
             </div>
 
             <div className="dashboard-section" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 'var(--space-6)' }}>
-                {/* Map Section */}
                 <div className="card" style={{ padding: '0', minHeight: '500px', overflow: 'hidden', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                     <div style={{ padding: '16px', borderBottom: '1px solid #F3F4F6', backgroundColor: 'white' }}>
                         <h3 className="section-title" style={{ marginBottom: '0', color: THEME.text }}>Geographic Overview</h3>
@@ -356,7 +346,6 @@ const MonitorProgress = () => {
                     </div>
                 </div>
 
-                {/* Details Section */}
                 <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                     {stateData ? (
                         <>
@@ -367,7 +356,6 @@ const MonitorProgress = () => {
                                 <p style={{ color: '#6B7280', margin: 0, fontSize: '14px' }}>Comprehensive Progress Report</p>
                             </div>
 
-                            {/* 1. Fund Utilization (Donut) */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: THEME.background, padding: '16px', borderRadius: '12px' }}>
                                 <div>
                                     <h4 style={{ fontSize: '16px', color: THEME.text, fontWeight: '600', marginBottom: '4px' }}>Fund Utilization</h4>
@@ -381,37 +369,47 @@ const MonitorProgress = () => {
                                     size={100}
                                 />
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {stateData.components.map((comp, idx) => (
-                                    <div key={idx}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: THEME.text }}>
-                                            <span>{comp.name}</span>
-                                            <span>{comp.progress}%</span>
-                                        </div>
-                                        <div style={{ height: '8px', backgroundColor: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
-                                            <div style={{
-                                                width: `${comp.progress}%`,
-                                                height: '100%',
-                                                backgroundColor: comp.color,
-                                                borderRadius: '4px',
-                                                transition: 'width 0.8s ease'
-                                            }}></div>
-                                        </div>
-                                    </div>
-                                ))}
+
+                            <div>
+                                <h4 style={{ fontSize: '16px', color: THEME.text, fontWeight: '600', marginBottom: '12px' }}>Project Status Trends</h4>
+                                <div style={{ padding: '16px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${THEME.background}` }}>
+                                    <AnimatedLineChart data={stateData.projectTrends} key={stateData.name} />
+                                </div>
                             </div>
+
+                            <div>
+                                <h4 style={{ fontSize: '16px', color: THEME.text, fontWeight: '600', marginBottom: '12px' }}>Component Performance</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {stateData.components.map((comp, idx) => (
+                                        <div key={idx}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: THEME.text }}>
+                                                <span>{comp.name}</span>
+                                                <span>{comp.progress}%</span>
+                                            </div>
+                                            <div style={{ height: '8px', backgroundColor: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    width: `${comp.progress}%`,
+                                                    height: '100%',
+                                                    backgroundColor: comp.color,
+                                                    borderRadius: '4px',
+                                                    transition: 'width 0.8s ease'
+                                                }}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', textAlign: 'center', padding: '32px' }}>
+                            <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.5 }}>🗺️</div>
+                            <h3 style={{ fontSize: '18px', color: THEME.text, marginBottom: '8px' }}>Select a State</h3>
+                            <p style={{ maxWidth: '250px', color: '#6B7280' }}>Click on any state in the map to view detailed progress reports.</p>
                         </div>
-                </>
-                ) : (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', textAlign: 'center', padding: '32px' }}>
-                    <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.5 }}>🗺️</div>
-                    <h3 style={{ fontSize: '18px', color: THEME.text, marginBottom: '8px' }}>Select a State</h3>
-                    <p style={{ maxWidth: '250px', color: '#6B7280' }}>Click on any state in the map to view detailed progress reports.</p>
-                </div>
                     )}
+                </div>
             </div>
         </div>
-        </div >
     );
 };
 
