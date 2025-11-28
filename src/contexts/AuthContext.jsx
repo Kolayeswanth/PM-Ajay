@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 const AuthContext = createContext(null);
 
@@ -12,12 +13,14 @@ export const useAuth = () => {
 
 // User roles
 export const ROLES = {
-  MINISTRY: 'ministry',
-  STATE: 'state',
-  DISTRICT: 'district',
-  GP: 'gp',
-  DEPARTMENT: 'department',
+  MINISTRY: 'centre_admin',  // Changed to match database constraint
+  STATE: 'state_admin',
+  DISTRICT: 'district_admin',
+  GP: 'gp_admin',
+  DEPARTMENT: 'department_admin',
   CONTRACTOR: 'contractor',
+  IMPLEMENTING_AGENCY: 'implementing_agency',
+  EXECUTING_AGENCY: 'executing_agency',
   PUBLIC: 'public'
 };
 
@@ -25,87 +28,118 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('pm_ajay_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+    // Force loading to false after 3 seconds to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.warn('Auth check timed out, setting loading to false');
+      setLoading(false);
+    }, 3000);
 
-  const login = (credentials) => {
-    // Mock login - In production, this would call an API
-    const mockUsers = {
-      ministry: {
-        id: 1,
-        name: 'Ministry Admin',
-        email: 'admin@mosje.gov.in',
-        role: ROLES.MINISTRY,
-        department: 'Ministry of Social Justice & Empowerment'
-      },
-      state: {
-        id: 2,
-        name: 'State Admin - Maharashtra',
-        email: 'admin@maharashtra.gov.in',
-        role: ROLES.STATE,
-        state: 'Maharashtra',
-        department: 'State Social Welfare Department'
-      },
-      district: {
-        id: 3,
-        name: 'District Collector - Pune',
-        email: 'collector@pune.gov.in',
-        role: ROLES.DISTRICT,
-        state: 'Maharashtra',
-        district: 'Pune',
-        department: 'District Administration'
-      },
-      gp: {
-        id: 4,
-        name: 'GP Officer - Shirur',
-        email: 'gp@shirur.gov.in',
-        role: ROLES.GP,
-        state: 'Maharashtra',
-        district: 'Pune',
-        block: 'Shirur',
-        gp: 'Shirur Gram Panchayat'
-      },
-      department: {
-        id: 5,
-        name: 'PWD Engineer - Pune',
-        email: 'pwd@pune.gov.in',
-        role: ROLES.DEPARTMENT,
-        state: 'Maharashtra',
-        district: 'Pune',
-        department: 'Public Works Department'
-      },
-      contractor: {
-        id: 6,
-        name: 'ABC Construction Pvt Ltd',
-        email: 'contact@abcconstruction.com',
-        role: ROLES.CONTRACTOR,
-        state: 'Maharashtra',
-        district: 'Pune',
-        company: 'ABC Construction Pvt Ltd'
-      },
-      public: {
-        id: 7,
-        name: 'Public User',
-        email: 'public@example.com',
-        role: ROLES.PUBLIC
+    // Check active session
+    const checkSession = async () => {
+      try {
+        // FIRST: Check localStorage for manually stored session (faster, no network)
+        const storedSession = localStorage.getItem('supabase.auth.token');
+        if (storedSession) {
+          const sessionData = JSON.parse(storedSession);
+          if (sessionData.user) {
+            console.log('✅ Loading user from localStorage:', sessionData.user.email);
+            console.log('✅ User role from localStorage:', sessionData.user.role);
+            setUser({
+              id: sessionData.user.id,
+              email: sessionData.user.email,
+              role: sessionData.user.role || 'centre_admin',
+              ...sessionData.user
+            });
+            clearTimeout(loadingTimeout);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // FALLBACK: Try Supabase session (might hang on some systems)
+        console.log('No localStorage session, trying Supabase...');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await fetchUserProfile(session.user.id, session.user);
+        } else {
+          setLoading(false);
+        }
+        clearTimeout(loadingTimeout);
+      } catch (error) {
+        console.error('Error checking session:', error);
+        clearTimeout(loadingTimeout);
+        setLoading(false);
       }
     };
 
-    const authenticatedUser = mockUsers[credentials.role] || mockUsers.public;
-    setUser(authenticatedUser);
-    localStorage.setItem('pm_ajay_user', JSON.stringify(authenticatedUser));
-    return authenticatedUser;
+    checkSession();
+
+    return () => clearTimeout(loadingTimeout);
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        await fetchUserProfile(session.user.id, session.user);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserProfile = async (userId, sessionUser = null) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        // Fallback to session user if profile fetch fails (e.g. RLS issue)
+        if (sessionUser) {
+          console.warn('Falling back to session user data');
+          setUser({ ...sessionUser, role: 'authenticated' }); // Default role
+        }
+      } else if (data) {
+        setUser(data);
+      }
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      if (sessionUser) {
+        setUser({ ...sessionUser, role: 'authenticated' });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('pm_ajay_user');
+  const login = async (email, password) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const value = {

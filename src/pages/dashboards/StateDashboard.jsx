@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
@@ -11,14 +11,53 @@ import UploadUC from './state/UploadUC';
 import StateReports from './state/StateReports';
 import StateNotifications from './state/StateNotifications';
 import StateHelp from './state/StateHelp';
+import FundsReceivedFromMinistry from './state/FundsReceivedFromMinistry';
 
 const StateDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [stateName, setStateName] = useState('Loading...');
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+
+    // Fetch state name from user profile
+    React.useEffect(() => {
+        const fetchStateName = async () => {
+            if (user?.id) {
+                console.log('Fetching state name for user:', user.email);
+                try {
+                    const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
+                        headers: {
+                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                        }
+                    });
+                    const data = await response.json();
+                    console.log('State name data:', data);
+                    if (data[0]?.full_name) {
+                        // Extract state name (e.g., "Maharashtra State Admin" -> "Maharashtra")
+                        let name = data[0].full_name
+                            .replace(' State Admin', '')
+                            .replace(' Admin', '')
+                            .replace(' State', '')
+                            .trim();
+                        console.log('Setting state name to:', name);
+                        setStateName(name);
+                    }
+                } catch (error) {
+                    console.error('Error fetching state name:', error);
+                    setStateName('State');
+                }
+            }
+        };
+        fetchStateName();
+    }, [user?.id, user?.email]); // Refetch when user changes
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: '💵', label: 'Funds Received from Ministry', action: () => setActiveTab('received'), active: activeTab === 'received' },
         { icon: '👥', label: 'Manage District Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
         { icon: '💰', label: 'Fund Release to Districts', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
         { icon: '✅', label: 'Approve District Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
@@ -36,7 +75,10 @@ const StateDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <StateDashboardPanel formatCurrency={formatCurrency} />;
+                return <StateDashboardPanel formatCurrency={formatCurrency} stateName={stateName} />;
+
+            case 'received':
+                return <FundsReceivedFromMinistry formatCurrency={formatCurrency} />;
             case 'admins':
                 return <ManageDistrictAdmins />;
             case 'funds':
@@ -52,13 +94,14 @@ const StateDashboard = () => {
             case 'help':
                 return <StateHelp />;
             default:
-                return <StateDashboardPanel formatCurrency={formatCurrency} />;
+                return <StateDashboardPanel formatCurrency={formatCurrency} stateName={stateName} />;
         }
     };
 
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'received': 'Funds Received from Ministry',
             'admins': 'Manage District Admins',
             'funds': 'Fund Release',
             'proposals': 'Approve Proposals',
@@ -77,7 +120,7 @@ const StateDashboard = () => {
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
-                        <h1>State Dashboard - Maharashtra</h1>
+                        <h1>State Dashboard - {stateName}</h1>
                         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
                             {getBreadcrumb()}
                         </p>

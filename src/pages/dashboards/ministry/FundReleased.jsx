@@ -1,78 +1,88 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
-import { states as initialStates } from '../../../data/mockData';
-
-const STORAGE_KEY_FUNDS = 'pmajay_fund_states_v1';
-const STORAGE_KEY_RELEASED = 'pmajay_released_funds_v1';
-
-// Full list of States + Union Territories of India (current)
-const INDIA_STATES_AND_UT = [
-    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
-    "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
-    "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-    // Union Territories
-    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
-];
+import { useAuth } from '../../../contexts/AuthContext';
 
 const FundReleased = ({ formatCurrency }) => {
+    const { user } = useAuth();
     const [releasedFunds, setReleasedFunds] = useState([]);
-    const [fundStates, setFundStates] = useState([]);
+    const [states, setStates] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [toast, setToast] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const [formData, setFormData] = useState({
-        stateName: '',
+        stateId: '',
         component: [],
         amount: '',
         date: new Date().toISOString().slice(0, 10),
         remarks: '',
         officerId: '',
-        releasedBy: 'Ministry Admin', // Hardcoded for now, could come from auth context
     });
 
     const [errors, setErrors] = useState({});
 
-    // Load data on mount
-    useEffect(() => {
-        try {
-            const rawFunds = localStorage.getItem(STORAGE_KEY_FUNDS);
-            if (rawFunds) {
-                setFundStates(JSON.parse(rawFunds));
-            } else {
-                setFundStates(initialStates || []);
-            }
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
 
-            const rawReleased = localStorage.getItem(STORAGE_KEY_RELEASED);
-            if (rawReleased) {
-                setReleasedFunds(JSON.parse(rawReleased));
-            } else {
-                setReleasedFunds([]);
-            }
-        } catch (e) {
-            console.error("Error loading data", e);
-            setFundStates(initialStates || []);
-        }
+    // Fetch Data on Mount
+    useEffect(() => {
+        fetchStates();
+        fetchReleasedFunds();
     }, []);
 
-    // Persist releasedFunds whenever it changes
-    useEffect(() => {
+    const fetchStates = async () => {
         try {
-            localStorage.setItem(STORAGE_KEY_RELEASED, JSON.stringify(releasedFunds));
-        } catch (e) {
-            console.error("Error saving released funds", e);
+            // Fetch fund allocations which includes state details and amounts
+            const response = await fetch('http://localhost:5001/api/funds');
+            if (response.ok) {
+                const data = await response.json();
+                // Map to format needed for dropdown, but keep allocation info
+                const formattedStates = data.map(item => ({
+                    id: item.name, // Using name as ID since fund_allocations uses state_name
+                    name: item.name,
+                    allocated: item.fundAllocated || 0,
+                    released: item.amountReleased || 0,
+                    available: (item.fundAllocated || 0) - (item.amountReleased || 0)
+                }));
+                setStates(formattedStates);
+            }
+        } catch (error) {
+            console.error('Error fetching states:', error);
         }
-    }, [releasedFunds]);
+    };
 
-    // Persist fundStates whenever it changes (updated when funds are released)
-    useEffect(() => {
+    const fetchReleasedFunds = async () => {
+        setLoading(true);
         try {
-            localStorage.setItem(STORAGE_KEY_FUNDS, JSON.stringify(fundStates));
-        } catch (e) {
-            console.error("Error saving fund states", e);
+            // Fetch releases and join with states to get the name
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?select=*,states(name)&order=created_at.desc`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                // Transform data to match UI structure
+                const formattedData = data.map(item => ({
+                    id: item.id,
+                    stateName: item.states?.name || 'Unknown State',
+                    component: item.component,
+                    amountInRupees: item.amount_rupees,
+                    amountCr: item.amount_cr,
+                    date: item.release_date,
+                    officerId: item.officer_id || item.sanction_order_no, // Mapping sanction order or officer id
+                    remarks: item.remarks
+                }));
+                setReleasedFunds(formattedData);
+            }
+        } catch (error) {
+            console.error('Error fetching funds:', error);
+        } finally {
+            setLoading(false);
         }
-    }, [fundStates]);
+    };
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -81,13 +91,12 @@ const FundReleased = ({ formatCurrency }) => {
 
     const openModal = () => {
         setFormData({
-            stateName: '',
+            stateId: '',
             component: [],
             amount: '',
             date: new Date().toISOString().slice(0, 10),
             remarks: '',
             officerId: '',
-            releasedBy: 'Ministry Admin',
         });
         setErrors({});
         setIsModalOpen(true);
@@ -108,77 +117,72 @@ const FundReleased = ({ formatCurrency }) => {
 
     const validate = () => {
         const errs = {};
-        if (!formData.stateName) errs.stateName = 'Select a state.';
+        if (!formData.stateId) errs.stateId = 'Select a state.';
         if (formData.component.length === 0) errs.component = 'Select at least one component.';
 
         const amountCr = parseFloat(formData.amount);
         if (isNaN(amountCr) || amountCr <= 0) errs.amount = 'Enter a valid amount (> 0).';
 
-        if (!formData.date) errs.date = 'Select a release date.';
-        if (!formData.officerId.trim()) errs.officerId = 'Enter Officer ID.';
-
-        // Budget Check
-        if (formData.stateName) {
-            const state = fundStates.find(s => s.name === formData.stateName);
-            if (!state) {
-                errs.stateName = 'No funds allocated to this state yet.';
-            } else {
-                const allocated = state.fundAllocated || 0;
-                const released = state.amountReleased || 0;
-                const available = allocated - released;
-                const requestAmountRupees = Math.round(amountCr * 10000000);
-
-                if (requestAmountRupees > available) {
-                    errs.amount = `Insufficient funds. Available: ${formatCurrency(available)}`;
-                }
+        // Check available balance
+        const selectedState = states.find(s => s.name === formData.stateId);
+        if (selectedState) {
+            const availableCr = selectedState.available / 10000000;
+            if (amountCr > availableCr) {
+                errs.amount = `Amount exceeds available balance (₹${availableCr.toFixed(2)} Cr).`;
             }
         }
+
+        if (!formData.date) errs.date = 'Select a release date.';
+        if (!formData.officerId.trim()) errs.officerId = 'Enter Officer ID / Sanction Order No.';
 
         setErrors(errs);
         return Object.keys(errs).length === 0;
     };
 
-    const handleReleaseSubmit = () => {
+    const handleReleaseSubmit = async () => {
         if (!validate()) return;
 
-        const amountCr = parseFloat(formData.amount);
-        const amountInRupees = Math.round(amountCr * 10000000);
+        try {
+            const payload = {
+                stateName: formData.stateId, // formData.stateId holds the name
+                amount: formData.amount,
+                component: formData.component,
+                date: formData.date,
+                officerId: formData.officerId,
+                remarks: formData.remarks
+            };
 
-        // 1. Update Fund States (increment amountReleased)
-        const updatedStates = fundStates.map(s => {
-            if (s.name === formData.stateName) {
-                return {
-                    ...s,
-                    amountReleased: (s.amountReleased || 0) + amountInRupees
-                };
+            console.log('=== RELEASING FUND VIA BACKEND ===');
+            console.log('Payload:', payload);
+
+            const response = await fetch('http://localhost:5001/api/funds/release', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ Successfully released!');
+                showToast(`Successfully released ${formData.amount} Cr`);
+                fetchReleasedFunds(); // Refresh the log
+                fetchStates(); // Refresh the allocations/balances
+                closeModal();
+            } else {
+                console.error('❌ Failed to release:', result);
+                showToast(`Error: ${result.error || 'Failed to release funds'}`, 'error');
             }
-            return s;
-        });
-        setFundStates(updatedStates);
-
-        // 2. Add to Released Funds Log
-        const newRelease = {
-            id: Date.now(),
-            ...formData,
-            amountInRupees,
-            amountCr,
-            timestamp: new Date().toISOString()
-        };
-        setReleasedFunds([newRelease, ...releasedFunds]);
-
-        showToast(`Successfully released ${amountCr} Cr to ${formData.stateName}`);
-        closeModal();
+        } catch (error) {
+            console.error('❌ Network error:', error);
+            showToast('Network error occurred', 'error');
+        }
     };
 
-    // Helper to get available funds for selected state
-    const getAvailableFunds = () => {
-        if (!formData.stateName) return null;
-        const state = fundStates.find(s => s.name === formData.stateName);
-        if (!state) return 0;
-        return (state.fundAllocated || 0) - (state.amountReleased || 0);
-    };
-
-    const availableFunds = getAvailableFunds();
+    // Helper to get selected state details
+    const selectedStateData = states.find(s => s.name === formData.stateId);
 
     return (
         <div className="fund-released-page" style={{ padding: 20 }}>
@@ -213,12 +217,16 @@ const FundReleased = ({ formatCurrency }) => {
                             <th>Scheme Component</th>
                             <th style={{ textAlign: 'right' }}>Amount Released</th>
                             <th>Release Date</th>
-                            <th>Officer ID</th>
+                            <th>Officer ID / Sanction No</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {releasedFunds.length > 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                            </tr>
+                        ) : releasedFunds.length > 0 ? (
                             releasedFunds.map((item) => (
                                 <tr key={item.id}>
                                     <td style={{ fontWeight: 600 }}>{item.stateName}</td>
@@ -265,20 +273,32 @@ const FundReleased = ({ formatCurrency }) => {
                         <label className="form-label">State Name</label>
                         <select
                             className="form-control"
-                            value={formData.stateName}
-                            onChange={(e) => setFormData({ ...formData, stateName: e.target.value })}
+                            value={formData.stateId}
+                            onChange={(e) => setFormData({ ...formData, stateId: e.target.value })}
                         >
                             <option value="">-- select state / UT --</option>
-                            {INDIA_STATES_AND_UT.map((s) => (
-                                <option key={s} value={s}>{s}</option>
+                            {states.map((s) => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
                         </select>
-                        {errors.stateName && <div className="form-error">{errors.stateName}</div>}
-                        {formData.stateName && availableFunds !== null && (
-                            <div className="form-helper" style={{ marginTop: 8 }}>
-                                <strong style={{ color: availableFunds > 0 ? '#2ecc71' : '#e74c3c' }}>
-                                    Available Balance: {formatCurrency ? formatCurrency(availableFunds) : availableFunds}
-                                </strong>
+                        {errors.stateId && <div className="form-error">{errors.stateId}</div>}
+
+                        {selectedStateData && (
+                            <div style={{ marginTop: 8, padding: 10, background: '#f8f9fa', borderRadius: 6, fontSize: 13 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span>Total Allocated:</span>
+                                    <strong>₹{(selectedStateData.allocated / 10000000).toFixed(2)} Cr</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, color: '#2ecc71' }}>
+                                    <span>Already Released:</span>
+                                    <strong>₹{(selectedStateData.released / 10000000).toFixed(2)} Cr</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #ddd', paddingTop: 4 }}>
+                                    <span>Available Balance:</span>
+                                    <strong style={{ color: selectedStateData.available > 0 ? '#0984e3' : '#d63031' }}>
+                                        ₹{(selectedStateData.available / 10000000).toFixed(2)} Cr
+                                    </strong>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -323,7 +343,7 @@ const FundReleased = ({ formatCurrency }) => {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Release Officer ID</label>
+                        <label className="form-label">Release Officer ID / Sanction No</label>
                         <input
                             type="text"
                             className="form-control"

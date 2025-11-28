@@ -283,10 +283,12 @@ const StateNotifications = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(notif)} style={{ marginRight: '5px' }}>View</button>
-                                        {notif.status === 'Unread' && (
-                                            <button className="btn btn-primary btn-sm" onClick={() => handleMarkAsRead(notif.id)}>Mark Read</button>
-                                        )}
+                                        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(notif)}>View</button>
+                                            {notif.status === 'Unread' && (
+                                                <button className="btn btn-primary btn-sm" onClick={() => handleMarkAsRead(notif.id)}>Mark Read</button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))

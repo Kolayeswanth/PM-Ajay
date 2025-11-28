@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
@@ -12,7 +12,11 @@ import ContractorHelp from './contractor/ContractorHelp';
 const ContractorDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     // --- Lifted State ---
     const [works, setWorks] = useState([
@@ -91,7 +95,7 @@ const ContractorDashboard = () => {
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
-                        <h1>Contractor Dashboard</h1>
+                        <h1>{user?.role === 'executing_agency' ? `${user?.full_name || user?.user_metadata?.full_name || 'Executing Agency'} Dashboard` : 'Contractor Dashboard'}</h1>
                         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
                             {getBreadcrumb()}
                         </p>

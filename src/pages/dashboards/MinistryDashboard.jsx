@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
@@ -15,9 +15,16 @@ import HelpSupport from './ministry/HelpSupport';
 
 const MinistryDashboard = () => {
     const [selectedState, setSelectedState] = useState(null);
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [activeTab, setActiveTab] = useState('dashboard');
     const navigate = useNavigate();
     const { logout } = useAuth();
+
+    // Scroll to top when dashboard loads
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
@@ -32,14 +39,23 @@ const MinistryDashboard = () => {
         { icon: '🚪', label: 'Logout', action: () => { logout(); navigate('/login'); } }
     ];
 
+
     const formatCurrency = (amount) => {
-        return `₹${(amount / 10000000000).toFixed(2)} Cr`;
+        return `₹${(amount / 10000000).toFixed(2)} Cr`;
     };
 
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <DashboardPanel setSelectedState={setSelectedState} formatCurrency={formatCurrency} />;
+                return (
+                    <DashboardPanel
+                        selectedState={selectedState}
+                        setSelectedState={setSelectedState}
+                        selectedDistrict={selectedDistrict}
+                        setSelectedDistrict={setSelectedDistrict}
+                        formatCurrency={formatCurrency}
+                    />
+                );
             case 'admins':
                 return <ManageStateAdmins />;
             case 'funds':
@@ -57,7 +73,15 @@ const MinistryDashboard = () => {
             case 'help':
                 return <HelpSupport />;
             default:
-                return <DashboardPanel setSelectedState={setSelectedState} formatCurrency={formatCurrency} />;
+                return (
+                    <DashboardPanel
+                        selectedState={selectedState}
+                        setSelectedState={setSelectedState}
+                        selectedDistrict={selectedDistrict}
+                        setSelectedDistrict={setSelectedDistrict}
+                        formatCurrency={formatCurrency}
+                    />
+                );
         }
     };
 
@@ -82,9 +106,9 @@ const MinistryDashboard = () => {
 
             <main className="dashboard-main">
                 <div className="dashboard-header">
-                    <div className="dashboard-title-section">
+                    <div className="dashboard-title-section" style={{ marginTop: '1.5rem' }}>
                         <h1>Ministry Dashboard</h1>
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
+                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
                             {getBreadcrumb()}
                         </p>
                     </div>

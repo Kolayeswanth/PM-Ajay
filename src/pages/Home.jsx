@@ -1,17 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import IndiaMap from '../components/maps/IndiaMap';
+import DistrictMap from '../components/maps/DistrictMap';
+import CityMap from '../components/maps/CityMap';
 import StatCard from '../components/StatCard';
 import { nationalStats, schemeComponents } from '../data/mockData';
 
 const Home = () => {
     const [selectedState, setSelectedState] = useState(null);
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
     const navigate = useNavigate();
 
     const handleStateSelect = (stateName) => {
         setSelectedState(stateName);
-        // In a real app, this would navigate to state-specific view
+        setSelectedDistrict(null);
         console.log('Selected state:', stateName);
+    };
+
+    const handleDistrictSelect = (districtName) => {
+        setSelectedDistrict(districtName);
+        console.log('Selected district:', districtName);
+    };
+
+    const handleBack = () => {
+        if (selectedDistrict) {
+            setSelectedDistrict(null);
+        } else {
+            setSelectedState(null);
+        }
     };
 
     const formatCurrency = (amount) => {
@@ -40,10 +56,82 @@ const Home = () => {
                                 Streamlining implementation of Adarsh Gram, GIA, and Hostel components across India
                             </p>
                             <div style={{ display: 'flex', gap: 'var(--space-4)', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <button onClick={() => navigate('/login')} className="btn btn-primary btn-lg">
+                                <button
+                                    onClick={() => navigate('/login')}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        color: 'white',
+                                        padding: '1rem 2rem',
+                                        fontSize: '1.125rem',
+                                        fontWeight: 500,
+                                        border: '2px solid white',
+                                        borderRadius: '0.375rem',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        transition: 'none'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.border = '2px solid white';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.border = '2px solid white';
+                                    }}
+                                    onMouseDown={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#FF9933';
+                                        e.currentTarget.style.borderColor = '#FF9933';
+                                        e.currentTarget.style.transform = 'none';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                    onMouseUp={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'white';
+                                    }}
+                                >
                                     Login to Portal
                                 </button>
-                                <button onClick={() => navigate('/public-dashboard')} className="btn btn-outline btn-lg" style={{ borderColor: 'white', color: 'white' }}>
+                                <button
+                                    onClick={() => navigate('/public-dashboard')}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        color: 'white',
+                                        padding: '1rem 2rem',
+                                        fontSize: '1.125rem',
+                                        fontWeight: 500,
+                                        border: '2px solid white',
+                                        borderRadius: '0.375rem',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        transition: 'none'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.border = '2px solid white';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.border = '2px solid white';
+                                    }}
+                                    onMouseDown={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#FF9933';
+                                        e.currentTarget.style.borderColor = '#FF9933';
+                                        e.currentTarget.style.transform = 'none';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                    onMouseUp={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'white';
+                                    }}
+                                >
                                     View Public Dashboard
                                 </button>
                             </div>
@@ -130,17 +218,48 @@ const Home = () => {
                     {/* Interactive Map */}
                     <div className="dashboard-section">
                         <div className="section-header">
-                            <h2 className="section-title">Interactive State Map</h2>
-                            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                                Click on any state to view district-level details
-                            </p>
+                            <h2 className="section-title">
+                                {selectedDistrict
+                                    ? `${selectedDistrict} District Overview`
+                                    : selectedState
+                                        ? `${selectedState} Overview`
+                                        : 'Interactive State Map'
+                                }
+                            </h2>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                {(selectedState || selectedDistrict) && (
+                                    <button
+                                        className="btn btn-outline"
+                                        onClick={handleBack}
+                                        style={{ fontSize: '0.875rem', padding: '0.25rem 0.75rem' }}
+                                    >
+                                        ← Back to {selectedDistrict ? 'State View' : 'National View'}
+                                    </button>
+                                )}
+                                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                                    {selectedDistrict
+                                        ? 'View major cities and project locations'
+                                        : selectedState
+                                            ? 'Click on a district to view major cities'
+                                            : 'Click on any state to view district-level details'
+                                    }
+                                </p>
+                            </div>
                         </div>
 
-                        <IndiaMap onStateSelect={handleStateSelect} />
+                        <div style={{ height: '800px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                            {selectedDistrict ? (
+                                <CityMap district={selectedDistrict} state={selectedState} />
+                            ) : selectedState ? (
+                                <DistrictMap state={selectedState} onDistrictSelect={handleDistrictSelect} />
+                            ) : (
+                                <IndiaMap onStateSelect={handleStateSelect} />
+                            )}
+                        </div>
 
                         {selectedState && (
                             <div className="alert alert-info" style={{ marginTop: 'var(--space-4)' }}>
-                                <strong>Selected:</strong> {selectedState} - Login to view detailed district information
+                                <strong>Selected:</strong> {selectedState} {selectedDistrict ? `> ${selectedDistrict}` : ''} - Login to view detailed information
                             </div>
                         )}
                     </div>

@@ -27,8 +27,7 @@ const Header = () => {
     const getNavLinks = () => {
         if (!isAuthenticated) {
             return [
-                { path: '/', label: 'Home' },
-                { path: '/public-dashboard', label: 'Transparency Dashboard' }
+                { path: '/', label: 'Home' }
             ];
         }
 
@@ -101,10 +100,10 @@ const Header = () => {
 
             {/* Navigation */}
             <div className="header-nav">
-                <div className="container">
+                <div className="container-fluid">
                     <nav>
                         <ul className="nav-menu">
-                            {getNavLinks().map((link) => (
+                            {getNavLinks().map((link, index) => (
                                 <li key={link.path} className="nav-item">
                                     <Link to={link.path} className="nav-link">
                                         {link.label}

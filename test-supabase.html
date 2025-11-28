@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Connection Test</title>
+    <style>
+        body { font-family: Arial; padding: 40px; max-width: 600px; margin: 0 auto; }
+        .result { padding: 20px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+        window.testConnection = async function() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">Testing connection...</div>';
+
+            try {
+                const supabase = createClient(
+                    'https://gwfeaubvzjepmmhxgdvc.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                );
+
+                resultDiv.innerHTML = '<div class="result">Attempting login...</div>';
+
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'centre@pmajay.gov.in',
+                    password: 'Centre@2024!Secure'
+                });
+
+                if (error) {
+                    resultDiv.innerHTML = `<div class="result error"><strong>Login Failed:</strong> ${error.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result success"><strong>SUCCESS!</strong> Login works! User: ${data.user.email}</div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="result error"><strong>Connection Error:</strong> ${err.message}<br><br>This means your firewall/antivirus is blocking Supabase.</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

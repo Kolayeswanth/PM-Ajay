@@ -12,9 +12,8 @@ const DashboardSidebar = ({ menuItems }) => {
                                 <button
                                     onClick={item.action}
                                     className={`dashboard-sidebar-link ${item.active ? 'active' : ''}`}
-                                    style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                    style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '18px', fontWeight: '500' }}
                                 >
-                                    <span className="dashboard-sidebar-icon">{item.icon}</span>
                                     <span>{item.label}</span>
                                 </button>
                             ) : (
@@ -23,8 +22,8 @@ const DashboardSidebar = ({ menuItems }) => {
                                     className={({ isActive }) =>
                                         `dashboard-sidebar-link ${isActive && item.path !== '#' ? 'active' : ''}`
                                     }
+                                    style={{ fontSize: '18px', fontWeight: '500' }}
                                 >
-                                    <span className="dashboard-sidebar-icon">{item.icon}</span>
                                     <span>{item.label}</span>
                                 </NavLink>
                             )}

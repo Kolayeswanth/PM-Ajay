@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
@@ -14,7 +14,11 @@ import { mockProjects } from '../../data/mockData';
 const DepartmentDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     // --- Lifted State ---
 
@@ -124,7 +128,7 @@ const DepartmentDashboard = () => {
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
-                        <h1>Department Dashboard - PWD</h1>
+                        <h1>{user?.role === 'implementing_agency' ? `${user?.full_name || user?.user_metadata?.full_name || 'Implementing Agency'} Dashboard` : 'Department Dashboard - PWD'}</h1>
                         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
                             {getBreadcrumb()}
                         </p>

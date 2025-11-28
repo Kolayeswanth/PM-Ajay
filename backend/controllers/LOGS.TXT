@@ -1,0 +1,101 @@
+{
+    "success": true,
+    "message": "WhatsApp notification sent successfully",
+    "data": {
+        "phone": "919392842898",
+        "allocatorName": "ASDSFD",
+        "stateName": "Andhra Pradesh",
+        "amount": 1.5
+    },
+    "watiResponse": {
+        "result": true,
+        "phone_number": "919392842898",
+        "template_name": "sih",
+        "parameteres": [
+            {
+                "name": "message_body",
+                "value": "FUND ALLOCATION NOTIFICATION - Dear ASDSFD, A new fund allocation has been made for your state. State: Andhra Pradesh. Amount Allocated: Rs 1.5 Crore. Scheme Component: Adarsh Gram. Allocation Date: 2025-11-27. Your Role: AESRF. Officer ID: ERT. Please acknowledge receipt of this notification. Thank you, Ministry of Social Justice & Empowerment"
+            }
+        ],
+        "contact": {
+            "id": "692818fe4064ccefd9f170a2",
+            "tenantId": "324318",
+            "wAid": "919392842898",
+            "firstName": "919392842898",
+            "fullName": "919392842898",
+            "phone": "919392842898",
+            "source": "Wati",
+            "contactStatus": "UNCONFIRMED",
+            "photo": null,
+            "created": "Nov-27-2025",
+            "customParams": [
+                {
+                    "name": "name",
+                    "value": "919392842898"
+                },
+                {
+                    "name": "phone",
+                    "value": "919392842898"
+                }
+            ],
+            "originalCustomParams": [],
+            "importTaskId": null,
+            "updatedFromImport": false,
+            "optedIn": false,
+            "isDeleted": false,
+            "lastUpdated": "2025-11-27T09:25:18.4414924Z",
+            "allowBroadcast": true,
+            "allowSMS": true,
+            "teamIds": [
+                "668899f141479c98fc5a22f4"
+            ],
+            "isInFlow": false,
+            "isInTestFlow": false,
+            "lastFlowId": null,
+            "currentFlowNodeId": null,
+            "selectedHubspotId": null,
+            "channelId": null,
+            "displayId": null,
+            "contactLinkId": null,
+            "waChannelPhone": null,
+            "igPhoneSource": 0,
+            "mgPhoneSource": 0,
+            "rcsPhoneSource": 0,
+            "tagName": null,
+            "messengerPageName": "",
+            "paylinkSettings": null,
+            "ctwaFollowUpStatus": 0,
+            "ctwaFollowUpCount": 0,
+            "ctwaFollowUpNotice": 0,
+            "deletedFromSMB": false,
+            "segments": [],
+            "operatorIds": [],
+            "regionCode": "IN",
+            "customLabel": null
+        },
+        "model": {
+            "ids": [
+                "692818fe4064ccefd9f170a2"
+            ]
+        },
+        "validWhatsAppNumber": false
+    }
+}
+
+
+
+{
+    "success": true,
+    "message": "WhatsApp notification sent successfully",
+    "data": {
+        "phone": "919392842898",
+        "allocatorName": "hiushe",
+        "stateName": "Andhra Pradesh",
+        "amount": 1.5
+    },
+    "watiResponse": {
+        "result": false,
+        "info": "Sample Content param text cannot have new-line/tab characters or more than 4 consecutive spaces.",
+        "validWhatsAppNumber": false
+    }
+}
