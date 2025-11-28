@@ -3,25 +3,11 @@ import Modal from '../../../components/Modal';
 import { states as initialStates } from '../../../data/mockData';
 
 /**
- * FundAllocation with WhatsApp Integration
- * - State dropdown for fund allocation
- * - Allocator information fields (name, role, phone)
- * - WhatsApp notification on "Allocate & Notify" button
- * - Persists fundStates to localStorage and updates table in real-time
+ * FundAllocation with Backend Integration
+ * - Fetches fund states from backend API
+ * - Persists allocation to backend API
+ * - Sends WhatsApp notification via backend
  */
-
-const STORAGE_KEY = 'pmajay_fund_states_v1';
-
-// Full list of States + Union Territories of India (current)
-const INDIA_STATES_AND_UT = [
-    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
-    "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
-    "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-    // Union Territories
-    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
-];
 
 const FundAllocation = ({ formatCurrency }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,28 +26,25 @@ const FundAllocation = ({ formatCurrency }) => {
     const [toast, setToast] = useState(null);
     const [isNotifying, setIsNotifying] = useState(false);
 
-    // Load from localStorage (or fallback to initialStates) on mount
-    useEffect(() => {
+    // Load from Backend on mount
+    const fetchFunds = async () => {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                setFundStates(JSON.parse(raw));
+            const response = await fetch('http://localhost:5001/api/funds');
+            const data = await response.json();
+            if (Array.isArray(data) && data.length > 0) {
+                setFundStates(data);
             } else {
                 setFundStates(initialStates || []);
             }
-        } catch (e) {
+        } catch (error) {
+            console.error("Error fetching funds:", error);
             setFundStates(initialStates || []);
         }
-    }, []);
+    };
 
-    // Persist fundStates to localStorage whenever it changes
     useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(fundStates));
-        } catch (e) {
-            // ignore
-        }
-    }, [fundStates]);
+        fetchFunds();
+    }, []);
 
     // small helper to show transient messages
     const showToast = (message) => {
@@ -143,7 +126,7 @@ const FundAllocation = ({ formatCurrency }) => {
         }
     };
 
-    // Perform allocation with WhatsApp notification
+    // Perform allocation with Backend Persistence & WhatsApp notification
     const handleAllocateAndNotify = async () => {
         if (!validate()) return;
 
@@ -152,106 +135,98 @@ const FundAllocation = ({ formatCurrency }) => {
         const amountCr = parseFloat(allocationData.amount);
         const amountInRupees = Math.round(amountCr * 10000000); // 1 Cr = 10,000,000
 
-        // Try to find existing state record (by exact name)
-        const idx = fundStates.findIndex((s) => s.name === allocationData.stateName);
+        try {
+            // 1. Save to Backend
+            const saveResponse = await fetch('http://localhost:5001/api/funds/allocate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(allocationData)
+            });
 
-        let updatedStates = [...fundStates];
+            const saveData = await saveResponse.json();
 
-        const allocationRecord = {
-            amountInRupees,
-            amountCr,
-            date: allocationData.date,
-            officerId: allocationData.officerId,
-            component: allocationData.component,
-            allocatorName: allocationData.allocatorName,
-            allocatorRole: allocationData.allocatorRole,
-            allocatorPhone: allocationData.allocatorPhone,
-        };
+            if (!saveData.success) {
+                throw new Error(saveData.error || 'Failed to save allocation');
+            }
 
-        if (idx >= 0) {
-            // Top-up existing state's allocation
-            const s = updatedStates[idx];
-            const prev = s.fundAllocated || 0;
-            updatedStates[idx] = {
-                ...s,
-                component: allocationData.component.length ? allocationData.component : s.component,
-                fundAllocated: prev + amountInRupees,
-                lastAllocation: allocationRecord,
-            };
-        } else {
-            // Create a new state record
-            const newState = {
-                name: allocationData.stateName,
-                code: '',
+            // Refresh local state
+            await fetchFunds();
+
+            // 2. Send WhatsApp Notification
+            const notificationData = {
+                allocatorPhone: allocationData.allocatorPhone,
+                allocatorName: allocationData.allocatorName,
+                allocatorRole: allocationData.allocatorRole,
+                stateName: allocationData.stateName,
+                amount: amountCr,
                 component: allocationData.component,
-                fundAllocated: amountInRupees,
-                amountReleased: 0,
-                lastAllocation: allocationRecord,
+                date: allocationData.date,
+                officerId: allocationData.officerId,
             };
-            updatedStates = [newState, ...updatedStates];
+
+            const result = await sendWhatsAppNotification(notificationData);
+
+            setIsNotifying(false);
+
+            if (result.success) {
+                // Success popup with details
+                const successMessage =
+                    `✅ FUND ALLOCATION SUCCESSFUL!\n\n` +
+                    `📊 Allocation Details:\n` +
+                    `• State: ${allocationData.stateName}\n` +
+                    `• Amount: ₹${amountInRupees.toLocaleString()} (${amountCr} Cr)\n` +
+                    `• Component: ${allocationData.component.join(', ') || 'N/A'}\n` +
+                    `• Date: ${allocationData.date}\n` +
+                    `• Officer ID: ${allocationData.officerId}\n\n` +
+                    `📱 WhatsApp Notification: SENT ✅\n` +
+                    `• Recipient: ${allocationData.allocatorName}\n` +
+                    `• Role: ${allocationData.allocatorRole}\n` +
+                    `• Phone: +91${allocationData.allocatorPhone}\n\n` +
+                    `The allocator has been notified via WhatsApp!`;
+
+                alert(successMessage);
+                showToast(`✅ Allocation of ${amountCr} Cr recorded and WhatsApp notification sent to ${allocationData.allocatorName}!`);
+            } else {
+                // Error popup with details
+                const errorMessage =
+                    `⚠️ ALLOCATION SAVED BUT WHATSAPP FAILED!\n\n` +
+                    `📊 Allocation Details:\n` +
+                    `• State: ${allocationData.stateName}\n` +
+                    `• Amount: ₹${amountInRupees.toLocaleString()} (${amountCr} Cr)\n` +
+                    `• Component: ${allocationData.component.join(', ') || 'N/A'}\n\n` +
+                    `❌ WhatsApp Error:\n` +
+                    `${result.error || 'Unknown error'}\n\n` +
+                    `The allocation has been saved to the system, but the WhatsApp notification could not be sent.\n\n` +
+                    `Please contact ${allocationData.allocatorName} manually at +91${allocationData.allocatorPhone}`;
+
+                alert(errorMessage);
+                showToast(`⚠️ Allocation saved but WhatsApp notification failed: ${result.error || 'Unknown error'}`);
+            }
+
+            closeModal();
+
+        } catch (error) {
+            console.error("Allocation Error:", error);
+            setIsNotifying(false);
+            alert(`❌ Allocation Failed: ${error.message}`);
         }
-
-        // Update state immediately so UI reflects change in real-time
-        setFundStates(updatedStates);
-
-        // Send WhatsApp notification
-        const notificationData = {
-            allocatorPhone: allocationData.allocatorPhone,
-            allocatorName: allocationData.allocatorName,
-            allocatorRole: allocationData.allocatorRole,
-            stateName: allocationData.stateName,
-            amount: amountCr,
-            component: allocationData.component,
-            date: allocationData.date,
-            officerId: allocationData.officerId,
-        };
-
-        const result = await sendWhatsAppNotification(notificationData);
-
-        setIsNotifying(false);
-
-        if (result.success) {
-            // Success popup with details
-            const successMessage =
-                `✅ FUND ALLOCATION SUCCESSFUL!\n\n` +
-                `📊 Allocation Details:\n` +
-                `• State: ${allocationData.stateName}\n` +
-                `• Amount: ₹${amountInRupees.toLocaleString()} (${amountCr} Cr)\n` +
-                `• Component: ${allocationData.component.join(', ') || 'N/A'}\n` +
-                `• Date: ${allocationData.date}\n` +
-                `• Officer ID: ${allocationData.officerId}\n\n` +
-                `📱 WhatsApp Notification: SENT ✅\n` +
-                `• Recipient: ${allocationData.allocatorName}\n` +
-                `• Role: ${allocationData.allocatorRole}\n` +
-                `• Phone: +91${allocationData.allocatorPhone}\n\n` +
-                `The allocator has been notified via WhatsApp!`;
-
-            alert(successMessage);
-            showToast(`✅ Allocation of ${amountCr} Cr recorded and WhatsApp notification sent to ${allocationData.allocatorName}!`);
-        } else {
-            // Error popup with details
-            const errorMessage =
-                `⚠️ ALLOCATION SAVED BUT WHATSAPP FAILED!\n\n` +
-                `📊 Allocation Details:\n` +
-                `• State: ${allocationData.stateName}\n` +
-                `• Amount: ₹${amountInRupees.toLocaleString()} (${amountCr} Cr)\n` +
-                `• Component: ${allocationData.component.join(', ') || 'N/A'}\n\n` +
-                `❌ WhatsApp Error:\n` +
-                `${result.error || 'Unknown error'}\n\n` +
-                `The allocation has been saved to the system, but the WhatsApp notification could not be sent.\n\n` +
-                `Please contact ${allocationData.allocatorName} manually at +91${allocationData.allocatorPhone}`;
-
-            alert(errorMessage);
-            showToast(`⚠️ Allocation saved but WhatsApp notification failed: ${result.error || 'Unknown error'}`);
-        }
-
-        closeModal();
     };
 
     // Helper: find selected state's current allocation (if any)
     const selectedState = allocationData.stateName
         ? fundStates.find((s) => s.name === allocationData.stateName)
         : null;
+
+    // Full list of States + Union Territories of India (current)
+    const INDIA_STATES_AND_UT = [
+        "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
+        "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+        "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+        "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+        // Union Territories
+        "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+        "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+    ];
 
     return (
         <div className="fund-allocation-page" style={{ padding: 20 }}>

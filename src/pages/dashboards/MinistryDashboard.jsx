@@ -87,9 +87,9 @@ const MinistryDashboard = () => {
 
             <main className="dashboard-main">
                 <div className="dashboard-header">
-                    <div className="dashboard-title-section">
+                    <div className="dashboard-title-section" style={{ marginTop: '1.5rem' }}>
                         <h1>Ministry Dashboard</h1>
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
+                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
                             {getBreadcrumb()}
                         </p>
                     </div>

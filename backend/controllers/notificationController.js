@@ -128,3 +128,101 @@ exports.sendAllocationNotification = async (req, res) => {
         });
     }
 };
+
+/**
+ * Send WhatsApp notification for fund release
+ */
+exports.sendReleaseNotification = async (req, res) => {
+    try {
+        const {
+            allocatorPhone,
+            allocatorName,
+            stateName,
+            amount,
+            component,
+            date,
+            officerId,
+            remarks
+        } = req.body;
+
+        // Validate required fields
+        if (!allocatorPhone || !stateName || !amount) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: allocatorPhone, stateName, amount'
+            });
+        }
+
+        // Format phone number
+        let formattedPhone = allocatorPhone.replace(/\D/g, '');
+        if (formattedPhone.startsWith('91')) {
+            formattedPhone = formattedPhone.substring(2);
+        }
+        formattedPhone = `91${formattedPhone}`;
+
+        if (formattedPhone.length !== 12) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid phone number format. Expected 10 digits.'
+            });
+        }
+
+        const watiApiBaseUrl = process.env.WATI_API_URL;
+        const watiApiKey = process.env.WATI_API_KEY;
+        const tenantId = process.env.TENANT_ID;
+        const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
+
+        if (!watiApiBaseUrl || !watiApiKey || !tenantId) {
+            return res.status(500).json({
+                success: false,
+                error: 'WATI API credentials not configured.'
+            });
+        }
+
+        const messageContent =
+            `FUND RELEASE NOTIFICATION - ` +
+            `Dear ${allocatorName || 'State Officer'}, ` +
+            `Funds have been released for your state. ` +
+            `State: ${stateName}. ` +
+            `Amount Released: Rs ${amount} Crore. ` +
+            `Scheme Component: ${Array.isArray(component) ? component.join(', ') : component || 'N/A'}. ` +
+            `Release Date: ${date || new Date().toISOString().slice(0, 10)}. ` +
+            `Released By Officer ID: ${officerId || 'Ministry Admin'}. ` +
+            `Remarks: ${remarks || 'None'}. ` +
+            `Please check your dashboard for details. ` +
+            `Thank you, Ministry of Social Justice & Empowerment`;
+
+        const templateParams = [
+            { name: "message_body", value: messageContent }
+        ];
+
+        const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
+
+        const payload = {
+            template_name: templateName,
+            broadcast_name: 'Fund Release Notification',
+            parameters: templateParams
+        };
+
+        const response = await axios.post(endpoint, payload, {
+            headers: {
+                'Authorization': `Bearer ${watiApiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'WhatsApp notification sent successfully',
+            data: response.data
+        });
+
+    } catch (error) {
+        console.error('❌ Error sending Release WhatsApp notification:', error.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to send WhatsApp notification',
+            details: error.response?.data || error.message
+        });
+    }
+};
