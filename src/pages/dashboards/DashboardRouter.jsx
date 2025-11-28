@@ -8,7 +8,6 @@ import GPDashboard from './GPDashboard';
 import DepartmentDashboard from './DepartmentDashboard';
 import ContractorDashboard from './ContractorDashboard';
 import PublicDashboard from './PublicDashboard';
-
 const DashboardRouter = () => {
     const { user } = useAuth();
 
@@ -33,6 +32,12 @@ const DashboardRouter = () => {
             return <DepartmentDashboard />;
 
         case ROLES.CONTRACTOR:
+            return <ContractorDashboard />;
+
+        case ROLES.IMPLEMENTING_AGENCY:
+            return <DepartmentDashboard />;
+
+        case ROLES.EXECUTING_AGENCY:
             return <ContractorDashboard />;
 
         case ROLES.PUBLIC:

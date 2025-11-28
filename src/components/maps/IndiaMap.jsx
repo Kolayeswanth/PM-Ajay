@@ -40,18 +40,23 @@ const IndiaMap = ({ onStateSelect }) => {
     setShowDistrictModal(true);
   };
 
-  const onEachState = (feature, layer) => {
+  const mapStyle = (feature) => {
     const geoJsonName = feature.properties.NAME_1;
     const stateName = normalizeStateName(geoJsonName);
-    const stateData = states.find(s => s.name === stateName);
 
-    layer.setStyle({
+    return {
       fillColor: getStateColor(stateName),
       weight: 1.5,
       opacity: 1,
       color: '#4338CA', // Dark Blue border
       fillOpacity: 1
-    });
+    };
+  };
+
+  const onEachState = (feature, layer) => {
+    const geoJsonName = feature.properties.NAME_1;
+    const stateName = normalizeStateName(geoJsonName);
+    const stateData = states.find(s => s.name === stateName);
 
     layer.on({
       mouseover: (e) => {
@@ -166,6 +171,7 @@ const IndiaMap = ({ onStateSelect }) => {
         >
           <GeoJSON
             data={indiaGeoJSON}
+            style={mapStyle}
             onEachFeature={onEachState}
           />
         </MapContainer>

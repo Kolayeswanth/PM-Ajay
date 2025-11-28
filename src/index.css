@@ -852,7 +852,7 @@ textarea.form-control {
    =================================== */
 
 .map-container {
-  height: 600px;
+  height: 800px;
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
