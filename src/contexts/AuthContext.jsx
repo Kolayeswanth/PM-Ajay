@@ -19,6 +19,8 @@ export const ROLES = {
   GP: 'gp_admin',
   DEPARTMENT: 'department_admin',
   CONTRACTOR: 'contractor',
+  IMPLEMENTING_AGENCY: 'implementing_agency',
+  EXECUTING_AGENCY: 'executing_agency',
   PUBLIC: 'public'
 };
 

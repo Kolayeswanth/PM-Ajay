@@ -19,5 +19,26 @@
       "allocatorRole": "statefine",
       "allocatorPhone": "9704846498"
     }
+  },
+  {
+    "name": "Andhra Pradesh",
+    "code": "",
+    "component": [
+      "Adarsh Gram"
+    ],
+    "fundAllocated": 2340000000,
+    "amountReleased": 0,
+    "lastAllocation": {
+      "amountInRupees": 2340000000,
+      "amountCr": 234,
+      "date": "2025-11-28",
+      "officerId": "deep123",
+      "component": [
+        "Adarsh Gram"
+      ],
+      "allocatorName": "deepika",
+      "allocatorRole": "state finance",
+      "allocatorPhone": "9963584014"
+    }
   }
 ]
