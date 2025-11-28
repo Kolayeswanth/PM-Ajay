@@ -29,6 +29,7 @@ BEGIN
             new_user_id := gen_random_uuid();
             
             INSERT INTO auth.users (
+                
                 instance_id,
                 id,
                 aud,

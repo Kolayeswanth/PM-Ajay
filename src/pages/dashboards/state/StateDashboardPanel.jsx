@@ -1,8 +1,65 @@
+
+import React, { useState, useEffect } from 'react';
+=======
 import React, { useState } from 'react';
 import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
 import { stateStats } from '../../../data/mockData';
+
+import IndiaMap from '../../../components/maps/IndiaMap';
+
+const StateDashboardPanel = ({ formatCurrency, stateName }) => {
+    const [totalFundReleased, setTotalFundReleased] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    // Supabase Config
+    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+
+    useEffect(() => {
+        const fetchTotalFunds = async () => {
+            if (!stateName || stateName === 'Loading...' || stateName === 'State') return;
+
+            // Clean the state name (remove 'State Admin', 'Admin', 'State')
+            let cleanStateName = stateName;
+            cleanStateName = cleanStateName.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
+            console.log('📊 Dashboard fetching funds for:', cleanStateName);
+
+            setLoading(true);
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?select=amount_rupees,states!inner(name)`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📊 All funds:', data);
+
+                    // Filter for current state using cleaned name
+                    const stateFunds = data.filter(item => item.states.name === cleanStateName);
+                    console.log('📊 Filtered funds for', cleanStateName, ':', stateFunds);
+
+                    // Sum up
+                    const total = stateFunds.reduce((sum, item) => sum + (item.amount_rupees || 0), 0);
+                    console.log('📊 Total fund received:', total);
+                    setTotalFundReleased(total);
+                }
+            } catch (error) {
+                console.error('Error fetching total funds:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTotalFunds();
+    }, [stateName]);
+
+    const stats = stateStats.Maharashtra; // Keep other stats mock for now
+=======
 
 const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
     const stats = stateStats[stateName] || stateStats.Maharashtra;
@@ -21,14 +78,15 @@ const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
         setSelectedDistrict(null);
     };
 
+
     return (
         <div className="dashboard-panel">
             {/* State KPIs */}
             <div className="kpi-row">
                 <StatCard
                     icon="💰"
-                    value={formatCurrency(stats.fundAllocated)}
-                    label="Total Fund Released"
+                    value={loading ? "Loading..." : formatCurrency(totalFundReleased)}
+                    label="Total Fund Received"
                     color="var(--color-primary)"
                 />
                 <StatCard
