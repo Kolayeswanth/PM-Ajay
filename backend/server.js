@@ -8,7 +8,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const fundRoutes = require('./routes/fundRoutes');
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = 5001; // process.env.PORT;
 
 // Middleware
 app.use(cors());
