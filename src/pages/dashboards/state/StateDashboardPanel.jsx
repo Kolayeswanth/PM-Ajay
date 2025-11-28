@@ -1,17 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
-=======
-import React, { useState } from 'react';
 import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
 import { stateStats } from '../../../data/mockData';
 
-import IndiaMap from '../../../components/maps/IndiaMap';
-
 const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     const [totalFundReleased, setTotalFundReleased] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
 
     // Supabase Config
     const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
@@ -58,16 +54,12 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
         fetchTotalFunds();
     }, [stateName]);
 
-    const stats = stateStats.Maharashtra; // Keep other stats mock for now
-=======
-
-const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
-    const stats = stateStats[stateName] || stateStats.Maharashtra;
-    const [selectedDistrict, setSelectedDistrict] = useState(null);
-
     // Don't render map until we have a valid state name
     const isValidState = stateName && stateName !== 'Loading...' && stateName !== 'State';
     const displayStateName = isValidState ? stateName : 'Maharashtra';
+
+    // Fallback stats if state not found in mock data
+    const stats = stateStats[displayStateName] || stateStats.Maharashtra || { districts: 0, projectsProposed: 0 };
 
     const handleDistrictSelect = (districtName) => {
         setSelectedDistrict(districtName);
@@ -77,7 +69,6 @@ const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
     const handleBack = () => {
         setSelectedDistrict(null);
     };
-
 
     return (
         <div className="dashboard-panel">
