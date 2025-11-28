@@ -10,8 +10,6 @@ const __dirname = path.dirname(__filename);
 const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const CSV_FILENAME = 'agencies.csv';
-const DEFAULT_PASSWORD = 'Test123!';
 
 if (!SERVICE_ROLE_KEY) {
     console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY environment variable is missing.');
