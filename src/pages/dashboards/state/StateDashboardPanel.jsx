@@ -3,7 +3,6 @@ import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
 import { stateStats } from '../../../data/mockData';
-
 const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     const [totalFundReleased, setTotalFundReleased] = useState(0);
     const [loading, setLoading] = useState(false);
