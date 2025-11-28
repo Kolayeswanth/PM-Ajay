@@ -11,6 +11,8 @@ const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 
+//removed csv file name and default password
+
 if (!SERVICE_ROLE_KEY) {
     console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY environment variable is missing.');
     process.exit(1);
@@ -79,7 +81,6 @@ async function importAgencies() {
         return result.map(c => c.trim().replace(/^"|"$/g, '').replace(/'/g, "''"));
     };
 
-    console.log('🚀 Starting import...');
     let successCount = 0;
     let errorCount = 0;
 
@@ -179,9 +180,6 @@ async function importAgencies() {
         }
     }
 
-    console.log('\n--- Import Summary ---');
-    console.log(`✅ Successful: ${successCount}`);
-    console.log(`❌ Failed: ${errorCount}`);
 }
 
 importAgencies();
