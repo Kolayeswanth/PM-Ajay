@@ -1,7 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-=======
-import React, { useState } from 'react';
 import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
@@ -58,10 +56,6 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
         fetchTotalFunds();
     }, [stateName]);
 
-    const stats = stateStats.Maharashtra; // Keep other stats mock for now
-=======
-
-const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
     const stats = stateStats[stateName] || stateStats.Maharashtra;
     const [selectedDistrict, setSelectedDistrict] = useState(null);
 
@@ -77,7 +71,6 @@ const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
     const handleBack = () => {
         setSelectedDistrict(null);
     };
-
 
     return (
         <div className="dashboard-panel">
@@ -114,7 +107,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
                     <h2 className="section-title">
                         {selectedDistrict
                             ? `${selectedDistrict} District Overview`
-                            : `${displayStateName} District-wise Progress Map`
+                            : `${displayStateName} District - wise Progress Map`
                         }
                     </h2>
                     {selectedDistrict && (

@@ -1,0 +1,71 @@
+/* Force all National Overview cards in a single horizontal row */
+.dashboard-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 1rem !important;
+    margin-bottom: 2rem !important;
+}
+
+.dashboard-section {
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+/* Make stat cards more compact to fit in single line */
+.stat-card {
+    padding: 1rem !important;
+}
+
+.stat-card-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.25rem !important;
+}
+
+.stat-card-value {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.stat-card-label {
+    font-size: 0.75rem !important;
+}
+
+.stat-card-trend {
+    font-size: 0.75rem !important;
+    margin-top: 0.5rem !important;
+}
+
+/* Responsive - still keep in single row but allow scrolling if needed */
+@media (max-width: 1400px) {
+    .dashboard-grid {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
