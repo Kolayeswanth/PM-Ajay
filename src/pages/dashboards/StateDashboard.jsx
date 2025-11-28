@@ -11,6 +11,7 @@ import UploadUC from './state/UploadUC';
 import StateReports from './state/StateReports';
 import StateNotifications from './state/StateNotifications';
 import StateHelp from './state/StateHelp';
+import FundsReceivedFromMinistry from './state/FundsReceivedFromMinistry';
 
 const StateDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -52,6 +53,7 @@ const StateDashboard = () => {
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: '💵', label: 'Funds Received from Ministry', action: () => setActiveTab('received'), active: activeTab === 'received' },
         { icon: '👥', label: 'Manage District Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
         { icon: '💰', label: 'Fund Release to Districts', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
         { icon: '✅', label: 'Approve District Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
@@ -69,7 +71,9 @@ const StateDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <StateDashboardPanel formatCurrency={formatCurrency} />;
+                return <StateDashboardPanel formatCurrency={formatCurrency} stateName={stateName} />;
+            case 'received':
+                return <FundsReceivedFromMinistry formatCurrency={formatCurrency} />;
             case 'admins':
                 return <ManageDistrictAdmins />;
             case 'funds':
@@ -85,13 +89,14 @@ const StateDashboard = () => {
             case 'help':
                 return <StateHelp />;
             default:
-                return <StateDashboardPanel formatCurrency={formatCurrency} />;
+                return <StateDashboardPanel formatCurrency={formatCurrency} stateName={stateName} />;
         }
     };
 
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'received': 'Funds Received from Ministry',
             'admins': 'Manage District Admins',
             'funds': 'Fund Release',
             'proposals': 'Approve Proposals',
