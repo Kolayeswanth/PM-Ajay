@@ -1,13 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-=======
-import React, { useState } from 'react';
 import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
 import { stateStats } from '../../../data/mockData';
-
-import IndiaMap from '../../../components/maps/IndiaMap';
 
 const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     const [totalFundReleased, setTotalFundReleased] = useState(0);
@@ -58,10 +53,6 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
         fetchTotalFunds();
     }, [stateName]);
 
-    const stats = stateStats.Maharashtra; // Keep other stats mock for now
-=======
-
-const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
     const stats = stateStats[stateName] || stateStats.Maharashtra;
     const [selectedDistrict, setSelectedDistrict] = useState(null);
 
