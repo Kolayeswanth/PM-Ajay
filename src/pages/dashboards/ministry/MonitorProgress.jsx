@@ -1,9 +1,29 @@
 import React, { useState } from 'react';
 import IndiaMap from '../../../components/maps/IndiaMap';
+import DistrictMap from '../../../components/maps/DistrictMap';
+import CityMap from '../../../components/maps/CityMap';
 import StatCard from '../../../components/StatCard';
 
 const MonitorProgress = () => {
     const [selectedState, setSelectedState] = useState(null);
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
+
+    const handleStateSelect = (stateName) => {
+        setSelectedState(stateName);
+        setSelectedDistrict(null);
+    };
+
+    const handleDistrictSelect = (districtName) => {
+        setSelectedDistrict(districtName);
+    };
+
+    const handleBack = () => {
+        if (selectedDistrict) {
+            setSelectedDistrict(null);
+        } else {
+            setSelectedState(null);
+        }
+    };
 
     return (
         <div className="dashboard-panel">
@@ -45,8 +65,33 @@ const MonitorProgress = () => {
 
             <div className="dashboard-section" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-4)' }}>
                 <div>
-                    <h3 className="section-title">Geographic Progress Overview</h3>
-                    <IndiaMap onStateSelect={setSelectedState} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: 'var(--space-3)' }}>
+                        <h3 className="section-title" style={{ margin: 0 }}>
+                            {selectedDistrict
+                                ? `${selectedDistrict} District Overview`
+                                : selectedState
+                                    ? `${selectedState} Progress`
+                                    : 'Geographic Progress Overview'
+                            }
+                        </h3>
+                        {(selectedState || selectedDistrict) && (
+                            <button
+                                className="btn btn-outline btn-sm"
+                                onClick={handleBack}
+                            >
+                                ← Back to {selectedDistrict ? 'State View' : 'National View'}
+                            </button>
+                        )}
+                    </div>
+                    <div style={{ height: '800px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                        {selectedDistrict ? (
+                            <CityMap district={selectedDistrict} state={selectedState} />
+                        ) : selectedState ? (
+                            <DistrictMap state={selectedState} onDistrictSelect={handleDistrictSelect} />
+                        ) : (
+                            <IndiaMap onStateSelect={handleStateSelect} />
+                        )}
+                    </div>
                 </div>
                 <div>
                     <h3 className="section-title">Region-wise Performance</h3>
