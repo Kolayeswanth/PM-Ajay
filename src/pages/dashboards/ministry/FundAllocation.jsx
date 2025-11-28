@@ -26,24 +26,19 @@ const FundAllocation = ({ formatCurrency }) => {
     const [toast, setToast] = useState(null);
     const [isNotifying, setIsNotifying] = useState(false);
 
-    // Load from Backend on mount
-    const fetchFunds = async () => {
-        try {
-            const response = await fetch('http://localhost:5001/api/funds');
-            const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-                setFundStates(data);
-            } else {
-                setFundStates(initialStates || []);
-            }
-        } catch (error) {
-            console.error("Error fetching funds:", error);
-            setFundStates(initialStates || []);
-        }
-    };
-
+    // Fetch Fund Allocations from Supabase via Backend
     useEffect(() => {
-        fetchFunds();
+        const fetchAllocations = async () => {
+            try {
+                const response = await fetch('http://localhost:5001/api/funds');
+                const data = await response.json();
+                setFundStates(data || []);
+            } catch (error) {
+                console.error('Error fetching allocations:', error);
+                setFundStates(initialStates || []); // Fallback to mock data
+            }
+        };
+        fetchAllocations();
     }, []);
 
     // small helper to show transient messages
@@ -126,7 +121,7 @@ const FundAllocation = ({ formatCurrency }) => {
         }
     };
 
-    // Perform allocation with Backend Persistence & WhatsApp notification
+    // Perform allocation with Real WhatsApp notification (No DB Storage)
     const handleAllocateAndNotify = async () => {
         if (!validate()) return;
 
@@ -136,23 +131,34 @@ const FundAllocation = ({ formatCurrency }) => {
         const amountInRupees = Math.round(amountCr * 10000000); // 1 Cr = 10,000,000
 
         try {
-            // 1. Save to Backend
+            // Prepare allocation data
+            const allocationPayload = {
+                stateName: allocationData.stateName,
+                component: allocationData.component,
+                amount: amountCr,
+                date: allocationData.date,
+                officerId: allocationData.officerId,
+                allocatorName: allocationData.allocatorName,
+                allocatorRole: allocationData.allocatorRole,
+                allocatorPhone: allocationData.allocatorPhone
+            };
+
+            // Step 1: Save to Supabase via Backend
             const saveResponse = await fetch('http://localhost:5001/api/funds/allocate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(allocationData)
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(allocationPayload),
             });
 
-            const saveData = await saveResponse.json();
+            const saveResult = await saveResponse.json();
 
-            if (!saveData.success) {
-                throw new Error(saveData.error || 'Failed to save allocation');
+            if (!saveResult.success) {
+                throw new Error(saveResult.error || 'Failed to save allocation');
             }
 
-            // Refresh local state
-            await fetchFunds();
-
-            // 2. Send WhatsApp Notification
+            // Step 2: Send WhatsApp Notification
             const notificationData = {
                 allocatorPhone: allocationData.allocatorPhone,
                 allocatorName: allocationData.allocatorName,
@@ -169,46 +175,49 @@ const FundAllocation = ({ formatCurrency }) => {
             setIsNotifying(false);
 
             if (result.success) {
-                // Success popup with details
-                const successMessage =
-                    `✅ FUND ALLOCATION SUCCESSFUL!\n\n` +
-                    `📊 Allocation Details:\n` +
-                    `• State: ${allocationData.stateName}\n` +
-                    `• Amount: ₹${amountInRupees.toLocaleString()} (${amountCr} Cr)\n` +
-                    `• Component: ${allocationData.component.join(', ') || 'N/A'}\n` +
-                    `• Date: ${allocationData.date}\n` +
-                    `• Officer ID: ${allocationData.officerId}\n\n` +
-                    `📱 WhatsApp Notification: SENT ✅\n` +
-                    `• Recipient: ${allocationData.allocatorName}\n` +
-                    `• Role: ${allocationData.allocatorRole}\n` +
-                    `• Phone: +91${allocationData.allocatorPhone}\n\n` +
-                    `The allocator has been notified via WhatsApp!`;
+                // Step 3: Refresh table data from Supabase
+                const response = await fetch('http://localhost:5001/api/funds');
+                const data = await response.json();
+                setFundStates(data || []);
 
-                alert(successMessage);
-                showToast(`✅ Allocation of ${amountCr} Cr recorded and WhatsApp notification sent to ${allocationData.allocatorName}!`);
-            } else {
-                // Error popup with details
-                const errorMessage =
-                    `⚠️ ALLOCATION SAVED BUT WHATSAPP FAILED!\n\n` +
+                // Success popup
+                const successMessage =
+                    `✅ FUND ALLOCATION SAVED & NOTIFIED!\n\n` +
                     `📊 Allocation Details:\n` +
                     `• State: ${allocationData.stateName}\n` +
                     `• Amount: ₹${amountInRupees.toLocaleString()} (${amountCr} Cr)\n` +
                     `• Component: ${allocationData.component.join(', ') || 'N/A'}\n\n` +
-                    `❌ WhatsApp Error:\n` +
-                    `${result.error || 'Unknown error'}\n\n` +
-                    `The allocation has been saved to the system, but the WhatsApp notification could not be sent.\n\n` +
-                    `Please contact ${allocationData.allocatorName} manually at +91${allocationData.allocatorPhone}`;
+                    `💾 Database: SAVED TO SUPABASE ✅\n` +
+                    `📱 WhatsApp Status: DELIVERED ✅\n` +
+                    `• Recipient: ${allocationData.allocatorName}\n` +
+                    `• Phone: +91${allocationData.allocatorPhone}\n\n` +
+                    `The allocation has been saved to the database and the WhatsApp message has been sent successfully!`;
 
-                alert(errorMessage);
-                showToast(`⚠️ Allocation saved but WhatsApp notification failed: ${result.error || 'Unknown error'}`);
+                alert(successMessage);
+                showToast(`✅ Allocation saved & notification sent to ${allocationData.allocatorName}!`);
+                closeModal();
+            } else {
+                // WhatsApp failed but data is saved
+                alert(
+                    `⚠️ ALLOCATION SAVED BUT NOTIFICATION FAILED!\n\n` +
+                    `The allocation has been saved to the database, but the WhatsApp notification could not be sent.\n` +
+                    `Error: ${result.error || 'Unknown error'}\n\n` +
+                    `Please ensure the Backend Server is running and WATI credentials are correct.`
+                );
+                showToast(`⚠️ Saved but WhatsApp failed: ${result.error || 'Backend error'}`);
+
+                // Still refresh the table
+                const response = await fetch('http://localhost:5001/api/funds');
+                const data = await response.json();
+                setFundStates(data || []);
+                closeModal();
             }
 
-            closeModal();
 
         } catch (error) {
             console.error("Allocation Error:", error);
             setIsNotifying(false);
-            alert(`❌ Allocation Failed: ${error.message}`);
+            alert(`❌ Error: ${error.message}\n\nPlease check the backend server and try again.`);
         }
     };
 
@@ -252,9 +261,9 @@ const FundAllocation = ({ formatCurrency }) => {
                             <th>State/UT</th>
                             <th>Scheme Component</th>
                             <th style={{ textAlign: 'right' }}>Total Allocated</th>
-                            <th style={{ textAlign: 'right' }}>Amount Released</th>
-                            <th style={{ textAlign: 'right' }}>Pending Release</th>
-                            <th style={{ textAlign: 'center' }}>Last Allocation</th>
+                            <th>Allocator Name</th>
+                            <th>Phone No</th>
+                            <th>Role</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -266,26 +275,9 @@ const FundAllocation = ({ formatCurrency }) => {
                                 </td>
                                 <td style={{ padding: '12px 16px' }}>{Array.isArray(s.component) ? s.component.join(', ') : s.component || '-'}</td>
                                 <td style={{ padding: '12px 16px', textAlign: 'right' }}>{formatCurrency ? formatCurrency(s.fundAllocated || 0) : s.fundAllocated || 0}</td>
-                                <td style={{ padding: '12px 16px', textAlign: 'right' }}>{formatCurrency ? formatCurrency(s.amountReleased || 0) : s.amountReleased || 0}</td>
-                                <td style={{ padding: '12px 16px', textAlign: 'right' }}>{formatCurrency ? formatCurrency((s.fundAllocated || 0) - (s.amountReleased || 0)) : ((s.fundAllocated || 0) - (s.amountReleased || 0))}</td>
-                                <td style={{ padding: '8px 16px', textAlign: 'center', fontSize: 12 }}>
-                                    {s.lastAllocation ? (
-                                        <div>
-                                            <div>₹{(s.lastAllocation.amountInRupees || 0).toLocaleString()} ({s.lastAllocation.amountCr} Cr)</div>
-                                            <div style={{ color: '#666' }}>{s.lastAllocation.date || '-'}</div>
-                                            <div style={{ color: '#666' }}>Officer: {s.lastAllocation.officerId || '-'}</div>
-                                            {s.lastAllocation.allocatorName && (
-                                                <>
-                                                    <div style={{ color: '#666', marginTop: 4 }}>Allocator: {s.lastAllocation.allocatorName}</div>
-                                                    <div style={{ color: '#666' }}>{s.lastAllocation.allocatorRole || '-'}</div>
-                                                    <div style={{ color: '#666' }}>📱 {s.lastAllocation.allocatorPhone || '-'}</div>
-                                                </>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div style={{ color: '#999' }}>No allocation yet</div>
-                                    )}
-                                </td>
+                                <td style={{ padding: '12px 16px' }}>{s.lastAllocation?.allocatorName || '-'}</td>
+                                <td style={{ padding: '12px 16px' }}>{s.lastAllocation?.allocatorPhone || '-'}</td>
+                                <td style={{ padding: '12px 16px' }}>{s.lastAllocation?.allocatorRole || '-'}</td>
                             </tr>
                         ))}
                         {fundStates.length === 0 && (
