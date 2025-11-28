@@ -1,9 +1,11 @@
 import React from 'react';
 import StatCard from '../../../components/StatCard';
 import IndiaMap from '../../../components/maps/IndiaMap';
+import DistrictMap from '../../../components/maps/DistrictMap';
+import CityMap from '../../../components/maps/CityMap';
 import { nationalStats, states, mockProjects } from '../../../data/mockData';
 
-const DashboardPanel = ({ setSelectedState, formatCurrency }) => {
+const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, setSelectedDistrict, formatCurrency }) => {
     const handleExportMapData = () => {
         try {
             // Prepare state-wise project data
@@ -47,6 +49,19 @@ const DashboardPanel = ({ setSelectedState, formatCurrency }) => {
         } catch (error) {
             console.error('Error exporting map data:', error);
             alert('Failed to export data. Please try again.');
+        }
+    };
+
+    const handleDistrictSelect = (districtName) => {
+        setSelectedDistrict(districtName);
+        console.log('Selected district:', districtName);
+    };
+
+    const handleBack = () => {
+        if (selectedDistrict) {
+            setSelectedDistrict(null);
+        } else {
+            setSelectedState(null);
         }
     };
 
@@ -120,12 +135,37 @@ const DashboardPanel = ({ setSelectedState, formatCurrency }) => {
             {/* GIS Map */}
             <div className="dashboard-section">
                 <div className="section-header">
-                    <h2 className="section-title">State-wise Project Distribution</h2>
-                    <button className="btn btn-primary btn-sm" onClick={handleExportMapData}>
-                        📥 Export Map Data
-                    </button>
+                    <h2 className="section-title">
+                        {selectedDistrict
+                            ? `${selectedDistrict} District Overview`
+                            : selectedState
+                                ? `${selectedState} Project Distribution`
+                                : 'State-wise Project Distribution'
+                        }
+                    </h2>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        {(selectedState || selectedDistrict) && (
+                            <button
+                                className="btn btn-outline btn-sm"
+                                onClick={handleBack}
+                            >
+                                ← Back to {selectedDistrict ? 'State View' : 'National View'}
+                            </button>
+                        )}
+                        <button className="btn btn-primary btn-sm" onClick={handleExportMapData}>
+                            📥 Export Map Data
+                        </button>
+                    </div>
                 </div>
-                <IndiaMap onStateSelect={setSelectedState} />
+                <div style={{ height: '800px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                    {selectedDistrict ? (
+                        <CityMap district={selectedDistrict} state={selectedState} />
+                    ) : selectedState ? (
+                        <DistrictMap state={selectedState} onDistrictSelect={handleDistrictSelect} />
+                    ) : (
+                        <IndiaMap onStateSelect={setSelectedState} />
+                    )}
+                </div>
             </div>
         </div>
     );

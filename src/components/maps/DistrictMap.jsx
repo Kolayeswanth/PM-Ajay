@@ -56,9 +56,36 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
             'Odisha': 'Orissa',
             'Uttarakhand': 'Uttaranchal',
             'Andaman & Nicobar Islands': 'Andaman and Nicobar',
-            'Puducherry': 'Puducherry', // Check spelling
-            'Telangana': 'Andhra Pradesh', // Show AP map for Telangana
-            'Andhra Pradesh': 'Andhra Pradesh'
+            'Andaman and Nicobar Islands': 'Andaman and Nicobar',
+            'Puducherry': 'Puducherry',
+            'Telangana': 'Andhra Pradesh',
+            'Andhra Pradesh': 'Andhra Pradesh',
+            'Maharashtra': 'Maharashtra',
+            'Karnataka': 'Karnataka',
+            'Tamil Nadu': 'Tamil Nadu',
+            'Gujarat': 'Gujarat',
+            'Rajasthan': 'Rajasthan',
+            'West Bengal': 'West Bengal',
+            'Madhya Pradesh': 'Madhya Pradesh',
+            'Uttar Pradesh': 'Uttar Pradesh',
+            'Kerala': 'Kerala',
+            'Bihar': 'Bihar',
+            'Jharkhand': 'Jharkhand',
+            'Chhattisgarh': 'Chhattisgarh',
+            'Haryana': 'Haryana',
+            'Punjab': 'Punjab',
+            'Delhi': 'NCT of Delhi',
+            'Goa': 'Goa',
+            'Himachal Pradesh': 'Himachal Pradesh',
+            'Jammu and Kashmir': 'Jammu and Kashmir',
+            'Assam': 'Assam',
+            'Manipur': 'Manipur',
+            'Meghalaya': 'Meghalaya',
+            'Mizoram': 'Mizoram',
+            'Nagaland': 'Nagaland',
+            'Sikkim': 'Sikkim',
+            'Tripura': 'Tripura',
+            'Arunachal Pradesh': 'Arunachal Pradesh'
         };
         return mapping[modernStateName] || modernStateName;
     };
@@ -68,13 +95,23 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
         if (!indiaDistrictsGeoJSON) return null;
 
         const targetGeoJSONName = getGeoJSONStateName(state);
+        console.log('DistrictMap: Looking for state:', state, '-> GeoJSON name:', targetGeoJSONName);
 
-        return {
+        const filtered = {
             ...indiaDistrictsGeoJSON,
             features: indiaDistrictsGeoJSON.features.filter(feature =>
                 feature.properties.NAME_1 === targetGeoJSONName
             )
         };
+
+        console.log('DistrictMap: Found', filtered.features.length, 'districts for', targetGeoJSONName);
+        if (filtered.features.length === 0) {
+            console.warn('⚠️ No districts found! Available states in GeoJSON:',
+                [...new Set(indiaDistrictsGeoJSON.features.map(f => f.properties.NAME_1))].sort()
+            );
+        }
+
+        return filtered;
     }, [state]);
 
     // Calculate bounds
@@ -157,6 +194,7 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
       `);
         }
 
+
         // Add Label using Tooltip
         layer.bindTooltip(districtName, {
             permanent: true,
@@ -196,10 +234,12 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
                 center={[22, 79]} // Default center
                 zoom={6}
                 style={{ height: '100%', width: '100%', backgroundColor: '#F3F4F6' }}
-                scrollWheelZoom={true}
+                scrollWheelZoom={false}
                 doubleClickZoom={false}
-                dragging={true}
+                dragging={false}
+                touchZoom={false}
                 zoomControl={false}
+                keyboard={false}
             >
                 {/* Update map bounds when state changes */}
                 <MapUpdater bounds={mapBounds} />

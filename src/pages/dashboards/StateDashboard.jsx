@@ -32,8 +32,12 @@ const StateDashboard = () => {
                     const data = await response.json();
                     console.log('State name data:', data);
                     if (data[0]?.full_name) {
-                        // Extract state name (e.g., "Andaman and Nicobar Islands Admin" -> "Andaman and Nicobar Islands")
-                        const name = data[0].full_name.replace(' Admin', '').replace(' State Admin', '');
+                        // Extract state name (e.g., "Maharashtra State Admin" -> "Maharashtra")
+                        let name = data[0].full_name
+                            .replace(' State Admin', '')
+                            .replace(' Admin', '')
+                            .replace(' State', '')
+                            .trim();
                         console.log('Setting state name to:', name);
                         setStateName(name);
                     }
@@ -69,7 +73,7 @@ const StateDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <StateDashboardPanel formatCurrency={formatCurrency} />;
+                return <StateDashboardPanel formatCurrency={formatCurrency} stateName={stateName} />;
             case 'admins':
                 return <ManageDistrictAdmins />;
             case 'funds':
@@ -85,7 +89,7 @@ const StateDashboard = () => {
             case 'help':
                 return <StateHelp />;
             default:
-                return <StateDashboardPanel formatCurrency={formatCurrency} />;
+                return <StateDashboardPanel formatCurrency={formatCurrency} stateName={stateName} />;
         }
     };
 
