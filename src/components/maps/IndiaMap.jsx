@@ -159,14 +159,14 @@ const IndiaMap = ({ onStateSelect }) => {
     <>
       <div className="map-container">
         <MapContainer
-          center={[22.5, 78.9]}
-          zoom={5}
+          center={[22, 82]}
+          zoom={4.5}
           style={{ height: '100%', width: '100%', backgroundColor: '#F3F4F6' }}
           scrollWheelZoom={false}
           doubleClickZoom={false}
-          dragging={false}
+          dragging={true}
           touchZoom={false}
-          zoomControl={false}
+          zoomControl={true}
           keyboard={false}
         >
           <GeoJSON

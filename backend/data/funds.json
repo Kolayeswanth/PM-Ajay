@@ -5,19 +5,19 @@
     "component": [
       "Adarsh Gram"
     ],
-    "fundAllocated": 10000000,
+    "fundAllocated": 50000000,
     "amountReleased": 5000000,
     "lastAllocation": {
-      "amountInRupees": 10000000,
-      "amountCr": 1,
-      "date": "2025-11-27",
-      "officerId": "off12",
+      "amountInRupees": 40000000,
+      "amountCr": 4,
+      "date": "2025-11-28",
+      "officerId": "OFF12",
       "component": [
         "Adarsh Gram"
       ],
       "allocatorName": "leela",
-      "allocatorRole": "statefine",
-      "allocatorPhone": "9704846498"
+      "allocatorRole": "state finance",
+      "allocatorPhone": "8142333445"
     }
   }
 ]

@@ -8,6 +8,11 @@ const DATA_FILE = path.join(__dirname, '../data/funds.json');
 const readData = () => {
     try {
         if (!fs.existsSync(DATA_FILE)) {
+            // Ensure directory exists
+            const dir = path.dirname(DATA_FILE);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
             fs.writeFileSync(DATA_FILE, JSON.stringify([]));
             return [];
         }
@@ -22,6 +27,10 @@ const readData = () => {
 // Helper to write data
 const writeData = (data) => {
     try {
+        const dir = path.dirname(DATA_FILE);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
         fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
         return true;
     } catch (error) {
@@ -89,10 +98,6 @@ exports.allocateFund = async (req, res) => {
         }
 
         writeData(funds);
-
-        // Trigger Notification (Optional: can be done here or separately)
-        // For now, we return success and let frontend trigger notification or we can call it here.
-        // Let's keep it simple: just save data here.
 
         res.json({ success: true, message: 'Allocation saved', data: funds });
 
