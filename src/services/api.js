@@ -1,5 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
+const API_URL = import.meta.env.VITE_API_URL;
+console.log(API_URL);
 export const healthCheck = async () => {
   try {
     const response = await fetch(`${API_URL}/api/health`);

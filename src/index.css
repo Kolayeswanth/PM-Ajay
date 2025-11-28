@@ -358,11 +358,23 @@ a:hover {
    Footer Component
    =================================== */
 
+/* Update your existing .footer class (around line 684) */
 .footer {
   background-color: var(--color-gray-800);
   color: var(--text-inverse);
   padding: var(--space-8) 0 var(--space-4);
   margin-top: auto;
+
+  /* ADD THIS LINE */
+  margin-left: 260px;
+  /* This ensures the footer respects the fixed sidebar's space */
+}
+
+/* IMPORTANT: Reset this for mobile devices */
+@media (max-width: 768px) {
+  .footer {
+    margin-left: 0;
+  }
 }
 
 .footer-content {
@@ -1094,6 +1106,238 @@ textarea.form-control {
    Dashboard Layout with Sidebar
    =================================== */
 
+/* Make header fixed instead of sticky */
+.header {
+  background: linear-gradient(to right, var(--color-saffron), var(--color-white), var(--color-green));
+  border-bottom: 3px solid var(--color-navy);
+  box-shadow: var(--shadow-md);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 2000;
+}
+
+/* This is the ACTUAL approximate header height */
+:root {
+  --header-height: 160px;
+  /* change if header grows */
+}
+
+/* FIXED SIDEBAR — aligned under header */
+.dashboard-sidebar {
+  width: 260px;
+  background-color: var(--color-gray-800);
+  color: var(--text-inverse);
+  position: fixed;
+  /* Ensure this variable is defined, or use 160px */
+  top: var(--header-height);
+  left: 0;
+  bottom: 0;
+  overflow-y: auto;
+  padding: 0;
+  z-index: 1500;
+  /* Keeps it above standard content */
+}
+
+/* MAIN CONTENT — shifted correctly beside sidebar + below header */
+.dashboard-main {
+  margin-left: 260px;
+  margin-top: var(--header-height);
+  padding: var(--space-6);
+  background-color: var(--bg-secondary);
+  min-height: calc(100vh - var(--header-height));
+  overflow-y: auto;
+}
+
+
+/* ===================================
+   Progress Bar
+   =================================== */
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--bg-gradient);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
+}
+
+.alert {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  border-left: 4px solid;
+}
+
+.alert-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.alert-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.alert-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.alert-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
+/* ===================================
+   Utility Classes
+   =================================== */
+
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mt-4 {
+  margin-top: var(--space-4);
+}
+
+.mb-4 {
+  margin-bottom: var(--space-4);
+}
+
+.ml-4 {
+  margin-left: var(--space-4);
+}
+
+.mr-4 {
+  margin-right: var(--space-4);
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-4 {
+  gap: var(--space-4);
+}
+
+.hidden {
+  display: none;
+}
+
+/* ===================================
+   Responsive Design
+   =================================== */
+
+@media (max-width: 768px) {
+  :root {
+    --text-4xl: 2rem;
+    --text-3xl: 1.5rem;
+    --text-2xl: 1.25rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .header-logos {
+    flex-direction: column;
+  }
+
+  .nav-menu {
+    flex-direction: column;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .map-container {
+    height: 400px;
+  }
+
+  .login-card {
+    padding: var(--space-6);
+  }
+}
+
+/* ===================================
+   Accessibility
+   =================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border-light: #000000;
+    --border-medium: #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===================================
+   Dashboard Layout with Sidebar
+   =================================== */
+
 .dashboard-layout {
   display: flex;
   min-height: calc(100vh - 200px);
@@ -1103,11 +1347,15 @@ textarea.form-control {
   width: 260px;
   background-color: var(--color-gray-800);
   color: var(--text-inverse);
-  padding: var(--space-6) 0;
-  position: sticky;
+  padding: 0;
+  padding-top: 190px;
+  /* Space for header */
+  position: fixed;
   top: 0;
-  height: calc(100vh - 200px);
-  overflow-y: hidden;
+  left: 0;
+  bottom: 0;
+  overflow-y: auto;
+  z-index: 90;
 }
 
 .dashboard-sidebar-nav {
@@ -1152,6 +1400,7 @@ textarea.form-control {
 
 .dashboard-main {
   flex: 1;
+  margin-left: 260px;
   padding: var(--space-6);
   background-color: var(--bg-secondary);
   overflow-y: auto;
@@ -1551,14 +1800,29 @@ textarea.form-control {
   display: none;
 }
 
-/* Fixed Sidebar Override Removed */
-.dashboard-sidebar {
-  /* Ensure it sticks below the header */
-  top: 180px;
-  height: calc(100vh - 180px);
+/* Logout Button Styling */
+.logout-btn {
+  background-color: #dc2626 !important;
+  color: white !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--space-2) var(--space-4) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: var(--font-medium) !important;
+  border: 2px solid transparent !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block;
 }
 
-.dashboard-main {
-  /* Reset margin since sidebar is no longer fixed out of flow */
-  margin-left: 0 !important;
+.logout-btn:hover {
+  background-color: #991b1b !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.logout-btn:active,
+.logout-btn:focus {
+  border-color: #dc2626 !important;
+  outline: 2px solid #dc2626 !important;
+  outline-offset: 2px;
 }

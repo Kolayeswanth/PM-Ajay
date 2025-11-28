@@ -35,15 +35,26 @@ const FundReleased = ({ formatCurrency }) => {
     const [errors, setErrors] = useState({});
 
     // Load data on mount
-    useEffect(() => {
+    const fetchFunds = async () => {
         try {
-            const rawFunds = localStorage.getItem(STORAGE_KEY_FUNDS);
-            if (rawFunds) {
-                setFundStates(JSON.parse(rawFunds));
+            const response = await fetch('http://localhost:5001/api/funds');
+            const data = await response.json();
+            if (Array.isArray(data) && data.length > 0) {
+                setFundStates(data);
             } else {
                 setFundStates(initialStates || []);
             }
+        } catch (error) {
+            console.error("Error fetching funds:", error);
+            setFundStates(initialStates || []);
+        }
+    };
 
+    useEffect(() => {
+        fetchFunds();
+
+        // Load released funds log from local storage for now (visual only)
+        try {
             const rawReleased = localStorage.getItem(STORAGE_KEY_RELEASED);
             if (rawReleased) {
                 setReleasedFunds(JSON.parse(rawReleased));
@@ -51,8 +62,7 @@ const FundReleased = ({ formatCurrency }) => {
                 setReleasedFunds([]);
             }
         } catch (e) {
-            console.error("Error loading data", e);
-            setFundStates(initialStates || []);
+            console.error("Error loading released funds", e);
         }
     }, []);
 
@@ -64,15 +74,6 @@ const FundReleased = ({ formatCurrency }) => {
             console.error("Error saving released funds", e);
         }
     }, [releasedFunds]);
-
-    // Persist fundStates whenever it changes (updated when funds are released)
-    useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY_FUNDS, JSON.stringify(fundStates));
-        } catch (e) {
-            console.error("Error saving fund states", e);
-        }
-    }, [fundStates]);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -129,7 +130,7 @@ const FundReleased = ({ formatCurrency }) => {
                 const requestAmountRupees = Math.round(amountCr * 10000000);
 
                 if (requestAmountRupees > available) {
-                    errs.amount = `Insufficient funds. Available: ${formatCurrency(available)}`;
+                    errs.amount = `Insufficient funds. Available: ${formatCurrency ? formatCurrency(available) : available}`;
                 }
             }
         }
@@ -138,36 +139,97 @@ const FundReleased = ({ formatCurrency }) => {
         return Object.keys(errs).length === 0;
     };
 
-    const handleReleaseSubmit = () => {
+    const handleReleaseSubmit = async () => {
         if (!validate()) return;
 
         const amountCr = parseFloat(formData.amount);
         const amountInRupees = Math.round(amountCr * 10000000);
 
-        // 1. Update Fund States (increment amountReleased)
-        const updatedStates = fundStates.map(s => {
-            if (s.name === formData.stateName) {
-                return {
-                    ...s,
-                    amountReleased: (s.amountReleased || 0) + amountInRupees
-                };
+        // Find the state to get allocator details
+        const stateRecord = fundStates.find(s => s.name === formData.stateName);
+        let allocatorPhone = '';
+        let allocatorName = '';
+
+        if (stateRecord && stateRecord.lastAllocation) {
+            allocatorPhone = stateRecord.lastAllocation.allocatorPhone || '';
+            allocatorName = stateRecord.lastAllocation.allocatorName || '';
+        }
+
+        try {
+            // 1. Save Release to Backend
+            const saveResponse = await fetch('http://localhost:5001/api/funds/release', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    stateName: formData.stateName,
+                    amount: amountCr
+                })
+            });
+
+            const saveData = await saveResponse.json();
+
+            if (!saveData.success) {
+                throw new Error(saveData.error || 'Failed to save release');
             }
-            return s;
-        });
-        setFundStates(updatedStates);
 
-        // 2. Add to Released Funds Log
-        const newRelease = {
-            id: Date.now(),
-            ...formData,
-            amountInRupees,
-            amountCr,
-            timestamp: new Date().toISOString()
-        };
-        setReleasedFunds([newRelease, ...releasedFunds]);
+            // Refresh local state
+            await fetchFunds();
 
-        showToast(`Successfully released ${amountCr} Cr to ${formData.stateName}`);
-        closeModal();
+            // 2. Add to Local Released Funds Log (Visual only for now)
+            const newRelease = {
+                id: Date.now(),
+                ...formData,
+                amountInRupees,
+                amountCr,
+                timestamp: new Date().toISOString()
+            };
+            setReleasedFunds([newRelease, ...releasedFunds]);
+
+            // 3. Send WhatsApp Notification if phone number exists
+            if (allocatorPhone) {
+                try {
+                    showToast(`Funds released. Sending WhatsApp to ${allocatorName}...`, 'info');
+
+                    const notificationData = {
+                        allocatorPhone,
+                        allocatorName,
+                        stateName: formData.stateName,
+                        amount: amountCr,
+                        component: formData.component,
+                        date: formData.date,
+                        officerId: formData.officerId,
+                        remarks: formData.remarks
+                    };
+
+                    const response = await fetch('http://localhost:5001/api/notifications/send-release', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(notificationData),
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        alert(`✅ Funds Released & WhatsApp Sent!\n\nNotification sent to ${allocatorName} (${allocatorPhone})`);
+                    } else {
+                        alert(`⚠️ Funds Released but WhatsApp Failed.\n\nError: ${result.error}`);
+                    }
+                } catch (error) {
+                    console.error("Notification Error:", error);
+                    alert(`⚠️ Funds Released but WhatsApp Failed.\n\nNetwork Error`);
+                }
+            } else {
+                alert(`✅ Funds Released Successfully!\n\n(No allocator phone number found for this state, so no WhatsApp sent)`);
+            }
+
+            closeModal();
+
+        } catch (error) {
+            console.error("Release Error:", error);
+            alert(`❌ Release Failed: ${error.message}`);
+        }
     };
 
     // Helper to get available funds for selected state

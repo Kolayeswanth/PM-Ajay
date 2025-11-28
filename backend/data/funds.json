@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Arunachal Pradesh",
+    "code": "",
+    "component": [
+      "Adarsh Gram"
+    ],
+    "fundAllocated": 10000000,
+    "amountReleased": 5000000,
+    "lastAllocation": {
+      "amountInRupees": 10000000,
+      "amountCr": 1,
+      "date": "2025-11-27",
+      "officerId": "off12",
+      "component": [
+        "Adarsh Gram"
+      ],
+      "allocatorName": "leela",
+      "allocatorRole": "statefine",
+      "allocatorPhone": "9704846498"
+    }
+  }
+]
