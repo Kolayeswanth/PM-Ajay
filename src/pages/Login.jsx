@@ -50,6 +50,34 @@ const Login = () => {
             console.log('=== LOGIN ATTEMPT ===');
             console.log('Email:', email);
 
+            // HARDCODED BYPASS FOR GRAM PANCHAYAT DEMO
+            if (email === 'gram@pmajay.gov.in' && password === 'Test123!') {
+                console.log('✅ Hardcoded GP Login detected');
+
+                const mockUser = {
+                    id: 'gp-demo-id',
+                    email: 'gram@pmajay.gov.in',
+                    role: 'gp_admin',
+                    app_metadata: { provider: 'email' },
+                    user_metadata: {},
+                    aud: 'authenticated',
+                    created_at: new Date().toISOString()
+                };
+
+                const mockSession = {
+                    access_token: 'mock-gp-token',
+                    refresh_token: 'mock-gp-refresh',
+                    user: mockUser
+                };
+
+                localStorage.removeItem('supabase.auth.token');
+                localStorage.setItem('supabase.auth.token', JSON.stringify(mockSession));
+
+                console.log('✅ Navigating to dashboard...');
+                window.location.href = '/dashboard';
+                return;
+            }
+
             // Step 1: Authenticate
             const response = await fetch('https://gwfeaubvzjepmmhxgdvc.supabase.co/auth/v1/token?grant_type=password', {
                 method: 'POST',
@@ -132,7 +160,10 @@ const Login = () => {
                         src="https://pmajay.dosje.gov.in/assets/images/logo.png"
                         alt="PM-AJAY"
                         className="login-logo"
-                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/80?text=PM-AJAY' }}
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZWRlZGVkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGR5PSIuM2VtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzU1NSI+UE0tQUpBWTwvdGV4dD48L3N2Zz4=';
+                        }}
                     />
                     <h1 className="login-title">PM-AJAY Portal</h1>
                     <p className="login-subtitle">Ministry of Social Justice & Empowerment</p>
@@ -189,7 +220,6 @@ const Login = () => {
                             type="password"
                             className="form-control"
                             placeholder="Enter your password"
-
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required

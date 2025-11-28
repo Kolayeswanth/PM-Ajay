@@ -1,0 +1,138 @@
+.components-section {
+    padding-top: 40px;
+    padding-bottom: 40px;
+    background-color: #f8f9fa;
+}
+
+.section-heading {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.section-heading::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background-color: #0066cc;
+    margin: 10px auto 0;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.component-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.component-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover effect: Icon border turns blue */
+.component-card:hover .card-icon {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 1px #0066cc;
+}
+
+/* Icon styling: Circular with gray border */
+.card-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 2px solid #cccccc;
+    margin: 0 auto 25px;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+/* Title styling: Gap increased to 35px */
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 35px;
+    line-height: 1.4;
+    min-height: 3.5rem;
+}
+
+.card-content {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    flex-grow: 1;
+    text-align: justify;
+}
+
+.card-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+}
+
+/* Reduced margin for list items as requested */
+.card-list li {
+    margin-bottom: 4px;
+    padding-left: 0;
+}
+
+.card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #0066cc;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: auto;
+    align-self: flex-start;
+    transition: color 0.2s ease;
+}
+
+.card-link:hover {
+    color: #004499;
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .components-section {
+        padding-top: 30px;
+        padding-bottom: 30px;
+    }
+
+    .section-heading {
+        font-size: 1.75rem;
+        margin-bottom: 30px;
+    }
+}

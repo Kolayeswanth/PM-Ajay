@@ -1,61 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
-
-const STORAGE_KEY_RELEASED = 'pmajay_state_released_funds_v1';
-
-// List of major districts in Maharashtra
-const MAHARASHTRA_DISTRICTS = [
-    "Ahmednagar", "Akola", "Amravati", "Aurangabad", "Beed", "Bhandara", "Buldhana", "Chandrapur",
-    "Dhule", "Gadchiroli", "Gondia", "Hingoli", "Jalgaon", "Jalna", "Kolhapur", "Latur",
-    "Mumbai City", "Mumbai Suburban", "Nagpur", "Nanded", "Nandurbar", "Nashik", "Osmanabad", "Palghar",
-    "Parbhani", "Pune", "Raigad", "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur",
-    "Thane", "Wardha", "Washim", "Yavatmal"
-];
+import { useAuth } from '../../../contexts/AuthContext';
 
 const FundRelease = ({ formatCurrency }) => {
+    const { user } = useAuth();
     const [releasedFunds, setReleasedFunds] = useState([]);
+    const [districts, setDistricts] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [toast, setToast] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const [formData, setFormData] = useState({
-        districtName: '',
+        districtId: '',
         component: [],
         amount: '',
         date: new Date().toISOString().slice(0, 10),
         remarks: '',
         officerId: '',
-        releasedBy: 'State Admin', // Hardcoded for now
     });
 
     const [errors, setErrors] = useState({});
 
-    // Load data on mount
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+
+    // Fetch Data on Mount
     useEffect(() => {
-        try {
-            const rawReleased = localStorage.getItem(STORAGE_KEY_RELEASED);
-            if (rawReleased) {
-                setReleasedFunds(JSON.parse(rawReleased));
-            } else {
-                // Initialize with sample data
-                setReleasedFunds([
-                    { id: 1, districtName: 'Pune', component: ['Adarsh Gram'], amountInRupees: 680000000, amountCr: 68, date: '2025-01-15', officerId: 'OFF001', remarks: 'Initial release' },
-                    { id: 2, districtName: 'Mumbai City', component: ['GIA'], amountInRupees: 920000000, amountCr: 92, date: '2025-02-01', officerId: 'OFF002', remarks: 'Q1 release' },
-                ]);
-            }
-        } catch (e) {
-            console.error("Error loading data", e);
-            setReleasedFunds([]);
-        }
+        fetchDistricts();
+        fetchReleasedFunds();
     }, []);
 
-    // Persist releasedFunds whenever it changes
-    useEffect(() => {
+    const fetchDistricts = async () => {
         try {
-            localStorage.setItem(STORAGE_KEY_RELEASED, JSON.stringify(releasedFunds));
-        } catch (e) {
-            console.error("Error saving released funds", e);
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/districts?select=id,name&order=name.asc`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setDistricts(data);
+            }
+        } catch (error) {
+            console.error('Error fetching districts:', error);
         }
-    }, [releasedFunds]);
+    };
+
+    const fetchReleasedFunds = async () => {
+        setLoading(true);
+        try {
+            // Fetch releases and join with districts to get the name
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/fund_releases?select=*,districts(name)&order=created_at.desc`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                // Transform data to match UI structure
+                const formattedData = data.map(item => ({
+                    id: item.id,
+                    districtName: item.districts?.name || 'Unknown District',
+                    component: item.component,
+                    amountInRupees: item.amount_rupees,
+                    amountCr: item.amount_cr,
+                    date: item.release_date,
+                    officerId: item.officer_id,
+                    remarks: item.remarks
+                }));
+                setReleasedFunds(formattedData);
+            }
+        } catch (error) {
+            console.error('Error fetching funds:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -64,13 +87,12 @@ const FundRelease = ({ formatCurrency }) => {
 
     const openModal = () => {
         setFormData({
-            districtName: '',
+            districtId: '',
             component: [],
             amount: '',
             date: new Date().toISOString().slice(0, 10),
             remarks: '',
             officerId: '',
-            releasedBy: 'State Admin',
         });
         setErrors({});
         setIsModalOpen(true);
@@ -91,7 +113,7 @@ const FundRelease = ({ formatCurrency }) => {
 
     const validate = () => {
         const errs = {};
-        if (!formData.districtName) errs.districtName = 'Select a district.';
+        if (!formData.districtId) errs.districtId = 'Select a district.';
         if (formData.component.length === 0) errs.component = 'Select at least one component.';
 
         const amountCr = parseFloat(formData.amount);
@@ -104,24 +126,47 @@ const FundRelease = ({ formatCurrency }) => {
         return Object.keys(errs).length === 0;
     };
 
-    const handleReleaseSubmit = () => {
+    const handleReleaseSubmit = async () => {
         if (!validate()) return;
 
         const amountCr = parseFloat(formData.amount);
         const amountInRupees = Math.round(amountCr * 10000000);
 
-        // Add to Released Funds Log
-        const newRelease = {
-            id: Date.now(),
-            ...formData,
-            amountInRupees,
-            amountCr,
-            timestamp: new Date().toISOString()
-        };
-        setReleasedFunds([newRelease, ...releasedFunds]);
+        try {
+            const payload = {
+                district_id: formData.districtId,
+                component: formData.component,
+                amount_rupees: amountInRupees,
+                amount_cr: amountCr,
+                release_date: formData.date,
+                officer_id: formData.officerId,
+                remarks: formData.remarks,
+                created_by: user?.id
+            };
 
-        showToast(`Successfully released ${amountCr} Cr to ${formData.districtName}`);
-        closeModal();
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/fund_releases`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                showToast(`Successfully released ${amountCr} Cr`);
+                fetchReleasedFunds(); // Refresh the list
+                closeModal();
+            } else {
+                const errorData = await response.json();
+                showToast(`Error: ${errorData.message || 'Failed to release funds'}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error saving fund release:', error);
+            showToast('Network error occurred', 'error');
+        }
     };
 
     return (
@@ -162,7 +207,11 @@ const FundRelease = ({ formatCurrency }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {releasedFunds.length > 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                            </tr>
+                        ) : releasedFunds.length > 0 ? (
                             releasedFunds.map((item) => (
                                 <tr key={item.id}>
                                     <td style={{ fontWeight: 600 }}>{item.districtName}</td>
@@ -209,15 +258,15 @@ const FundRelease = ({ formatCurrency }) => {
                         <label className="form-label">District Name</label>
                         <select
                             className="form-control"
-                            value={formData.districtName}
-                            onChange={(e) => setFormData({ ...formData, districtName: e.target.value })}
+                            value={formData.districtId}
+                            onChange={(e) => setFormData({ ...formData, districtId: e.target.value })}
                         >
                             <option value="">-- select district --</option>
-                            {MAHARASHTRA_DISTRICTS.map((d) => (
-                                <option key={d} value={d}>{d}</option>
+                            {districts.map((d) => (
+                                <option key={d.id} value={d.id}>{d.name}</option>
                             ))}
                         </select>
-                        {errors.districtName && <div className="form-error">{errors.districtName}</div>}
+                        {errors.districtId && <div className="form-error">{errors.districtId}</div>}
                     </div>
 
                     <div className="form-group">

@@ -1,0 +1,252 @@
+/* Overall Section */
+.monitorable-indicators {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+}
+
+.mi-header {
+    background-color: #f0f2f5;
+    padding: 40px 0 20px;
+    text-align: center;
+}
+
+.mi-header h2 {
+    font-size: 2rem;
+    color: #333;
+    font-weight: 700;
+    margin: 0;
+    font-style: italic;
+}
+
+/* Top Section - Gauges */
+.mi-top-section {
+    background-color: #f0f2f5;
+    padding-bottom: 50px;
+}
+
+.gauges-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.gauge-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 220px;
+}
+
+.gauge-wrapper {
+    position: relative;
+    width: 180px;
+    height: 100px;
+    margin-bottom: 25px;
+    /* Increased space for numbers below */
+}
+
+.gauge-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.gauge-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.gauge-achievement {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #5cb85c;
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.gauge-start {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #000;
+    position: absolute;
+    bottom: -25px;
+    left: 18px;
+    /* Aligned with arc start */
+    transform: translateX(-50%);
+}
+
+.gauge-target {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0000ff;
+    position: absolute;
+    bottom: -25px;
+    right: 18px;
+    /* Aligned with arc end */
+    transform: translateX(50%);
+}
+
+.gauge-caption {
+    font-size: 0.9rem;
+    color: #777;
+    font-style: italic;
+    line-height: 1.4;
+    max-width: 90%;
+}
+
+.mi-legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-dot.green {
+    background-color: #5cb85c;
+}
+
+.legend-dot.blue {
+    background-color: #0000ff;
+}
+
+
+/* Bottom Section - Indicators */
+.mi-bottom-section {
+    background-color: #eef2ff;
+    padding: 50px 0;
+    border-top: 1px solid #e0e0e0;
+}
+
+.indicators-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.indicator-card {
+    background: white;
+    border-radius: 6px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
+}
+
+.indicator-title {
+    font-size: 0.85rem;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 15px;
+    line-height: 1.3;
+}
+
+.indicator-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.indicator-target {
+    color: #555;
+}
+
+.indicator-progress-bg {
+    width: 100%;
+    height: 8px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.indicator-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease-out;
+}
+
+.mi-legend-bottom {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.color-samples {
+    display: inline-flex;
+    gap: 3px;
+    margin: 0 5px;
+}
+
+.sample {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+}
+
+.sample.red {
+    background-color: #d9534f;
+}
+
+.sample.yellow {
+    background-color: #f0ad4e;
+}
+
+.sample.blue {
+    background-color: #428bca;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+
+    .gauges-grid,
+    .indicators-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+
+    .gauges-grid,
+    .indicators-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mi-header h2 {
+        font-size: 1.5rem;
+    }
+}
