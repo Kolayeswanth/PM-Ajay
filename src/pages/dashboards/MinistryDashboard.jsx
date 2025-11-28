@@ -15,6 +15,7 @@ import HelpSupport from './ministry/HelpSupport';
 
 const MinistryDashboard = () => {
     const [selectedState, setSelectedState] = useState(null);
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [activeTab, setActiveTab] = useState('dashboard');
     const navigate = useNavigate();
     const { logout } = useAuth();
@@ -23,6 +24,7 @@ const MinistryDashboard = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
@@ -37,6 +39,7 @@ const MinistryDashboard = () => {
         { icon: '🚪', label: 'Logout', action: () => { logout(); navigate('/login'); } }
     ];
 
+
     const formatCurrency = (amount) => {
         return `₹${(amount / 10000000).toFixed(2)} Cr`;
     };
@@ -44,7 +47,15 @@ const MinistryDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <DashboardPanel setSelectedState={setSelectedState} formatCurrency={formatCurrency} />;
+                return (
+                    <DashboardPanel
+                        selectedState={selectedState}
+                        setSelectedState={setSelectedState}
+                        selectedDistrict={selectedDistrict}
+                        setSelectedDistrict={setSelectedDistrict}
+                        formatCurrency={formatCurrency}
+                    />
+                );
             case 'admins':
                 return <ManageStateAdmins />;
             case 'funds':
@@ -62,7 +73,15 @@ const MinistryDashboard = () => {
             case 'help':
                 return <HelpSupport />;
             default:
-                return <DashboardPanel setSelectedState={setSelectedState} formatCurrency={formatCurrency} />;
+                return (
+                    <DashboardPanel
+                        selectedState={selectedState}
+                        setSelectedState={setSelectedState}
+                        selectedDistrict={selectedDistrict}
+                        setSelectedDistrict={setSelectedDistrict}
+                        formatCurrency={formatCurrency}
+                    />
+                );
         }
     };
 

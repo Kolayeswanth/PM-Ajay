@@ -1,6 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
+=======
+import React, { useState } from 'react';
 import StatCard from '../../../components/StatCard';
+import DistrictMap from '../../../components/maps/DistrictMap';
+import CityMap from '../../../components/maps/CityMap';
 import { stateStats } from '../../../data/mockData';
+
 import IndiaMap from '../../../components/maps/IndiaMap';
 
 const StateDashboardPanel = ({ formatCurrency, stateName }) => {
@@ -53,6 +59,25 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     }, [stateName]);
 
     const stats = stateStats.Maharashtra; // Keep other stats mock for now
+=======
+
+const StateDashboardPanel = ({ formatCurrency, stateName = 'Maharashtra' }) => {
+    const stats = stateStats[stateName] || stateStats.Maharashtra;
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
+
+    // Don't render map until we have a valid state name
+    const isValidState = stateName && stateName !== 'Loading...' && stateName !== 'State';
+    const displayStateName = isValidState ? stateName : 'Maharashtra';
+
+    const handleDistrictSelect = (districtName) => {
+        setSelectedDistrict(districtName);
+        console.log('Selected district:', districtName);
+    };
+
+    const handleBack = () => {
+        setSelectedDistrict(null);
+    };
+
 
     return (
         <div className="dashboard-panel">
@@ -84,12 +109,30 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                 />
             </div>
 
-            {/* GIS Map Placeholder */}
             <div className="dashboard-section">
                 <div className="section-header">
-                    <h2 className="section-title">District-wise Progress Map</h2>
+                    <h2 className="section-title">
+                        {selectedDistrict
+                            ? `${selectedDistrict} District Overview`
+                            : `${displayStateName} District-wise Progress Map`
+                        }
+                    </h2>
+                    {selectedDistrict && (
+                        <button
+                            className="btn btn-outline btn-sm"
+                            onClick={handleBack}
+                        >
+                            ← Back to State View
+                        </button>
+                    )}
                 </div>
-                <IndiaMap />
+                <div style={{ height: '800px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                    {selectedDistrict ? (
+                        <CityMap district={selectedDistrict} state={displayStateName} />
+                    ) : (
+                        <DistrictMap state={displayStateName} onDistrictSelect={handleDistrictSelect} />
+                    )}
+                </div>
             </div>
 
             {/* District-wise Status */}
