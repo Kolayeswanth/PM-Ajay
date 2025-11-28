@@ -33,15 +33,19 @@ const FundReleased = ({ formatCurrency }) => {
 
     const fetchStates = async () => {
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/states?select=id,name&order=name.asc`, {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
-                }
-            });
+            // Fetch fund allocations which includes state details and amounts
+            const response = await fetch('http://localhost:5001/api/funds');
             if (response.ok) {
                 const data = await response.json();
-                setStates(data);
+                // Map to format needed for dropdown, but keep allocation info
+                const formattedStates = data.map(item => ({
+                    id: item.name, // Using name as ID since fund_allocations uses state_name
+                    name: item.name,
+                    allocated: item.fundAllocated || 0,
+                    released: item.amountReleased || 0,
+                    available: (item.fundAllocated || 0) - (item.amountReleased || 0)
+                }));
+                setStates(formattedStates);
             }
         } catch (error) {
             console.error('Error fetching states:', error);
@@ -119,6 +123,15 @@ const FundReleased = ({ formatCurrency }) => {
         const amountCr = parseFloat(formData.amount);
         if (isNaN(amountCr) || amountCr <= 0) errs.amount = 'Enter a valid amount (> 0).';
 
+        // Check available balance
+        const selectedState = states.find(s => s.name === formData.stateId);
+        if (selectedState) {
+            const availableCr = selectedState.available / 10000000;
+            if (amountCr > availableCr) {
+                errs.amount = `Amount exceeds available balance (₹${availableCr.toFixed(2)} Cr).`;
+            }
+        }
+
         if (!formData.date) errs.date = 'Select a release date.';
         if (!formData.officerId.trim()) errs.officerId = 'Enter Officer ID / Sanction Order No.';
 
@@ -129,54 +142,47 @@ const FundReleased = ({ formatCurrency }) => {
     const handleReleaseSubmit = async () => {
         if (!validate()) return;
 
-        const amountCr = parseFloat(formData.amount);
-        const amountInRupees = Math.round(amountCr * 10000000);
-
         try {
             const payload = {
-                state_id: formData.stateId,
+                stateName: formData.stateId, // formData.stateId holds the name
+                amount: formData.amount,
                 component: formData.component,
-                amount_rupees: amountInRupees,
-                amount_cr: amountCr,
-                release_date: formData.date,
-                sanction_order_no: formData.officerId,
-                remarks: formData.remarks,
-                created_by: user?.id
+                date: formData.date,
+                officerId: formData.officerId,
+                remarks: formData.remarks
             };
 
-            console.log('=== SAVING FUND RELEASE ===');
+            console.log('=== RELEASING FUND VIA BACKEND ===');
             console.log('Payload:', payload);
-            console.log('URL:', `${SUPABASE_URL}/rest/v1/state_fund_releases`);
 
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases`, {
+            const response = await fetch('http://localhost:5001/api/funds/release', {
                 method: 'POST',
                 headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`,
                     'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
                 },
                 body: JSON.stringify(payload)
             });
 
-            console.log('Response status:', response.status);
-            const responseData = await response.json();
-            console.log('Response data:', responseData);
+            const result = await response.json();
 
-            if (response.ok) {
-                console.log('✅ Successfully saved to database!');
-                showToast(`Successfully released ${amountCr} Cr`);
-                fetchReleasedFunds();
+            if (result.success) {
+                console.log('✅ Successfully released!');
+                showToast(`Successfully released ${formData.amount} Cr`);
+                fetchReleasedFunds(); // Refresh the log
+                fetchStates(); // Refresh the allocations/balances
                 closeModal();
             } else {
-                console.error('❌ Failed to save:', responseData);
-                showToast(`Error: ${responseData.message || 'Failed to release funds'}`, 'error');
+                console.error('❌ Failed to release:', result);
+                showToast(`Error: ${result.error || 'Failed to release funds'}`, 'error');
             }
         } catch (error) {
             console.error('❌ Network error:', error);
             showToast('Network error occurred', 'error');
         }
     };
+
+    // Helper to get selected state details
+    const selectedStateData = states.find(s => s.name === formData.stateId);
 
     return (
         <div className="fund-released-page" style={{ padding: 20 }}>
@@ -276,6 +282,25 @@ const FundReleased = ({ formatCurrency }) => {
                             ))}
                         </select>
                         {errors.stateId && <div className="form-error">{errors.stateId}</div>}
+
+                        {selectedStateData && (
+                            <div style={{ marginTop: 8, padding: 10, background: '#f8f9fa', borderRadius: 6, fontSize: 13 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span>Total Allocated:</span>
+                                    <strong>₹{(selectedStateData.allocated / 10000000).toFixed(2)} Cr</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, color: '#2ecc71' }}>
+                                    <span>Already Released:</span>
+                                    <strong>₹{(selectedStateData.released / 10000000).toFixed(2)} Cr</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #ddd', paddingTop: 4 }}>
+                                    <span>Available Balance:</span>
+                                    <strong style={{ color: selectedStateData.available > 0 ? '#0984e3' : '#d63031' }}>
+                                        ₹{(selectedStateData.available / 10000000).toFixed(2)} Cr
+                                    </strong>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-group">
