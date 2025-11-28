@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 import { useAuth } from '../../../contexts/AuthContext';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../../config/supabase';
 
 const FundRelease = ({ formatCurrency }) => {
     const { user } = useAuth();
@@ -21,9 +22,7 @@ const FundRelease = ({ formatCurrency }) => {
 
     const [errors, setErrors] = useState({});
 
-    // Supabase Configuration
-    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+    // Supabase credentials are now imported from config file
 
     // Fetch Data on Mount
     useEffect(() => {
@@ -35,7 +34,7 @@ const FundRelease = ({ formatCurrency }) => {
         try {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/districts?select=id,name&order=name.asc`, {
                 headers: {
-                    'apikey': SUPABASE_KEY,
+                    'apikey': SUPABASE_ANON_KEY,
                     'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
                 }
             });
@@ -54,7 +53,7 @@ const FundRelease = ({ formatCurrency }) => {
             // Fetch releases and join with districts to get the name
             const response = await fetch(`${SUPABASE_URL}/rest/v1/fund_releases?select=*,districts(name)&order=created_at.desc`, {
                 headers: {
-                    'apikey': SUPABASE_KEY,
+                    'apikey': SUPABASE_ANON_KEY,
                     'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
                 }
             });
@@ -147,7 +146,7 @@ const FundRelease = ({ formatCurrency }) => {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/fund_releases`, {
                 method: 'POST',
                 headers: {
-                    'apikey': SUPABASE_KEY,
+                    'apikey': SUPABASE_ANON_KEY,
                     'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`,
                     'Content-Type': 'application/json',
                     'Prefer': 'return=representation'
