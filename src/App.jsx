@@ -3,7 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth, ROLES } from './contexts/AuthContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
+import AdarshGram from './pages/AdarshGram';
 import Login from './pages/Login';
 import DashboardRouter from './pages/dashboards/DashboardRouter';
 import PublicDashboard from './pages/dashboards/PublicDashboard';
@@ -35,13 +37,13 @@ const AppLayout = ({ children }) => {
     const location = useLocation();
     const { user } = useAuth();
 
-    // Hide global header if user is PUBLIC and on dashboard
-    const shouldHideHeader = user?.role === ROLES.PUBLIC && location.pathname === '/dashboard';
+    // Hide global header on dashboard for PUBLIC users and on Adarsh Gram page
+    const shouldHideHeader = (user?.role === ROLES.PUBLIC && location.pathname === '/dashboard');
 
     return (
         <>
             {!shouldHideHeader && <Header />}
-            <main style={{ flex: 1 }}>
+            <main style={{ flex: 1, marginTop: shouldHideHeader ? 0 : 'var(--header-height)' }}>
                 {children}
             </main>
         </>
@@ -52,10 +54,12 @@ function App() {
     return (
         <AuthProvider>
             <Router>
+                <ScrollToTop />
                 <AppLayout>
                     <Routes>
                         {/* Public Routes */}
                         <Route path="/" element={<Home />} />
+                        <Route path="/adarsh-gram" element={<AdarshGram />} />
                         <Route path="/login" element={<Login />} />
 
                         {/* Protected Routes */}
