@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabaseConfig';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -14,10 +15,10 @@ const Login = () => {
     React.useEffect(() => {
         const checkConnection = async () => {
             try {
-                const response = await fetch('https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/', {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
                     method: 'GET',
                     headers: {
-                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                        'apikey': SUPABASE_ANON_KEY
                     }
                 });
                 if (response.ok || response.status === 200 || response.status === 404) {
@@ -79,11 +80,11 @@ const Login = () => {
             }
 
             // Step 1: Authenticate
-            const response = await fetch('https://gwfeaubvzjepmmhxgdvc.supabase.co/auth/v1/token?grant_type=password', {
+            const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                    'apikey': SUPABASE_ANON_KEY
                 },
                 body: JSON.stringify({ email, password })
             });
@@ -100,10 +101,10 @@ const Login = () => {
             let userRole = null;
 
             try {
-                const profileResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${data.user.id}&select=*`, {
+                const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${data.user.id}&select=*`, {
                     method: 'GET',
                     headers: {
-                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE',
+                        'apikey': SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${data.access_token}`,
                         'Content-Type': 'application/json'
                     }
