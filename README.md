@@ -115,19 +115,19 @@ Test with these credentials:
 **Centre Admin:**
 ```
 Email: centre@pmajay.gov.in
-Password: Centre@2024!Secure
+Password: [REDACTED]
 ```
 
 **State Admin (Maharashtra):**
 ```
 Email: mh.admin@pmajay.gov.in
-Password: MH@State2024!
+Password: [REDACTED]
 ```
 
 **District Admin (Mumbai):**
 ```
 Email: mh-mc.district@pmajay.gov.in
-Password: MH-MC@Dist2024!
+Password: [REDACTED]
 ```
 
 ---
@@ -171,17 +171,17 @@ PM-Ajay/
 
 ### Centre Admin
 - **Email:** `centre@pmajay.gov.in`
-- **Password:** `Centre@2024!Secure`
+- **Password:** `[REDACTED]`
 
 ### State Admins
 - **Email:** `{state_code}.admin@pmajay.gov.in`
-- **Password:** `{STATE_CODE}@State2024!`
-- **Example:** `mh.admin@pmajay.gov.in` / `MH@State2024!`
+- **Password:** `[REDACTED]`
+- **Example:** `mh.admin@pmajay.gov.in` / `[REDACTED]`
 
 ### District Admins
 - **Email:** `{district_code}.district@pmajay.gov.in`
-- **Password:** `{DISTRICT_CODE}@Dist2024!`
-- **Example:** `mh-mc.district@pmajay.gov.in` / `MH-MC@Dist2024!`
+- **Password:** `[REDACTED]`
+- **Example:** `mh-mc.district@pmajay.gov.in` / `[REDACTED]`
 
 📖 **See `CREDENTIALS_REFERENCE.md` for complete list**
 
