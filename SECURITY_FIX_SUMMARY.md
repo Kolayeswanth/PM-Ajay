@@ -38,23 +38,10 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../../lib/supabaseConfig';
 ```
 
 **Step 2:** Remove any lines like:
-```javascript
-const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
-const SUPABASE_KEY = 'eyJhbGci...';
-```
-
-**Step 3:** Replace all instances of:
-- `'https://gwfeaubvzjepmmhxgdvc.supabase.co'` → `SUPABASE_URL`
-- `'eyJhbGci...'` → `SUPABASE_ANON_KEY`
-- `SUPABASE_KEY` → `SUPABASE_ANON_KEY`
-
-## 📋 Next Steps
-
-### 1. **Update Your .env File**
 Make sure your `.env` file contains:
 ```env
-VITE_SUPABASE_URL=https://gwfeaubvzjepmmhxgdvc.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### 2. **Revoke Exposed Secrets (CRITICAL!)**
