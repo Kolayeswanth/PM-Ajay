@@ -142,7 +142,8 @@ exports.sendReleaseNotification = async (req, res) => {
             component,
             date,
             officerId,
-            remarks
+            remarks,
+            remainingBalance
         } = req.body;
 
         // Validate required fields
@@ -185,6 +186,7 @@ exports.sendReleaseNotification = async (req, res) => {
             `Funds have been released for your state. ` +
             `State: ${stateName}. ` +
             `Amount Released: Rs ${amount} Crore. ` +
+            `Remaining Balance: Rs ${remainingBalance || 'N/A'} Crore. ` +
             `Scheme Component: ${Array.isArray(component) ? component.join(', ') : component || 'N/A'}. ` +
             `Release Date: ${date || new Date().toISOString().slice(0, 10)}. ` +
             `Released By Officer ID: ${officerId || 'Ministry Admin'}. ` +
@@ -204,12 +206,19 @@ exports.sendReleaseNotification = async (req, res) => {
             parameters: templateParams
         };
 
+        console.log('📱 Sending Fund Release WhatsApp notification...');
+        console.log('📞 Phone:', formattedPhone);
+        console.log('💰 Amount Released:', amount, 'Cr');
+        console.log('💵 Remaining Balance:', remainingBalance, 'Cr');
+
         const response = await axios.post(endpoint, payload, {
             headers: {
                 'Authorization': `Bearer ${watiApiKey}`,
                 'Content-Type': 'application/json'
             }
         });
+
+        console.log('✅ WhatsApp notification sent successfully!');
 
         return res.status(200).json({
             success: true,

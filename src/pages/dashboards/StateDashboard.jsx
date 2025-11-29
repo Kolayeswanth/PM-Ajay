@@ -27,9 +27,12 @@ const StateDashboard = () => {
             if (user?.id) {
                 console.log('Fetching state name for user:', user.email);
                 try {
-                    const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
+                    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+                    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
                         headers: {
-                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                            'apikey': SUPABASE_ANON_KEY
                         }
                     });
                     const data = await response.json();
@@ -45,9 +48,9 @@ const StateDashboard = () => {
                         setStateName(name);
 
                         // Fetch State ID and Code
-                        const stateRes = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/states?name=eq.${name}&select=id,code`, {
+                        const stateRes = await fetch(`${SUPABASE_URL}/rest/v1/states?name=eq.${name}&select=id,code`, {
                             headers: {
-                                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                                'apikey': SUPABASE_ANON_KEY
                             }
                         });
                         const stateData = await stateRes.json();
