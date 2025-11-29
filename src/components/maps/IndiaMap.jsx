@@ -123,25 +123,7 @@ const IndiaMap = ({ onStateSelect }) => {
       container.appendChild(noData);
     }
 
-    const button = document.createElement('button');
-    button.textContent = 'View Districts →';
-    button.style.marginTop = '12px';
-    button.style.width = '100%';
-    button.style.backgroundColor = 'var(--color-primary)';
-    button.style.color = 'white';
-    button.style.border = 'none';
-    button.style.padding = '8px 12px';
-    button.style.borderRadius = '4px';
-    button.style.cursor = 'pointer';
-    button.style.fontSize = '12px';
-    button.style.fontWeight = '500';
-
-    button.onclick = (e) => {
-      e.stopPropagation();
-      handleViewDistricts(stateName);
-    };
-
-    container.appendChild(button);
+    // Removed "View Districts" button
     layer.bindPopup(container);
 
     // Add Label using Tooltip
@@ -157,7 +139,7 @@ const IndiaMap = ({ onStateSelect }) => {
 
   return (
     <>
-      <div className="map-container">
+      <div className="map-container" style={{ height: '100%', width: '100%' }}>
         <MapContainer
           center={[22.5, 78.9]}
           zoom={5}
@@ -168,6 +150,8 @@ const IndiaMap = ({ onStateSelect }) => {
           touchZoom={false}
           zoomControl={false}
           keyboard={false}
+          minZoom={5}
+          maxZoom={5}
         >
           <GeoJSON
             data={indiaGeoJSON}
