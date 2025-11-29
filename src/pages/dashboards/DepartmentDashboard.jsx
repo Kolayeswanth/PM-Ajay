@@ -9,6 +9,7 @@ import DPRUpload from './department/DPRUpload';
 import DepartmentReports from './department/DepartmentReports';
 import DepartmentNotifications from './department/DepartmentNotifications';
 import DepartmentHelp from './department/DepartmentHelp';
+import ManageExecutingAgencies from './department/ManageExecutingAgencies';
 import { mockProjects } from '../../data/mockData';
 
 const DepartmentDashboard = () => {
@@ -109,6 +110,8 @@ const DepartmentDashboard = () => {
                     projects={projects}
                     onNavigate={handleTabChange}
                 />;
+            case 'executing-agencies':
+                return <ManageExecutingAgencies />;
             case 'work-orders':
                 return <WorkOrders
                     orders={workOrders}
@@ -134,6 +137,8 @@ const DepartmentDashboard = () => {
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'executing-agencies': 'Manage Executing Agencies',
+            'work-orders': 'Work Orders',
             'work-orders': 'Work Progress',
             'dpr-upload': 'DPR Upload',
             'reports': 'Reports',

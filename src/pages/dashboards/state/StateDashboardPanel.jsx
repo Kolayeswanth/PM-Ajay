@@ -3,7 +3,6 @@ import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
 import { stateStats } from '../../../data/mockData';
-
 const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     const [totalFundReleased, setTotalFundReleased] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -58,6 +57,9 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     const isValidState = stateName && stateName !== 'Loading...' && stateName !== 'State';
     const displayStateName = isValidState ? stateName : 'Maharashtra';
     const stats = stateStats[displayStateName] || stateStats.Maharashtra;
+
+    // Fallback stats if state not found in mock data
+    const stats = stateStats[displayStateName] || stateStats.Maharashtra || { districts: 0, projectsProposed: 0 };
 
     const handleDistrictSelect = (districtName) => {
         setSelectedDistrict(districtName);
