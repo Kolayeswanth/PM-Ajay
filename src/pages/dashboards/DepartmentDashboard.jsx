@@ -9,6 +9,7 @@ import DPRUpload from './department/DPRUpload';
 import DepartmentReports from './department/DepartmentReports';
 import DepartmentNotifications from './department/DepartmentNotifications';
 import DepartmentHelp from './department/DepartmentHelp';
+import ManageExecutingAgencies from './department/ManageExecutingAgencies';
 import { mockProjects } from '../../data/mockData';
 
 const DepartmentDashboard = () => {
@@ -27,12 +28,23 @@ const DepartmentDashboard = () => {
         mockProjects.filter(p => p.component === 'Infrastructure' || p.component === 'Adarsh Gram')
     );
 
-    // Work Orders (Initialize with sample data from WorkOrders.jsx)
-    const [workOrders, setWorkOrders] = useState([
-        { id: 101, title: 'Construction of Community Hall', location: 'Shirur GP', contractor: 'M/s Patil Constructions', amount: '0.45 Cr', date: '2025-11-10', status: 'In Progress', deadline: '2026-05-10' },
-        { id: 102, title: 'Road Upgradation (Phase 1)', location: 'Khed GP', contractor: 'M/s Deshmukh Infra', amount: '0.75 Cr', date: '2025-11-15', status: 'Not Started', deadline: '2026-04-15' },
-        { id: 103, title: 'Solar Street Light Installation', location: 'Baramati GP', contractor: 'SolarTech Solutions', amount: '0.25 Cr', date: '2025-11-05', status: 'Completed', deadline: '2025-12-05' },
-    ]);
+    // Work Orders (Initialize with data from WorkService)
+    const [workOrders, setWorkOrders] = useState([]);
+
+    const loadWorkOrders = () => {
+        import('../../services/WorkService').then(({ WorkService }) => {
+            WorkService.getAllWorks().then(data => {
+                setWorkOrders(data);
+            });
+        });
+    };
+
+    useEffect(() => {
+        loadWorkOrders();
+        // Add event listener for storage changes to sync across tabs/windows
+        window.addEventListener('storage', loadWorkOrders);
+        return () => window.removeEventListener('storage', loadWorkOrders);
+    }, []);
 
     // DPRs (Initialize with sample data from DPRUpload.jsx)
     const [dprs, setDprs] = useState([
@@ -47,7 +59,17 @@ const DepartmentDashboard = () => {
     };
 
     const handleUpdateWorkOrder = (updatedOrder) => {
-        setWorkOrders(workOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+        import('../../services/WorkService').then(({ WorkService }) => {
+            // Department updates status, not progress details, so pass empty officer details or handle differently
+            // For now, we just update the status which is part of updatedOrder
+            WorkService.updateWork(updatedOrder, {}).then(newWorks => {
+                setWorkOrders(newWorks);
+            });
+        });
+    };
+
+    const handleViewProgress = (updatedWorks) => {
+        setWorkOrders(updatedWorks);
     };
 
     const handleTabChange = (tab) => {
@@ -66,7 +88,7 @@ const DepartmentDashboard = () => {
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
-        { icon: '📋', label: 'Work Orders', action: () => setActiveTab('work-orders'), active: activeTab === 'work-orders' },
+        { icon: '📋', label: 'Work Progress', action: () => setActiveTab('work-orders'), active: activeTab === 'work-orders' },
         { icon: '📤', label: 'DPR Upload', action: () => setActiveTab('dpr-upload'), active: activeTab === 'dpr-upload' },
         { icon: '📊', label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
         { icon: '🔔', label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
@@ -88,10 +110,13 @@ const DepartmentDashboard = () => {
                     projects={projects}
                     onNavigate={handleTabChange}
                 />;
+            case 'executing-agencies':
+                return <ManageExecutingAgencies />;
             case 'work-orders':
                 return <WorkOrders
                     orders={workOrders}
                     onUpdateOrder={handleUpdateWorkOrder}
+                    onViewProgress={handleViewProgress}
                 />;
             case 'dpr-upload':
                 return <DPRUpload
@@ -112,7 +137,9 @@ const DepartmentDashboard = () => {
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'executing-agencies': 'Manage Executing Agencies',
             'work-orders': 'Work Orders',
+            'work-orders': 'Work Progress',
             'dpr-upload': 'DPR Upload',
             'reports': 'Reports',
             'notifications': 'Notifications',

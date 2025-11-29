@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 import { useAuth } from '../../../contexts/AuthContext';
 
-const FundRelease = ({ formatCurrency }) => {
+const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     const { user } = useAuth();
     const [releasedFunds, setReleasedFunds] = useState([]);
     const [districts, setDistricts] = useState([]);
+    const [totalReceived, setTotalReceived] = useState(0);
+    const [totalReleased, setTotalReleased] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [toast, setToast] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -29,11 +31,12 @@ const FundRelease = ({ formatCurrency }) => {
     useEffect(() => {
         fetchDistricts();
         fetchReleasedFunds();
-    }, []);
+    }, [stateCode]);
 
     const fetchDistricts = async () => {
+        if (!stateCode) return;
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/districts?select=id,name&order=name.asc`, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/districts?state_code=eq.${stateCode}&select=id,name&order=name.asc`, {
                 headers: {
                     'apikey': SUPABASE_KEY,
                     'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
@@ -72,6 +75,10 @@ const FundRelease = ({ formatCurrency }) => {
                     remarks: item.remarks
                 }));
                 setReleasedFunds(formattedData);
+
+                // Calculate total released
+                const total = formattedData.reduce((sum, item) => sum + (item.amountCr || 0), 0);
+                setTotalReleased(total);
             }
         } catch (error) {
             console.error('Error fetching funds:', error);
@@ -79,6 +86,29 @@ const FundRelease = ({ formatCurrency }) => {
             setLoading(false);
         }
     };
+
+    // Fetch Total Funds Received from Ministry
+    useEffect(() => {
+        const fetchReceivedFunds = async () => {
+            if (!stateId) return;
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?state_id=eq.${stateId}&select=amount_cr`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const total = data.reduce((sum, item) => sum + (item.amount_cr || 0), 0);
+                    setTotalReceived(total);
+                }
+            } catch (error) {
+                console.error('Error fetching received funds:', error);
+            }
+        };
+        fetchReceivedFunds();
+    }, [stateId]);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -176,6 +206,26 @@ const FundRelease = ({ formatCurrency }) => {
                 <button className="btn btn-primary" onClick={openModal}>
                     + Release New Funds
                 </button>
+            </div>
+
+            {/* Fund Summary Card */}
+            <div className="card" style={{ padding: 20, marginBottom: 20, backgroundColor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Funds Received (Ministry)</h3>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2c3e50' }}>₹{totalReceived.toFixed(2)} Cr</div>
+                    </div>
+                    <div>
+                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Released (Districts)</h3>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e67e22' }}>₹{totalReleased.toFixed(2)} Cr</div>
+                    </div>
+                    <div>
+                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Available Balance</h3>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#27ae60' }}>
+                            ₹{(totalReceived - totalReleased).toFixed(2)} Cr
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {toast && (
@@ -333,7 +383,7 @@ const FundRelease = ({ formatCurrency }) => {
                     </div>
 
                     <div style={{ fontSize: 13, color: '#555' }}>
-                        <strong>Note:</strong> Funds will be released to the selected district for the specified scheme components.
+                        <strong>Note:</strong> Available balance is ₹{(totalReceived - totalReleased).toFixed(2)} Cr.
                     </div>
                 </div>
             </Modal>

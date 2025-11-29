@@ -56,7 +56,7 @@ const FundReleased = ({ formatCurrency }) => {
         setLoading(true);
         try {
             // Fetch releases and join with states to get the name
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?select=*,states(name)&order=created_at.desc`, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?select=*,states(name,id)&order=created_at.desc`, {
                 headers: {
                     'apikey': SUPABASE_KEY,
                     'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
@@ -68,6 +68,7 @@ const FundReleased = ({ formatCurrency }) => {
                 const formattedData = data.map(item => ({
                     id: item.id,
                     stateName: item.states?.name || 'Unknown State',
+                    stateId: item.states?.id,
                     component: item.component,
                     amountInRupees: item.amount_rupees,
                     amountCr: item.amount_cr,
@@ -216,6 +217,7 @@ const FundReleased = ({ formatCurrency }) => {
                             <th>State/UT</th>
                             <th>Scheme Component</th>
                             <th style={{ textAlign: 'right' }}>Amount Released</th>
+                            <th style={{ textAlign: 'right' }}>Remaining Fund</th>
                             <th>Release Date</th>
                             <th>Officer ID / Sanction No</th>
                             <th>Remarks</th>
@@ -224,26 +226,35 @@ const FundReleased = ({ formatCurrency }) => {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                                <td colSpan={7} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
                             </tr>
                         ) : releasedFunds.length > 0 ? (
-                            releasedFunds.map((item) => (
-                                <tr key={item.id}>
-                                    <td style={{ fontWeight: 600 }}>{item.stateName}</td>
-                                    <td>{item.component.join(', ')}</td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
-                                        {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
-                                    </td>
-                                    <td>{item.date}</td>
-                                    <td>{item.officerId || '-'}</td>
-                                    <td style={{ color: '#666', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.remarks}>
-                                        {item.remarks || '-'}
-                                    </td>
-                                </tr>
-                            ))
+                            releasedFunds.map((item) => {
+                                // Find the state data to get remaining balance
+                                const stateData = states.find(s => s.name === item.stateName);
+                                const remainingCr = stateData ? (stateData.available / 10000000).toFixed(2) : '0.00';
+
+                                return (
+                                    <tr key={item.id}>
+                                        <td style={{ fontWeight: 600 }}>{item.stateName}</td>
+                                        <td>{item.component.join(', ')}</td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
+                                            {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#0984e3' }}>
+                                            ₹{remainingCr} Cr
+                                        </td>
+                                        <td>{item.date}</td>
+                                        <td>{item.officerId || '-'}</td>
+                                        <td style={{ color: '#666', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.remarks}>
+                                            {item.remarks || '-'}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         ) : (
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
                                     No fund release records found.
                                 </td>
                             </tr>
