@@ -56,7 +56,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     // Don't render map until we have a valid state name
     const isValidState = stateName && stateName !== 'Loading...' && stateName !== 'State';
     const displayStateName = isValidState ? stateName : 'Maharashtra';
-    const stats = stateStats[displayStateName] || stateStats.Maharashtra;
+
 
     // Fallback stats if state not found in mock data
     const stats = stateStats[displayStateName] || stateStats.Maharashtra || { districts: 0, projectsProposed: 0 };
