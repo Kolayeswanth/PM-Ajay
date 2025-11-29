@@ -7,10 +7,13 @@ const Footer = () => {
                 <div className="footer-content">
                     <div className="footer-section">
                         <h3>About PM-AJAY</h3>
-                        <p style={{ color: 'var(--color-gray-300)', fontSize: 'var(--text-sm)' }}>
+                        <p style={{ color: '#f1f1f1', fontSize: 'var(--text-sm)' }}>
                             PM-AJAY is a comprehensive scheme for the welfare and empowerment of Scheduled Castes,
                             focusing on Adarsh Gram, Grant-in-Aid, and Hostel components.
                         </p>
+                        <div className="header-logos">
+                            <img src="/logos/logo-amrit.png" alt="PM-AJAY" className="logo-emblem" />
+                        </div>
                     </div>
 
                     <div className="footer-section">
@@ -38,13 +41,13 @@ const Footer = () => {
                     <div className="footer-section">
                         <h3>Contact Information</h3>
                         <ul style={{ listStyle: 'none' }}>
-                            <li style={{ color: 'var(--color-gray-300)', marginBottom: 'var(--space-2)' }}>
+                            <li style={{ color: '#f1f1f1', marginBottom: 'var(--space-2)' }}>
                                 📧 Email: pmajay@mosje.gov.in
                             </li>
-                            <li style={{ color: 'var(--color-gray-300)', marginBottom: 'var(--space-2)' }}>
+                            <li style={{ color: '#f1f1f1', marginBottom: 'var(--space-2)' }}>
                                 📞 Helpline: 1800-XXX-XXXX
                             </li>
-                            <li style={{ color: 'var(--color-gray-300)', marginBottom: 'var(--space-2)' }}>
+                            <li style={{ color: '#f1f1f1', marginBottom: 'var(--space-2)' }}>
                                 📍 Ministry of Social Justice & Empowerment<br />
                                 Shastri Bhawan, New Delhi - 110001
                             </li>
@@ -53,11 +56,12 @@ const Footer = () => {
                 </div>
 
                 <div className="footer-bottom">
-                    <p>
+
+                    <p style={{ color: '#f1f1f1' }}>
                         © 2025 Ministry of Social Justice & Empowerment, Government of India. All Rights Reserved.
                     </p>
-                    <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-xs)' }}>
-                        Last Updated: November 25, 2025 | Visitors: 1,234,567
+                    <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-xs)', color: '#f1f1f1' }}>
+                        Last Updated: november 28, 2025 | Visitors: 1,234,567
                     </p>
                 </div>
             </div>
