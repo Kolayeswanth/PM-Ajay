@@ -129,6 +129,8 @@ const ManageExecutingAgencies = () => {
         setErrors({});
     };
 
+    const [successModal, setSuccessModal] = useState({ show: false, message: '' });
+
     const handleStatusChange = async (agency, newStatus) => {
         setProcessingId(agency.id);
         if (newStatus === 'Active') {
@@ -154,6 +156,33 @@ const ManageExecutingAgencies = () => {
                 if (data) {
                     const savedData = data[0];
                     setAgencies(prev => prev.map(a => a.id === agency.id ? savedData : a));
+
+                    // Send Activation WhatsApp Notification
+                    try {
+                        const response = await fetch('http://localhost:5001/api/notifications/send-activation-email', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                name: agency.name,
+                                phone: agency.phone,
+                                work_assigned: agency.work_assigned,
+                                agency_officer: agency.agency_officer
+                            }),
+                        });
+
+                        if (response.ok) {
+                            setSuccessModal({
+                                show: true,
+                                message: `Agency Activated Successfully! WhatsApp notification sent to ${agency.phone}`
+                            });
+                        } else {
+                            console.error('Failed to send WhatsApp notification');
+                        }
+                    } catch (emailError) {
+                        console.error('Failed to send activation notification:', emailError);
+                    }
                 }
             } catch (error) {
                 console.error('Error activating agency:', error);
@@ -327,6 +356,45 @@ const ManageExecutingAgencies = () => {
                     {errors.work_assigned && <div className="form-error">{errors.work_assigned}</div>}
                 </div>
             </Modal>
+
+            {/* Success Modal */}
+            {successModal.show && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        backgroundColor: 'white',
+                        padding: '30px',
+                        borderRadius: '12px',
+                        maxWidth: '400px',
+                        width: '90%',
+                        textAlign: 'center',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                    }}>
+                        <div style={{ fontSize: '48px', marginBottom: '20px' }}>✅</div>
+                        <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>Success!</h3>
+                        <p style={{ color: '#7f8c8d', marginBottom: '25px', lineHeight: '1.5' }}>
+                            {successModal.message}
+                        </p>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => setSuccessModal({ show: false, message: '' })}
+                            style={{ width: '100%' }}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -139,7 +139,6 @@ const DepartmentDashboard = () => {
         const labels = {
             'dashboard': 'Dashboard',
             'executing-agencies': 'Manage Executing Agencies',
-            'work-orders': 'Work Orders',
             'work-orders': 'Work Progress',
             'dpr-upload': 'DPR Upload',
             'reports': 'Reports',
