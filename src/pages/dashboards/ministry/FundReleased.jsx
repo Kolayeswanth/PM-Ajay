@@ -37,14 +37,17 @@ const FundReleased = ({ formatCurrency }) => {
             const response = await fetch('http://localhost:5001/api/funds');
             if (response.ok) {
                 const data = await response.json();
-                // Map to format needed for dropdown, but keep allocation info
+                console.log('📊 Fetched fund data:', data); // Debug log
+                // Map to format needed for dropdown, but keep allocation info INCLUDING lastAllocation
                 const formattedStates = data.map(item => ({
                     id: item.name, // Using name as ID since fund_allocations uses state_name
                     name: item.name,
                     allocated: item.fundAllocated || 0,
                     released: item.amountReleased || 0,
-                    available: (item.fundAllocated || 0) - (item.amountReleased || 0)
+                    available: (item.fundAllocated || 0) - (item.amountReleased || 0),
+                    lastAllocation: item.lastAllocation || null // Include allocator info
                 }));
+                console.log('📋 Formatted states with allocator info:', formattedStates); // Debug log
                 setStates(formattedStates);
             }
         } catch (error) {
@@ -143,6 +146,9 @@ const FundReleased = ({ formatCurrency }) => {
         if (!validate()) return;
 
         try {
+            // Get selected state data to retrieve allocator info
+            const selectedState = states.find(s => s.name === formData.stateId);
+
             const payload = {
                 stateName: formData.stateId, // formData.stateId holds the name
                 amount: formData.amount,
@@ -167,7 +173,91 @@ const FundReleased = ({ formatCurrency }) => {
 
             if (result.success) {
                 console.log('✅ Successfully released!');
-                showToast(`Successfully released ${formData.amount} Cr`);
+
+                // Calculate remaining balance after this release
+                const releasedAmountInRupees = parseFloat(formData.amount) * 10000000;
+                const newReleasedTotal = (selectedState.released || 0) + releasedAmountInRupees;
+                const remainingBalance = (selectedState.allocated || 0) - newReleasedTotal;
+                const remainingBalanceCr = (remainingBalance / 10000000).toFixed(2);
+
+                // Debug: Log selected state data
+                console.log('🔍 Selected State Data:', selectedState);
+                console.log('🔍 Last Allocation:', selectedState?.lastAllocation);
+                console.log('🔍 Allocator Phone:', selectedState?.lastAllocation?.allocatorPhone);
+
+                // Send WhatsApp notification if allocator phone is available
+                if (selectedState?.lastAllocation?.allocatorPhone) {
+                    console.log('📱 Sending WhatsApp notification to allocator...');
+
+                    const notificationPayload = {
+                        allocatorPhone: selectedState.lastAllocation.allocatorPhone,
+                        allocatorName: selectedState.lastAllocation.allocatorName || 'State Officer',
+                        stateName: formData.stateId,
+                        amount: formData.amount,
+                        component: formData.component,
+                        date: formData.date,
+                        officerId: formData.officerId,
+                        remarks: formData.remarks,
+                        remainingBalance: remainingBalanceCr
+                    };
+
+                    try {
+                        const notificationResponse = await fetch('http://localhost:5001/api/notifications/send-release', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(notificationPayload)
+                        });
+
+                        const notificationResult = await notificationResponse.json();
+
+                        if (notificationResult.success) {
+                            console.log('✅ WhatsApp notification sent successfully!');
+
+                            // Show detailed success popup
+                            const successMessage =
+                                `✅ FUND RELEASED & WHATSAPP NOTIFICATION SENT!\n\n` +
+                                `📊 Fund Release Details:\n` +
+                                `• State: ${formData.stateId}\n` +
+                                `• Amount Released: ₹${formData.amount} Crore\n` +
+                                `• Remaining Balance: ₹${remainingBalanceCr} Crore\n` +
+                                `• Component: ${formData.component.join(', ') || 'N/A'}\n` +
+                                `• Release Date: ${formData.date}\n` +
+                                `• Officer ID: ${formData.officerId}\n\n` +
+                                `📱 WhatsApp Notification Sent To:\n` +
+                                `• Name: ${selectedState.lastAllocation.allocatorName}\n` +
+                                `• Role: ${selectedState.lastAllocation.allocatorRole || 'State Officer'}\n` +
+                                `• Phone: +91${selectedState.lastAllocation.allocatorPhone}\n\n` +
+                                `The allocator has been notified about the fund release!`;
+
+                            alert(successMessage);
+                            showToast(`Successfully released ${formData.amount} Cr & notified allocator`);
+                        } else {
+                            console.warn('⚠️ Fund released but notification failed:', notificationResult.error);
+
+                            // Show error popup
+                            alert(
+                                `⚠️ FUND RELEASED BUT WHATSAPP NOTIFICATION FAILED!\n\n` +
+                                `The fund has been released successfully, but the WhatsApp notification could not be sent.\n\n` +
+                                `Error: ${notificationResult.error || 'Unknown error'}\n\n` +
+                                `Please check:\n` +
+                                `• Backend server is running\n` +
+                                `• WATI API credentials are correct\n` +
+                                `• Phone number is valid`
+                            );
+                            showToast(`Released ${formData.amount} Cr (notification failed)`);
+                        }
+                    } catch (notifError) {
+                        console.error('❌ Notification error:', notifError);
+                        showToast(`Released ${formData.amount} Cr (notification failed)`);
+                    }
+                } else {
+                    console.warn('⚠️ No allocator phone number found for this state');
+                    console.warn('💡 TIP: Go to Fund Allocation page and create an allocation with allocator details first!');
+                    showToast(`Successfully released ${formData.amount} Cr`);
+                }
+
                 fetchReleasedFunds(); // Refresh the log
                 fetchStates(); // Refresh the allocations/balances
                 closeModal();
