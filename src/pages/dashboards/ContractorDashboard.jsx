@@ -19,15 +19,24 @@ const ContractorDashboard = () => {
     }, []);
 
     // --- Lifted State ---
-    const [works, setWorks] = useState([
-        { id: 101, title: 'Construction of Community Hall', location: 'Shirur GP', amount: '₹15,00,000', date: '2025-10-01', deadline: '2026-03-31', status: 'In Progress', progress: 45 },
-        { id: 102, title: 'Road Upgradation (Phase 1)', location: 'Khed GP', amount: '₹25,00,000', date: '2025-11-15', deadline: '2026-05-15', status: 'Not Started', progress: 0 },
-        { id: 103, title: 'Solar Street Light Installation', location: 'Baramati GP', amount: '₹8,00,000', date: '2025-09-01', deadline: '2025-12-01', status: 'Completed', progress: 100 },
-    ]);
+    const [works, setWorks] = useState([]);
+
+    useEffect(() => {
+        // Load initial data
+        import('../../services/WorkService').then(({ WorkService }) => {
+            WorkService.getAllWorks().then(data => {
+                setWorks(data);
+            });
+        });
+    }, []);
 
     // --- Handlers ---
-    const handleUpdateProgress = (updatedWork) => {
-        setWorks(works.map(w => w.id === updatedWork.id ? updatedWork : w));
+    const handleUpdateProgress = (updatedWork, officerDetails) => {
+        return import('../../services/WorkService').then(({ WorkService }) => {
+            return WorkService.updateWork(updatedWork, officerDetails).then(newWorks => {
+                setWorks(newWorks);
+            });
+        });
     };
 
     const handleTabChange = (tab) => {

@@ -57,6 +57,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     const isValidState = stateName && stateName !== 'Loading...' && stateName !== 'State';
     const displayStateName = isValidState ? stateName : 'Maharashtra';
 
+
     // Fallback stats if state not found in mock data
     const stats = stateStats[displayStateName] || stateStats.Maharashtra || { districts: 0, projectsProposed: 0 };
 
@@ -75,7 +76,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
             <div className="kpi-row">
                 <StatCard
                     icon="💰"
-                    value={loading ? "Loading..." : formatCurrency(totalFundReleased)}
+                    value={loading ? "Loading..." : (formatCurrency ? formatCurrency(totalFundReleased) : `₹${totalFundReleased}`)}
                     label="Total Fund Received"
                     color="var(--color-primary)"
                 />
