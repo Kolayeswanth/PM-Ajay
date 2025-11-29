@@ -226,3 +226,121 @@ exports.sendReleaseNotification = async (req, res) => {
         });
     }
 };
+
+/**
+ * Send WhatsApp notification for agency activation
+ */
+exports.sendActivationWhatsApp = async (req, res) => {
+    console.log('🚀 sendActivationWhatsApp called with body:', req.body);
+    try {
+        const {
+            name,
+            phone,
+            work_assigned,
+            agency_officer
+        } = req.body;
+
+        // Validate required fields
+        if (!phone || !name) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: phone, name'
+            });
+        }
+
+        const safeName = name ? name.trim() : '';
+        const safeOfficer = agency_officer ? agency_officer.trim() : 'N/A';
+        const safeWork = work_assigned ? work_assigned.trim() : 'N/A';
+
+        // Format phone number robustly
+        let cleaned = phone.replace(/\D/g, ''); // Remove non-digits
+
+        // Handle leading '0' if present (e.g. 09876543210)
+        if (cleaned.startsWith('0')) {
+            cleaned = cleaned.substring(1);
+        }
+
+        // Handle '91' prefix if present (e.g. 919876543210)
+        // Be careful: a valid number could start with 91 (e.g. 91XXXXXX)
+        // Best guess: if length is 12 and starts with 91, assume it includes country code
+        if (cleaned.length === 12 && cleaned.startsWith('91')) {
+            cleaned = cleaned.substring(2);
+        }
+
+        // Now we expect a 10-digit number
+        if (cleaned.length !== 10) {
+            console.error(`❌ Invalid phone number length: ${cleaned.length} (Input: ${phone})`);
+            return res.status(400).json({
+                success: false,
+                error: `Invalid phone number. Expected 10 digits, got ${cleaned.length}. Input: ${phone}`
+            });
+        }
+
+        const formattedPhone = `91${cleaned}`; // Always add 91 for WATI
+
+        const watiApiBaseUrl = process.env.WATI_API_URL;
+        const watiApiKey = process.env.WATI_API_KEY;
+        const tenantId = process.env.TENANT_ID;
+        const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
+
+        if (!watiApiBaseUrl || !watiApiKey || !tenantId) {
+            return res.status(500).json({
+                success: false,
+                error: 'WATI API credentials not configured.'
+            });
+        }
+
+        const messageContent =
+            `AGENCY ACTIVATION NOTIFICATION - ` +
+            `Dear ${safeName}, ` +
+            `Your agency has been successfully ACTIVATED in the PM-AJAY Dashboard. ` +
+            `Officer In-Charge: ${safeOfficer}. ` +
+            `Work Assigned: ${safeWork}. ` +
+            `Status: Active. ` +
+            `You can now proceed with your assigned tasks. ` +
+            `Thank you, PM-AJAY Portal`;
+
+        const templateParams = [
+            { name: "message_body", value: messageContent }
+        ];
+
+        const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
+
+        const payload = {
+            template_name: templateName,
+            broadcast_name: 'Agency Activation Notification',
+            parameters: templateParams
+        };
+
+        console.log('🔗 WATI Endpoint:', endpoint);
+        console.log('📝 Payload (masked):', JSON.stringify({ ...payload, parameters: '...' }, null, 2));
+
+        const response = await axios.post(endpoint, payload, {
+            headers: {
+                'Authorization': `Bearer ${watiApiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('✅ WATI API Response Status:', response.status);
+        console.log('✅ WATI API Response Data:', JSON.stringify(response.data, null, 2));
+
+        return res.status(200).json({
+            success: true,
+            message: 'WhatsApp notification sent successfully',
+            data: response.data
+        });
+
+    } catch (error) {
+        console.error('❌ Error sending Activation WhatsApp notification:', error.message);
+        if (error.response) {
+            console.error('❌ WATI Error Response Data:', JSON.stringify(error.response.data, null, 2));
+            console.error('❌ WATI Error Response Status:', error.response.status);
+        }
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to send WhatsApp notification',
+            details: error.response?.data || error.message
+        });
+    }
+};
