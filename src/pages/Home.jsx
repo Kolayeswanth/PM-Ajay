@@ -11,6 +11,7 @@ import ComponentsSection from "../components/ComponentsSection";
 import StatisticsSection from "../components/StatisticsSection";
 import IndiaMap from "../components/maps/IndiaMap";
 import StatCard from "../components/StatCard";
+import PortalFeatures from "../components/PortalFeatures";
 
 // ⭐ DATA
 import { nationalStats } from "../data/mockData";
@@ -115,42 +116,12 @@ const Home = () => {
                             )}
                         </div>
 
-                        {/* ⭐ PORTAL FEATURES */}
-                        <div className="dashboard-section">
-                            <div className="section-header">
-                                <h2 className="section-title">Portal Features</h2>
-                            </div>
-
-                            <div className="dashboard-grid">
-                                <div className="card">
-                                    <h3>🗺️ GIS Mapping</h3>
-                                    <p>Interactive maps with project locations, progress tracking, and geo-tagged updates.</p>
-                                </div>
-                                <div className="card">
-                                    <h3>👥 Role-Based Access</h3>
-                                    <p>Custom dashboards for Ministry, State, District, and other stakeholders.</p>
-                                </div>
-                                <div className="card">
-                                    <h3>💸 Fund Management</h3>
-                                    <p>Tracks fund flow from Ministry down to execution level.</p>
-                                </div>
-                                <div className="card">
-                                    <h3>📋 Workflow Automation</h3>
-                                    <p>Automated approval workflows for proposals, DPRs, and payments.</p>
-                                </div>
-                                <div className="card">
-                                    <h3>📊 Real-Time Reports</h3>
-                                    <p>MIS reports, analytics, and export options.</p>
-                                </div>
-                                <div className="card">
-                                    <h3>🔔 Notifications</h3>
-                                    <p>Automatic alerts for approvals, deadlines, and fund releases.</p>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
+                </div>
 
+                {/* ⭐ PORTAL FEATURES */}
+                <div className="container" style={{ marginTop: "4rem", marginBottom: "4rem" }}>
+                    <PortalFeatures />
                 </div>
             </div>
 

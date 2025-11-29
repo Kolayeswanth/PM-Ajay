@@ -67,7 +67,10 @@ const Header = () => {
             <div className="header-top">
                 <div className="container">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>भारत सरकार | Government of India</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                            <img src="/logos/emblem.png" alt="Government of India" className="logo-emblem" style={{ height: '40px' }} />
+                            <span>भारत सरकार | Government of India</span>
+                        </div>
                         <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: 'var(--text-xs)' }}>
                             <a href="#" style={{ color: 'var(--text-inverse)' }}>हिंदी</a>
                             <a href="#" style={{ color: 'var(--text-inverse)' }}>Accessibility</a>
@@ -82,17 +85,19 @@ const Header = () => {
                 <div className="container">
                     <div className="header-content">
                         <div className="header-logos">
-                            <img src="/logos/emblem.png" alt="Government of India" className="logo-emblem" />
-                            <img src="/logos/ministry.png" alt="Ministry of Social Justice & Empowerment" className="logo-emblem" />
+
+                            <img src="/logos/adarsh-gram.png" alt="Ministry of Social Justice & Empowerment" className="logo-emblem" />
                         </div>
 
                         <div className="header-title">
-                            <h1>PM-AJAY Portal</h1>
-                            <p>Ministry of Social Justice & Empowerment</p>
+                            <h4>Pradhan Mantri Anusuchit Jaati Abhyuday Yojna<br />(PM-AJAY)</h4>
+                            <p>Department of Social Justice & Empowerment,
+                                Ministry of Social Justice & Empowerment,
+                                Government of India</p>
                         </div>
 
                         <div className="header-logos">
-                            <img src="/logos/pmajay.png" alt="PM-AJAY" className="logo-emblem" />
+                            <img src="/logos/swachh.png" alt="PM-AJAY" className="logo-emblem" />
                         </div>
                     </div>
                 </div>
@@ -119,7 +124,7 @@ const Header = () => {
                                         </span>
                                     </li>
                                     <li className="nav-item">
-                                        <button onClick={handleLogout} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                        <button onClick={handleLogout} className="nav-link logout-link">
                                             Logout
                                         </button>
                                     </li>

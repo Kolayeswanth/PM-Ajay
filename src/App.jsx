@@ -38,13 +38,12 @@ const AppLayout = ({ children }) => {
     const { user } = useAuth();
 
     // Hide global header on dashboard for PUBLIC users and on Adarsh Gram page
-    const shouldHideHeader = (user?.role === ROLES.PUBLIC && location.pathname === '/dashboard') ||
-        location.pathname === '/adarsh-gram';
+    const shouldHideHeader = (user?.role === ROLES.PUBLIC && location.pathname === '/dashboard');
 
     return (
         <>
             {!shouldHideHeader && <Header />}
-            <main style={{ flex: 1 }}>
+            <main style={{ flex: 1, marginTop: shouldHideHeader ? 0 : 'var(--header-height)' }}>
                 {children}
             </main>
         </>

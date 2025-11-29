@@ -3,9 +3,9 @@ import './ImageSlider.css';
 
 const ImageSlider = ({ images: propImages }) => {
     const defaultImages = [
-        '/logos/department of india.jpg',
-        '/logos/grant-in-aid.jpg',
-        '/logos/Mann ki Baath.jpeg'
+        '/logos/home-banner-1.jpg',
+        '/logos/home-banner-2.jpg',
+        '/logos/home-banner-3.jpg'
     ];
 
     const images = propImages || defaultImages;
