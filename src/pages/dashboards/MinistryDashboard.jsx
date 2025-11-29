@@ -41,7 +41,7 @@ const MinistryDashboard = () => {
 
 
     const formatCurrency = (amount) => {
-        return `₹${(amount / 10000000000).toFixed(2)} Cr`;
+        return `₹${(amount / 10000000).toFixed(2)} Cr`;
     };
 
     const renderContent = () => {

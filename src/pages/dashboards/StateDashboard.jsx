@@ -16,6 +16,8 @@ import FundsReceivedFromMinistry from './state/FundsReceivedFromMinistry';
 const StateDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [stateName, setStateName] = useState('Loading...');
+    const [stateId, setStateId] = useState(null);
+    const [stateCode, setStateCode] = useState(null);
     const navigate = useNavigate();
     const { logout, user } = useAuth();
 
@@ -25,9 +27,12 @@ const StateDashboard = () => {
             if (user?.id) {
                 console.log('Fetching state name for user:', user.email);
                 try {
-                    const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
+                    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+                    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
                         headers: {
-                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                            'apikey': SUPABASE_ANON_KEY
                         }
                     });
                     const data = await response.json();
@@ -41,6 +46,18 @@ const StateDashboard = () => {
                             .trim();
                         console.log('Setting state name to:', name);
                         setStateName(name);
+
+                        // Fetch State ID and Code
+                        const stateRes = await fetch(`${SUPABASE_URL}/rest/v1/states?name=eq.${name}&select=id,code`, {
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY
+                            }
+                        });
+                        const stateData = await stateRes.json();
+                        if (stateData && stateData.length > 0) {
+                            setStateId(stateData[0].id);
+                            setStateCode(stateData[0].code);
+                        }
                     }
                 } catch (error) {
                     console.error('Error fetching state name:', error);
@@ -82,7 +99,7 @@ const StateDashboard = () => {
             case 'admins':
                 return <ManageDistrictAdmins />;
             case 'funds':
-                return <FundRelease formatCurrency={formatCurrency} />;
+                return <FundRelease formatCurrency={formatCurrency} stateId={stateId} stateCode={stateCode} />;
             case 'proposals':
                 return <ApproveProposals />;
             case 'ucs':

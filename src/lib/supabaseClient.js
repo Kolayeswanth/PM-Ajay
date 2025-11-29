@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-// ACTIVE PROJECT: gwfeaubvzjepmmhxgdvc (Morning Organization - Has all data)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+// Load Supabase credentials from environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase credentials missing! Check your .env file.');
+    console.error('❌ Supabase credentials missing! Please check your .env file.');
+    console.error('Required variables: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

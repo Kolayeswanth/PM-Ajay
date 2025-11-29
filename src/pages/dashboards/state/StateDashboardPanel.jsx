@@ -3,14 +3,12 @@ import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
 import { stateStats } from '../../../data/mockData';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../../lib/supabaseConfig';
 
 const StateDashboardPanel = ({ formatCurrency, stateName }) => {
     const [totalFundReleased, setTotalFundReleased] = useState(0);
     const [loading, setLoading] = useState(false);
-
-    // Supabase Config
-    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
 
     useEffect(() => {
         const fetchTotalFunds = async () => {
@@ -25,7 +23,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
             try {
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?select=amount_rupees,states!inner(name)`, {
                     headers: {
-                        'apikey': SUPABASE_KEY,
+                        'apikey': SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
                     }
                 });
@@ -53,12 +51,13 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
         fetchTotalFunds();
     }, [stateName]);
 
-    const stats = stateStats[stateName] || stateStats.Maharashtra;
-    const [selectedDistrict, setSelectedDistrict] = useState(null);
-
     // Don't render map until we have a valid state name
     const isValidState = stateName && stateName !== 'Loading...' && stateName !== 'State';
     const displayStateName = isValidState ? stateName : 'Maharashtra';
+
+
+    // Fallback stats if state not found in mock data
+    const stats = stateStats[displayStateName] || stateStats.Maharashtra || { districts: 0, projectsProposed: 0 };
 
     const handleDistrictSelect = (districtName) => {
         setSelectedDistrict(districtName);
@@ -69,14 +68,13 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
         setSelectedDistrict(null);
     };
 
-
     return (
         <div className="dashboard-panel">
             {/* State KPIs */}
             <div className="kpi-row">
                 <StatCard
                     icon="💰"
-                    value={loading ? "Loading..." : formatCurrency(totalFundReleased)}
+                    value={loading ? "Loading..." : (formatCurrency ? formatCurrency(totalFundReleased) : `₹${totalFundReleased}`)}
                     label="Total Fund Received"
                     color="var(--color-primary)"
                 />

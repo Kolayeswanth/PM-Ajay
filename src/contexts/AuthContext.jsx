@@ -45,6 +45,15 @@ export const AuthProvider = ({ children }) => {
           if (sessionData.user) {
             console.log('✅ Loading user from localStorage:', sessionData.user.email);
             console.log('✅ User role from localStorage:', sessionData.user.role);
+
+            // CRITICAL FIX: Restore session to Supabase client
+            if (sessionData.access_token && sessionData.refresh_token) {
+              await supabase.auth.setSession({
+                access_token: sessionData.access_token,
+                refresh_token: sessionData.refresh_token
+              });
+            }
+
             setUser({
               id: sessionData.user.id,
               email: sessionData.user.email,

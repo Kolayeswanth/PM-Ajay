@@ -3,9 +3,11 @@ import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import { districtStats, mockProjects } from '../../../data/mockData';
 
-const DistrictDashboardPanel = ({ formatCurrency }) => {
+const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
     const stats = districtStats.Pune;
     const districtProjects = mockProjects.filter(p => p.district === 'Pune');
+    const [fundAllocated, setFundAllocated] = useState(0);
+    const [recentReleases, setRecentReleases] = useState([]);
     const [showAddLocationModal, setShowAddLocationModal] = useState(false);
     const [newLocation, setNewLocation] = useState({
         name: '',
@@ -14,6 +16,32 @@ const DistrictDashboardPanel = ({ formatCurrency }) => {
         estimatedCost: '',
         description: ''
     });
+
+    // Fetch allocated funds
+    React.useEffect(() => {
+        const fetchFunds = async () => {
+            if (!districtId) return;
+
+            try {
+                const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const total = data.reduce((sum, item) => sum + (item.amount_cr || 0), 0);
+                    setFundAllocated(total * 10000000);
+                    setRecentReleases(data.slice(0, 5)); // Keep top 5
+                }
+            } catch (error) {
+                console.error('Error fetching funds:', error);
+            }
+        };
+
+        fetchFunds();
+    }, [districtId]);
 
     const getStatusBadge = (status) => {
         const badges = {
@@ -57,7 +85,7 @@ const DistrictDashboardPanel = ({ formatCurrency }) => {
                 />
                 <StatCard
                     icon="💰"
-                    value={formatCurrency(stats.fundAllocated)}
+                    value={formatCurrency(fundAllocated)}
                     label="Fund Allocated"
                     color="var(--color-success)"
                 />
@@ -69,6 +97,51 @@ const DistrictDashboardPanel = ({ formatCurrency }) => {
                     trendValue="+5 this month"
                     color="var(--color-success)"
                 />
+            </div>
+
+            {/* Recent Funds Received */}
+            <div className="dashboard-section" style={{ marginBottom: 'var(--space-6)' }}>
+                <div className="section-header">
+                    <h2 className="section-title">Recent Funds Received from State</h2>
+                </div>
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <table className="table" style={{ margin: 0 }}>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Component</th>
+                                <th>Amount</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {recentReleases.length > 0 ? (
+                                recentReleases.map(release => (
+                                    <tr key={release.id}>
+                                        <td>{release.release_date}</td>
+                                        <td>
+                                            {release.component && release.component.map((c, i) => (
+                                                <span key={i} className="badge badge-primary" style={{ marginRight: 4 }}>{c}</span>
+                                            ))}
+                                        </td>
+                                        <td style={{ fontWeight: 'bold', color: 'var(--color-success)' }}>
+                                            ₹{release.amount_cr} Cr
+                                        </td>
+                                        <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+                                            {release.remarks || '-'}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" style={{ textAlign: 'center', padding: 'var(--space-4)', color: 'var(--text-tertiary)' }}>
+                                        No funds received yet.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* GIS Map */}
