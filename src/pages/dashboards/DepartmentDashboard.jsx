@@ -9,6 +9,7 @@ import DPRUpload from './department/DPRUpload';
 import DepartmentReports from './department/DepartmentReports';
 import DepartmentNotifications from './department/DepartmentNotifications';
 import DepartmentHelp from './department/DepartmentHelp';
+import ManageExecutingAgencies from './department/ManageExecutingAgencies';
 import { mockProjects } from '../../data/mockData';
 
 const DepartmentDashboard = () => {
@@ -66,6 +67,7 @@ const DepartmentDashboard = () => {
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: '🏗️', label: 'Manage Executing Agencies', action: () => setActiveTab('executing-agencies'), active: activeTab === 'executing-agencies' },
         { icon: '📋', label: 'Work Orders', action: () => setActiveTab('work-orders'), active: activeTab === 'work-orders' },
         { icon: '📤', label: 'DPR Upload', action: () => setActiveTab('dpr-upload'), active: activeTab === 'dpr-upload' },
         { icon: '📊', label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
@@ -88,6 +90,8 @@ const DepartmentDashboard = () => {
                     projects={projects}
                     onNavigate={handleTabChange}
                 />;
+            case 'executing-agencies':
+                return <ManageExecutingAgencies />;
             case 'work-orders':
                 return <WorkOrders
                     orders={workOrders}
@@ -112,6 +116,7 @@ const DepartmentDashboard = () => {
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'executing-agencies': 'Manage Executing Agencies',
             'work-orders': 'Work Orders',
             'dpr-upload': 'DPR Upload',
             'reports': 'Reports',

@@ -1,12 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
+import { useAuth } from '../../../contexts/AuthContext';
 
-const DPRUpload = ({ dprs, onAddDPR }) => {
-    // Use props 'dprs' instead of local state
+const DPRUpload = () => {
+    const { user } = useAuth();
+    const [dprs, setDprs] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({ title: '', location: '', estimatedCost: '', file: null });
     const [toast, setToast] = useState(null);
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(true);
+
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+
+    useEffect(() => {
+        fetchDPRs();
+    }, [user?.id]);
+
+    const fetchDPRs = async () => {
+        if (!user?.id) return;
+        setLoading(true);
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/dprs?uploaded_by=eq.${user.id}&select=*&order=created_at.desc`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setDprs(data);
+            }
+        } catch (error) {
+            console.error('Error fetching DPRs:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const showToast = (message) => {
         setToast(message);
@@ -23,24 +55,45 @@ const DPRUpload = ({ dprs, onAddDPR }) => {
         return Object.keys(errs).length === 0;
     };
 
-    const handleUpload = () => {
+    const handleUpload = async () => {
         if (!validate()) return;
 
-        const newDPR = {
-            id: Date.now(),
-            title: formData.title,
-            location: formData.location,
-            estimatedCost: `${formData.estimatedCost} Cr`,
-            date: new Date().toISOString().split('T')[0],
-            status: 'Submitted',
-            file: formData.file.name
-        };
+        try {
+            const payload = {
+                project_title: formData.title,
+                location: formData.location,
+                estimated_cost: parseFloat(formData.estimatedCost),
+                submission_date: new Date().toISOString().split('T')[0],
+                status: 'Submitted',
+                file_name: formData.file.name,
+                uploaded_by: user.id
+            };
 
-        onAddDPR(newDPR); // Call parent handler
-        showToast('DPR uploaded successfully');
-        setIsModalOpen(false);
-        setFormData({ title: '', location: '', estimatedCost: '', file: null });
-        setErrors({});
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/dprs`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                fetchDPRs();
+                showToast('DPR uploaded successfully');
+                setIsModalOpen(false);
+                setFormData({ title: '', location: '', estimatedCost: '', file: null });
+                setErrors({});
+            } else {
+                console.error('Failed to upload DPR');
+                showToast('Failed to upload DPR');
+            }
+        } catch (error) {
+            console.error('Error uploading DPR:', error);
+            showToast('Error uploading DPR');
+        }
     };
 
     const handleFileChange = (e) => {
@@ -56,7 +109,7 @@ const DPRUpload = ({ dprs, onAddDPR }) => {
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>DPR - ${dpr.title}</title>
+                    <title>DPR - ${dpr.project_title}</title>
                     <style>
                         body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 900px; margin: 0 auto; }
                         .header { text-align: center; border-bottom: 3px solid #2c3e50; padding-bottom: 20px; margin-bottom: 30px; }
@@ -80,19 +133,19 @@ const DPRUpload = ({ dprs, onAddDPR }) => {
                     
                     <div class="section">
                         <div class="section-title">Project Information</div>
-                        <div class="info-row"><div class="info-label">Project Title:</div><div class="info-value">${dpr.title}</div></div>
+                        <div class="info-row"><div class="info-label">Project Title:</div><div class="info-value">${dpr.project_title}</div></div>
                         <div class="info-row"><div class="info-label">Location:</div><div class="info-value">${dpr.location}</div></div>
-                        <div class="info-row"><div class="info-label">Estimated Cost:</div><div class="info-value">₹${dpr.estimatedCost}</div></div>
-                        <div class="info-row"><div class="info-label">Submission Date:</div><div class="info-value">${dpr.date}</div></div>
+                        <div class="info-row"><div class="info-label">Estimated Cost:</div><div class="info-value">₹${dpr.estimated_cost} Cr</div></div>
+                        <div class="info-row"><div class="info-label">Submission Date:</div><div class="info-value">${dpr.submission_date}</div></div>
                         <div class="info-row"><div class="info-label">Status:</div><div class="info-value">${dpr.status}</div></div>
-                        <div class="info-row"><div class="info-label">DPR Document:</div><div class="info-value">${dpr.file}</div></div>
+                        <div class="info-row"><div class="info-label">DPR Document:</div><div class="info-value">${dpr.file_name}</div></div>
                     </div>
 
                     <div class="section">
                         <div class="section-title">Project Description</div>
                         <div class="description">
                             This Detailed Project Report outlines the comprehensive planning, implementation strategy, 
-                            and financial requirements for the ${dpr.title} project located at ${dpr.location}. 
+                            and financial requirements for the ${dpr.project_title} project located at ${dpr.location}. 
                             The project has been carefully designed to align with PM-AJAY scheme objectives and 
                             community development goals.
                         </div>
@@ -114,7 +167,7 @@ const DPRUpload = ({ dprs, onAddDPR }) => {
             `;
             printWindow.document.write(htmlContent);
             printWindow.document.close();
-            showToast(`Opening DPR for ${dpr.title}`);
+            showToast(`Opening DPR for ${dpr.project_title}`);
         } catch (error) {
             console.error('Error generating PDF:', error);
             showToast('Error generating PDF');
@@ -148,23 +201,29 @@ const DPRUpload = ({ dprs, onAddDPR }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {dprs.map(dpr => (
-                            <tr key={dpr.id}>
-                                <td><strong>{dpr.title}</strong></td>
-                                <td>{dpr.location}</td>
-                                <td>₹{dpr.estimatedCost}</td>
-                                <td>{dpr.date}</td>
-                                <td>
-                                    <span className={`badge badge-${dpr.status === 'Submitted' ? 'success' : 'warning'}`}>
-                                        {dpr.status}
-                                    </span>
-                                </td>
-                                <td>{dpr.file}</td>
-                                <td>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(dpr)}>View</button>
-                                </td>
-                            </tr>
-                        ))}
+                        {loading ? (
+                            <tr><td colSpan="7" style={{ textAlign: 'center' }}>Loading...</td></tr>
+                        ) : dprs.length > 0 ? (
+                            dprs.map(dpr => (
+                                <tr key={dpr.id}>
+                                    <td><strong>{dpr.project_title}</strong></td>
+                                    <td>{dpr.location}</td>
+                                    <td>₹{dpr.estimated_cost} Cr</td>
+                                    <td>{dpr.submission_date}</td>
+                                    <td>
+                                        <span className={`badge badge-${dpr.status === 'Submitted' ? 'success' : 'warning'}`}>
+                                            {dpr.status}
+                                        </span>
+                                    </td>
+                                    <td>{dpr.file_name}</td>
+                                    <td>
+                                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(dpr)}>View</button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr><td colSpan="7" style={{ textAlign: 'center', padding: 20 }}>No DPRs uploaded yet.</td></tr>
+                        )}
                     </tbody>
                 </table>
             </div>
