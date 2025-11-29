@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 
-const FundReleaseToGP = ({ formatCurrency = (amount) => `₹${amount} Cr` }) => {
+const FundReleaseToGP = ({ formatCurrency = (amount) => `₹${amount} Cr`, districtId }) => {
     const [funds, setFunds] = useState([]);
+    const [totalAvailableFunds, setTotalAvailableFunds] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         gp: '',
@@ -34,6 +35,28 @@ const FundReleaseToGP = ({ formatCurrency = (amount) => `₹${amount} Cr` }) => 
             localStorage.setItem('district_funds_released', JSON.stringify(initialData));
         }
     }, []);
+
+    // Fetch total available funds from State
+    useEffect(() => {
+        const fetchTotalFunds = async () => {
+            if (!districtId) return;
+            try {
+                const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=amount_cr`, {
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const total = data.reduce((sum, item) => sum + (item.amount_cr || 0), 0);
+                    setTotalAvailableFunds(total);
+                }
+            } catch (error) {
+                console.error('Error fetching total funds:', error);
+            }
+        };
+        fetchTotalFunds();
+    }, [districtId]);
 
     const showToast = (message) => {
         setToast(message);
@@ -94,7 +117,7 @@ const FundReleaseToGP = ({ formatCurrency = (amount) => `₹${amount} Cr` }) => 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                             <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Funds Available</h3>
-                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2c3e50' }}>₹12.50 Cr</div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2c3e50' }}>₹{totalAvailableFunds.toFixed(2)} Cr</div>
                         </div>
                         <div>
                             <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Released</h3>
@@ -242,7 +265,7 @@ const FundReleaseToGP = ({ formatCurrency = (amount) => `₹${amount} Cr` }) => 
                 </div>
 
                 <div style={{ marginTop: 15, padding: 10, backgroundColor: '#e8f5e9', borderRadius: 6, fontSize: '14px', color: '#2e7d32' }}>
-                    <strong>Note:</strong> Available balance for release is ₹12.50 Cr. Please ensure sufficient funds before releasing.
+                    <strong>Note:</strong> Available balance for release is ₹{totalAvailableFunds.toFixed(2)} Cr. Please ensure sufficient funds before releasing.
                 </div>
             </Modal>
         </div>

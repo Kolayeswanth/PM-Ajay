@@ -1,126 +1,100 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Modal from '../../../components/Modal';
+import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../lib/supabaseClient';
 
 const DepartmentReports = () => {
-    const [reportType, setReportType] = useState('Execution');
+    const { user } = useAuth();
+    const [reports, setReports] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
+    const [formData, setFormData] = useState({
+        title: '',
+        reportType: 'Execution',
+        month: new Date().toLocaleString('default', { month: 'long' }),
+        year: new Date().getFullYear(),
+        description: ''
+    });
+
+    useEffect(() => {
+        fetchReports();
+    }, [user?.id]);
+
+    const fetchReports = async () => {
+        if (!user?.id) return;
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('reports')
+                .select('*')
+                .eq('submitted_by', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setReports(data || []);
+        } catch (error) {
+            console.error('Error fetching reports:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const showToast = (message) => {
         setToast(message);
         setTimeout(() => setToast(null), 3000);
     };
 
-    // Sample Data for Reports
-    const reportData = {
-        'Execution': {
-            title: 'Project Execution Status Report',
-            summary: { totalWorks: 45, completed: 20, ongoing: 15, delayed: 10 },
-            details: [
-                { id: 101, title: 'Community Hall', location: 'Shirur', status: 'Ongoing', progress: '65%' },
-                { id: 102, title: 'Road Phase 1', location: 'Khed', status: 'Delayed', progress: '30%' },
-                { id: 103, title: 'Solar Lights', location: 'Baramati', status: 'Completed', progress: '100%' },
-            ]
-        },
-        'Financial': {
-            title: 'Financial Utilization Report',
-            summary: { allocated: '₹15.00 Cr', utilized: '₹8.50 Cr', pending: '₹6.50 Cr' },
-            details: [
-                { id: 101, title: 'Community Hall', budget: '0.50', utilized: '0.35', balance: '0.15' },
-                { id: 102, title: 'Road Phase 1', budget: '0.80', utilized: '0.20', balance: '0.60' },
-                { id: 103, title: 'Solar Lights', budget: '0.25', utilized: '0.25', balance: '0.00' },
-            ]
+    const handleSubmit = async () => {
+        console.log('Submitting report...', formData);
+        if (!formData.title || !formData.description) {
+            showToast('Please fill in all required fields');
+            return;
         }
-    };
 
-    const handleExportPDF = () => {
-        const data = reportData[reportType];
+        if (!user || !user.id) {
+            console.error('User not authenticated');
+            showToast('User not authenticated');
+            return;
+        }
+
         try {
-            const printWindow = window.open('', '_blank');
+            const payload = {
+                title: formData.title,
+                report_type: formData.reportType,
+                reporting_month: formData.month,
+                reporting_year: parseInt(formData.year),
+                description: formData.description,
+                submitted_by: user.id
+            };
 
-            let tableHeaders = '';
-            let tableRows = '';
+            console.log('Payload:', payload);
 
-            if (reportType === 'Execution') {
-                tableHeaders = '<th>Work ID</th><th>Project Title</th><th>Location</th><th>Status</th><th>Progress</th>';
-                tableRows = data.details.map(row => `
-                    <tr>
-                        <td>WO-${row.id}</td>
-                        <td>${row.title}</td>
-                        <td>${row.location}</td>
-                        <td><span class="badge badge-${row.status === 'Completed' ? 'success' : row.status === 'Ongoing' ? 'warning' : 'error'}">${row.status}</span></td>
-                        <td>${row.progress}</td>
-                    </tr>
-                `).join('');
-            } else {
-                tableHeaders = '<th>Work ID</th><th>Project Title</th><th>Budget (Cr)</th><th>Utilized (Cr)</th><th>Balance (Cr)</th>';
-                tableRows = data.details.map(row => `
-                    <tr>
-                        <td>WO-${row.id}</td>
-                        <td>${row.title}</td>
-                        <td>₹${row.budget}</td>
-                        <td>₹${row.utilized}</td>
-                        <td>₹${row.balance}</td>
-                    </tr>
-                `).join('');
+            const { data, error } = await supabase
+                .from('reports')
+                .insert([payload])
+                .select();
+
+            if (error) {
+                console.error('Supabase error:', error);
+                throw error;
             }
 
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>${data.title}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 40px; }
-                        h1 { text-align: center; color: #2c3e50; margin-bottom: 10px; }
-                        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-                        .summary-box { display: flex; justify-content: space-between; background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #e9ecef; }
-                        .summary-item { text-align: center; }
-                        .summary-label { font-size: 14px; color: #666; margin-bottom: 5px; }
-                        .summary-value { font-size: 20px; font-weight: bold; color: #2c3e50; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                        th { background-color: #3498db; color: white; }
-                        tr:nth-child(even) { background-color: #f9f9f9; }
-                        .footer { margin-top: 50px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }
-                        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-                        .badge-success { background-color: #d4edda; color: #155724; }
-                        .badge-warning { background-color: #fff3cd; color: #856404; }
-                        .badge-error { background-color: #f8d7da; color: #721c24; }
-                    </style>
-                </head>
-                <body>
-                    <h1>${data.title}</h1>
-                    <div class="subtitle">Generated on: ${new Date().toLocaleDateString()}</div>
+            console.log('Success:', data);
+            fetchReports();
+            showToast('Report submitted successfully');
+            setIsModalOpen(false);
+            setFormData({
+                title: '',
+                reportType: 'Execution',
+                month: new Date().toLocaleString('default', { month: 'long' }),
+                year: new Date().getFullYear(),
+                description: ''
+            });
 
-                    <div class="summary-box">
-                        ${Object.entries(data.summary).map(([key, value]) => `
-                            <div class="summary-item">
-                                <div class="summary-label">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
-                                <div class="summary-value">${value}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <table>
-                        <thead>
-                            <tr>${tableHeaders}</tr>
-                        </thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-
-                    <div class="footer">
-                        <p>This is an official report generated from PM-AJAY Department Dashboard.</p>
-                    </div>
-                </body>
-                </html>
-            `;
-
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-            printWindow.onload = function () { printWindow.print(); };
-            showToast('Report generated successfully!');
         } catch (error) {
-            console.error('Error generating PDF:', error);
-            showToast('Error generating report');
+            console.error('Error submitting report:', error);
+            showToast(`Error: ${error.message}`);
         }
     };
 
@@ -128,18 +102,7 @@ const DepartmentReports = () => {
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h2 style={{ margin: 0 }}>Reports & Analytics</h2>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <select
-                        className="form-control"
-                        style={{ width: '200px' }}
-                        value={reportType}
-                        onChange={(e) => setReportType(e.target.value)}
-                    >
-                        <option value="Execution">Execution Report</option>
-                        <option value="Financial">Financial Report</option>
-                    </select>
-                    <button className="btn btn-primary btn-sm" onClick={handleExportPDF}>📥 Export Report</button>
-                </div>
+                <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>+ Submit New Report</button>
             </div>
 
             {toast && (
@@ -148,76 +111,112 @@ const DepartmentReports = () => {
                 </div>
             )}
 
-            {/* Report Preview */}
-            <div className="card" style={{ padding: 20 }}>
-                <h3 style={{ marginTop: 0, marginBottom: 20, borderBottom: '1px solid #eee', paddingBottom: 10 }}>
-                    {reportData[reportType].title}
-                </h3>
-
-                {/* Summary Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 30 }}>
-                    {Object.entries(reportData[reportType].summary).map(([key, value]) => (
-                        <div key={key} style={{ padding: 15, backgroundColor: '#f8f9fa', borderRadius: 8, textAlign: 'center', border: '1px solid #e9ecef' }}>
-                            <div style={{ fontSize: '14px', color: '#666', marginBottom: 5, textTransform: 'capitalize' }}>
-                                {key.replace(/([A-Z])/g, ' $1').trim()}
-                            </div>
-                            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2c3e50' }}>{value}</div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Data Table */}
-                <div className="table-wrapper">
-                    <table className="table">
-                        <thead>
-                            {reportType === 'Execution' && (
-                                <tr>
-                                    <th>Work ID</th>
-                                    <th>Project Title</th>
-                                    <th>Location</th>
-                                    <th>Status</th>
-                                    <th>Progress</th>
+            <div className="table-wrapper">
+                <table className="table">
+                    <thead>
+                        <tr>
+                            <th>Report Title</th>
+                            <th>Type</th>
+                            <th>Period</th>
+                            <th>Description</th>
+                            <th>Submitted On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr><td colSpan="6" style={{ textAlign: 'center' }}>Loading...</td></tr>
+                        ) : reports.length > 0 ? (
+                            reports.map(report => (
+                                <tr key={report.id}>
+                                    <td><strong>{report.title}</strong></td>
+                                    <td><span className="badge badge-primary">{report.report_type}</span></td>
+                                    <td>{report.reporting_month} {report.reporting_year}</td>
+                                    <td>{report.description.substring(0, 50)}...</td>
+                                    <td>{new Date(report.created_at).toLocaleDateString()}</td>
+                                    <td>
+                                        <button className="btn btn-sm btn-outline">View</button>
+                                    </td>
                                 </tr>
-                            )}
-                            {reportType === 'Financial' && (
-                                <tr>
-                                    <th>Work ID</th>
-                                    <th>Project Title</th>
-                                    <th>Budget (Cr)</th>
-                                    <th>Utilized (Cr)</th>
-                                    <th>Balance (Cr)</th>
-                                </tr>
-                            )}
-                        </thead>
-                        <tbody>
-                            {reportData[reportType].details.map((row, index) => (
-                                <tr key={index}>
-                                    <td><strong>WO-{row.id}</strong></td>
-                                    <td>{row.title}</td>
-                                    {reportType === 'Execution' && (
-                                        <>
-                                            <td>{row.location}</td>
-                                            <td>
-                                                <span className={`badge badge-${row.status === 'Completed' ? 'success' : row.status === 'Ongoing' ? 'warning' : 'error'}`}>
-                                                    {row.status}
-                                                </span>
-                                            </td>
-                                            <td>{row.progress}</td>
-                                        </>
-                                    )}
-                                    {reportType === 'Financial' && (
-                                        <>
-                                            <td>₹{row.budget}</td>
-                                            <td>₹{row.utilized}</td>
-                                            <td>₹{row.balance}</td>
-                                        </>
-                                    )}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            ))
+                        ) : (
+                            <tr><td colSpan="6" style={{ textAlign: 'center', padding: 20 }}>No reports submitted yet.</td></tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
+
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title="Submit New Report"
+                footer={
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                        <button className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                        <button className="btn btn-primary" onClick={handleSubmit}>Submit Report</button>
+                    </div>
+                }
+            >
+                <div className="form-group" style={{ marginBottom: 15 }}>
+                    <label className="form-label">Report Title</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        placeholder="e.g. Monthly Progress Report - Nov 2025"
+                    />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 15 }}>
+                    <label className="form-label">Report Type</label>
+                    <select
+                        className="form-control"
+                        value={formData.reportType}
+                        onChange={(e) => setFormData({ ...formData, reportType: e.target.value })}
+                    >
+                        <option value="Execution">Execution Report</option>
+                        <option value="Financial">Financial Report</option>
+                        <option value="MPR">Monthly Progress Report (MPR)</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 15, display: 'flex', gap: 10 }}>
+                    <div style={{ flex: 1 }}>
+                        <label className="form-label">Month</label>
+                        <select
+                            className="form-control"
+                            value={formData.month}
+                            onChange={(e) => setFormData({ ...formData, month: e.target.value })}
+                        >
+                            {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => (
+                                <option key={m} value={m}>{m}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <label className="form-label">Year</label>
+                        <input
+                            type="number"
+                            className="form-control"
+                            value={formData.year}
+                            onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                        />
+                    </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 15 }}>
+                    <label className="form-label">Description / Remarks</label>
+                    <textarea
+                        className="form-control"
+                        rows="4"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Enter report details..."
+                    ></textarea>
+                </div>
+            </Modal>
         </div>
     );
 };

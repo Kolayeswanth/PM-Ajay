@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../lib/supabaseClient';
 
 const DepartmentHelp = () => {
+    const { user } = useAuth();
     const [formData, setFormData] = useState({
         subject: '',
         category: 'Technical Issue',
@@ -9,11 +12,34 @@ const DepartmentHelp = () => {
         email: '',
         phone: ''
     });
-    const [tickets, setTickets] = useState([
-        { id: 1, subject: 'DPR Upload Error', category: 'Technical Issue', status: 'Resolved', date: '2025-11-20', priority: 'High' },
-    ]);
+    const [tickets, setTickets] = useState([]);
     const [toast, setToast] = useState(null);
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        fetchTickets();
+    }, [user?.id]);
+
+    const fetchTickets = async () => {
+        if (!user?.id) return;
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('support_tickets')
+                .select('*')
+                .eq('submitted_by', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setTickets(data || []);
+        } catch (error) {
+            console.error('Error fetching tickets:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const showToast = (message) => {
         setToast(message);
@@ -32,30 +58,56 @@ const DepartmentHelp = () => {
         return Object.keys(errs).length === 0;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!validate()) return;
 
-        const newTicket = {
-            id: Date.now(),
-            subject: formData.subject,
-            category: formData.category,
-            priority: formData.priority,
-            status: 'Open',
-            date: new Date().toISOString().split('T')[0]
-        };
+        if (!validate()) {
+            showToast('Please fill in all required fields');
+            return;
+        }
 
-        setTickets([newTicket, ...tickets]);
-        showToast('Support ticket submitted successfully!');
-        setFormData({
-            subject: '',
-            category: 'Technical Issue',
-            priority: 'Medium',
-            message: '',
-            email: '',
-            phone: ''
-        });
-        setErrors({});
+        if (!user || !user.id) {
+            showToast('User not authenticated');
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const payload = {
+                subject: formData.subject,
+                category: formData.category,
+                priority: formData.priority,
+                message: formData.message,
+                email: formData.email,
+                phone: formData.phone,
+                status: 'Open',
+                submitted_by: user.id
+            };
+
+            const { data, error } = await supabase
+                .from('support_tickets')
+                .insert([payload])
+                .select();
+
+            if (error) throw error;
+
+            fetchTickets();
+            showToast('Support ticket submitted successfully!');
+            setFormData({
+                subject: '',
+                category: 'Technical Issue',
+                priority: 'Medium',
+                message: '',
+                email: '',
+                phone: ''
+            });
+            setErrors({});
+        } catch (error) {
+            console.error('Error submitting ticket:', error);
+            showToast(`Error: ${error.message}`);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -188,8 +240,13 @@ const DepartmentHelp = () => {
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 10 }}>
-                                Submit Support Ticket
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                style={{ width: '100%', marginTop: 10, opacity: submitting ? 0.7 : 1 }}
+                                disabled={submitting}
+                            >
+                                {submitting ? 'Submitting...' : 'Submit Support Ticket'}
                             </button>
                         </form>
                     </div>
@@ -212,24 +269,30 @@ const DepartmentHelp = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {tickets.map(ticket => (
-                                <tr key={ticket.id}>
-                                    <td><strong>#{ticket.id}</strong></td>
-                                    <td>{ticket.subject}</td>
-                                    <td>{ticket.category}</td>
-                                    <td>
-                                        <span className={`badge badge-${ticket.priority === 'High' ? 'error' : ticket.priority === 'Medium' ? 'warning' : 'info'}`}>
-                                            {ticket.priority}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`badge badge-${ticket.status === 'Resolved' ? 'success' : 'warning'}`}>
-                                            {ticket.status}
-                                        </span>
-                                    </td>
-                                    <td>{ticket.date}</td>
-                                </tr>
-                            ))}
+                            {loading ? (
+                                <tr><td colSpan="6" style={{ textAlign: 'center' }}>Loading...</td></tr>
+                            ) : tickets.length > 0 ? (
+                                tickets.map(ticket => (
+                                    <tr key={ticket.id}>
+                                        <td><strong>#{ticket.id.substring(0, 8)}</strong></td>
+                                        <td>{ticket.subject}</td>
+                                        <td>{ticket.category}</td>
+                                        <td>
+                                            <span className={`badge badge-${ticket.priority === 'High' ? 'error' : ticket.priority === 'Medium' ? 'warning' : 'info'}`}>
+                                                {ticket.priority}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge badge-${ticket.status === 'Resolved' ? 'success' : 'warning'}`}>
+                                                {ticket.status}
+                                            </span>
+                                        </td>
+                                        <td>{new Date(ticket.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: 20 }}>No support tickets submitted yet.</td></tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
