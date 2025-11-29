@@ -1,257 +1,187 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-
-// Full list of States + Union Territories of India (current)
-const INDIA_STATES_AND_UT = [
-    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
-    "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
-    "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-    // Union Territories
-    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
-];
 
 const ManageStateAdmins = () => {
-    const [admins, setAdmins] = useState([
-        { id: 1, state: 'Maharashtra', name: 'Rajesh Kumar', email: 'rajesh.k@mah.gov.in', phone: '9876543210', status: 'Active', username: 'rajesh.mah', password: 'Mah@2024' },
-        { id: 2, state: 'Karnataka', name: 'Suresh Patil', email: 'suresh.p@kar.gov.in', phone: '9876543211', status: 'Active', username: 'suresh.kar', password: 'Kar@2024' },
-        { id: 3, state: 'Gujarat', name: 'Amit Shah', email: 'amit.s@guj.gov.in', phone: '9876543212', status: 'Inactive', username: 'amit.guj', password: 'Guj@2024' },
-    ]);
-
+    const [admins, setAdmins] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [currentAdmin, setCurrentAdmin] = useState(null);
-    const [formData, setFormData] = useState({ state: '', name: '', email: '', phone: '', status: true, username: '', password: '' });
+    const [formData, setFormData] = useState({
+        admin_name: '',
+        state_name: '',
+        phone_no: '',
+        email: '',
+        bank_account_number: ''
+    });
     const [errors, setErrors] = useState({});
     const [toast, setToast] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // Helper to generate credentials
-    const generateCredentials = (name, state) => {
-        const firstName = name.split(' ')[0].toLowerCase();
-        const stateCode = state.substring(0, 3).toLowerCase();
-        const username = `${firstName}.${stateCode}`;
-        const password = `${state.substring(0, 3)}@2024`;
-        return { username, password };
+    // API Base URL
+    const API_BASE_URL = 'http://localhost:5001/api/state-admins';
+
+    // Fetch all state admins from backend
+    useEffect(() => {
+        fetchStateAdmins();
+    }, []);
+
+    const fetchStateAdmins = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(API_BASE_URL);
+            const result = await response.json();
+
+            if (result.success) {
+                setAdmins(result.data);
+            } else {
+                showToast('Error fetching state admins', 'error');
+            }
+        } catch (error) {
+            console.error('Error fetching state admins:', error);
+            showToast('Failed to load state admins', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // small helper to show transient messages
-    const showToast = (message) => {
-        setToast(message);
+    // Show toast notification
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
     };
 
+    // Open modal to add new admin
     const handleAdd = () => {
         setCurrentAdmin(null);
-        setFormData({ state: '', name: '', email: '', phone: '', status: true, username: '', password: '' });
+        setFormData({ admin_name: '', state_name: '', phone_no: '', email: '', bank_account_number: '' });
         setErrors({});
         setIsModalOpen(true);
     };
 
+    // Open modal to edit existing admin
     const handleEdit = (admin) => {
         setCurrentAdmin(admin);
-        setFormData({ ...admin, status: admin.status === 'Active', username: admin.username || '', password: admin.password || '' });
+        setFormData({
+            admin_name: admin.admin_name,
+            state_name: admin.state_name,
+            phone_no: admin.phone_no,
+            email: admin.email,
+            bank_account_number: admin.bank_account_number
+        });
         setErrors({});
         setIsModalOpen(true);
     };
 
-    const handleDeleteClick = (admin) => {
-        setCurrentAdmin(admin);
-        setIsDeleteModalOpen(true);
-    };
-
-    // Basic validation
+    // Validation
     const validate = () => {
         const errs = {};
-        if (!formData.state) errs.state = 'Please select a state/UT.';
-        if (!formData.name.trim()) errs.name = 'Please enter admin name.';
-        if (!formData.username.trim()) errs.username = 'Please enter username.';
-        else if (formData.username.length < 4) errs.username = 'Username must be at least 4 characters.';
-        if (!formData.password.trim()) errs.password = 'Please enter password.';
-        else if (formData.password.length < 6) errs.password = 'Password must be at least 6 characters.';
+        if (!formData.admin_name.trim()) errs.admin_name = 'Please enter admin name.';
+        if (!formData.state_name.trim()) errs.state_name = 'Please enter state name.';
         if (!formData.email.trim()) errs.email = 'Please enter email address.';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errs.email = 'Please enter a valid email address.';
-        if (!formData.phone.trim()) errs.phone = 'Please enter phone number.';
-        else if (!/^[0-9]{10}$/.test(formData.phone)) errs.phone = 'Please enter a valid 10-digit phone number.';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+            errs.email = 'Please enter a valid email address.';
+        if (!formData.phone_no.trim()) errs.phone_no = 'Please enter phone number.';
+        else if (!/^[0-9]{10}$/.test(formData.phone_no))
+            errs.phone_no = 'Please enter a valid 10-digit phone number.';
+        if (!formData.bank_account_number.trim())
+            errs.bank_account_number = 'Please enter bank account number.';
+
         setErrors(errs);
         return Object.keys(errs).length === 0;
     };
 
-    const handleSave = () => {
+    // Save (Add or Update) state admin
+    const handleSave = async () => {
         if (!validate()) return;
 
-        if (currentAdmin) {
-            setAdmins(admins.map(a => a.id === currentAdmin.id ? { ...formData, id: a.id, status: formData.status ? 'Active' : 'Inactive' } : a));
-            showToast(`Admin "${formData.name}" updated successfully`);
-        } else {
-            setAdmins([...admins, { ...formData, id: Date.now(), status: formData.status ? 'Active' : 'Inactive' }]);
-            showToast(`Admin "${formData.name}" added successfully`);
-        }
-        setIsModalOpen(false);
-    };
-
-    const handleDeleteConfirm = () => {
-        setAdmins(admins.map(a => a.id === currentAdmin.id ? { ...a, status: 'Inactive' } : a)); // Soft delete/Deactivate
-        showToast(`Admin "${currentAdmin.name}" deactivated successfully`);
-        setIsDeleteModalOpen(false);
-    };
-
-    const handleActivate = (admin) => {
-        setAdmins(admins.map(a => a.id === admin.id ? { ...a, status: 'Active' } : a));
-        showToast(`Admin "${admin.name}" activated successfully`);
-    };
-
-    // Export to PDF function using print
-    const handleExportPDF = () => {
         try {
-            console.log('Export PDF button clicked!');
+            setLoading(true);
+            let response;
 
-            // Create a new window for printing
-            const printWindow = window.open('', '_blank');
+            if (currentAdmin) {
+                // Update existing admin
+                response = await fetch(`${API_BASE_URL}/${currentAdmin.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+            } else {
+                // Add new admin
+                response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+            }
 
-            // Generate HTML content
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>State Admins List</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            padding: 20px;
-                        }
-                        h1 {
-                            color: #2c3e50;
-                            border-bottom: 3px solid #3498db;
-                            padding-bottom: 10px;
-                        }
-                        .metadata {
-                            margin: 20px 0;
-                            color: #666;
-                        }
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin-top: 20px;
-                        }
-                        th {
-                            background-color: #3498db;
-                            color: white;
-                            padding: 12px;
-                            text-align: left;
-                            font-weight: bold;
-                        }
-                        td {
-                            padding: 10px;
-                            border: 1px solid #ddd;
-                        }
-                        tr:nth-child(even) {
-                            background-color: #f9f9f9;
-                        }
-                        .status-active {
-                            color: green;
-                            font-weight: bold;
-                        }
-                        .status-inactive {
-                            color: red;
-                            font-weight: bold;
-                        }
-                        @media print {
-                            body {
-                                padding: 10px;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>State Admins List</h1>
-                    <div class="metadata">
-                        <p><strong>Generated on:</strong> ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
-                        <p><strong>Total Admins:</strong> ${admins.length}</p>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>State</th>
-                                <th>Admin Name</th>
-                                <th>Username</th>
-                                <th>Password</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${admins.map(admin => `
-                                <tr>
-                                    <td>${admin.state}</td>
-                                    <td>${admin.name}</td>
-                                    <td>${admin.username}</td>
-                                    <td>${admin.password}</td>
-                                    <td>${admin.email}</td>
-                                    <td>${admin.phone}</td>
-                                    <td class="${admin.status === 'Active' ? 'status-active' : 'status-inactive'}">${admin.status}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </body>
-                </html>
-            `;
+            const result = await response.json();
 
-            // Write content to new window
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-
-            // Wait for content to load, then trigger print dialog
-            printWindow.onload = function () {
-                printWindow.print();
-            };
-
-            showToast('Print dialog opened! Use "Save as PDF" option.');
-            console.log('Print window opened successfully');
+            if (result.success) {
+                showToast(result.message, 'success');
+                fetchStateAdmins(); // Refresh the list
+                setIsModalOpen(false);
+            } else {
+                showToast(result.error || 'Failed to save admin', 'error');
+            }
         } catch (error) {
-            console.error('Error exporting PDF:', error);
-            showToast('Error exporting PDF. Please try again.');
+            console.error('Error saving admin:', error);
+            showToast('Failed to save admin', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Deactivate state admin (deletes from database)
+    const handleDeactivate = async (admin) => {
+        if (!confirm(`Are you sure you want to deactivate and remove "${admin.admin_name}" from the database? This action cannot be undone.`)) return;
 
-    // Filter admins based on search query
-    const filteredAdmins = admins.filter(admin => {
-        const query = searchQuery.toLowerCase();
-        return (
-            admin.name.toLowerCase().includes(query) ||
-            admin.state.toLowerCase().includes(query) ||
-            admin.email.toLowerCase().includes(query) ||
-            admin.phone.includes(query)
-        );
-    });
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_BASE_URL}/${admin.id}/deactivate`, {
+                method: 'PATCH'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`Admin "${admin.admin_name}" deactivated and removed successfully`, 'success');
+                fetchStateAdmins(); // Refresh the list
+            } else {
+                showToast(result.error || 'Failed to deactivate admin', 'error');
+            }
+        } catch (error) {
+            console.error('Error deactivating admin:', error);
+            showToast('Failed to deactivate admin', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="dashboard-panel" style={{ padding: 20, height: '100%', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ margin: 0 }}>Manage State Admins</h2>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <input
-                        type="text"
-                        placeholder="Search by name, state, email, or phone..."
-                        className="form-input"
-                        style={{ width: '300px' }}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <button className="btn btn-primary btn-sm" onClick={handleAdd}>+ Add New Admin</button>
-                    <button className="btn btn-outline btn-sm" onClick={handleExportPDF}>📥 Export</button>
-                </div>
+                <button className="btn btn-primary btn-sm" onClick={handleAdd}>
+                    + Add State Admin
+                </button>
             </div>
 
             {toast && (
                 <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'inline-block', background: '#00B894', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{toast}</div>
+                    <div style={{
+                        display: 'inline-block',
+                        background: toast.type === 'error' ? '#E74C3C' : '#00B894',
+                        color: '#fff',
+                        padding: '8px 12px',
+                        borderRadius: 6
+                    }}>
+                        {toast.message}
+                    </div>
+                </div>
+            )}
+
+            {loading && (
+                <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>
+                    Loading...
                 </div>
             )}
 
@@ -259,42 +189,53 @@ const ManageStateAdmins = () => {
                 <table className="table" style={{ minWidth: 800 }}>
                     <thead>
                         <tr>
+                            <th>Name</th>
                             <th>State Name</th>
-                            <th>Admin Name</th>
+                            <th>Phone No</th>
                             <th>Email</th>
-                            <th>Phone</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredAdmins.map(admin => (
-                            <tr key={admin.id}>
-                                <td>{admin.state}</td>
-                                <td style={{ padding: '12px 16px' }}>
-                                    <div style={{ fontWeight: 700 }}>{admin.name}</div>
-                                    <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-                                        <div>Username: <span style={{ fontWeight: 600, color: '#333' }}>{admin.username}</span></div>
-                                        <div>Password: <span style={{ fontWeight: 600, color: '#333' }}>{admin.password}</span></div>
-                                    </div>
-                                </td>
-                                <td>{admin.email}</td>
-                                <td>{admin.phone}</td>
-                                <td>
-                                    <span className={`badge badge-${admin.status === 'Active' ? 'success' : 'error'}`}>
-                                        {admin.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(admin)} style={{ marginRight: '5px' }}>Edit</button>
-                                    {admin.status === 'Active' ? (
-                                        <button className="btn btn-outline btn-sm" onClick={() => handleDeleteClick(admin)}>Deactivate</button>
-                                    ) : (
-                                        <button className="btn btn-primary btn-sm" onClick={() => handleActivate(admin)}>Activate</button>
-                                    )}
+                        {admins.length > 0 ? (
+                            admins.map(admin => (
+                                <tr key={admin.id}>
+                                    <td style={{ fontWeight: 600 }}>{admin.admin_name}</td>
+                                    <td>{admin.state_name}</td>
+                                    <td>{admin.phone_no}</td>
+                                    <td>{admin.email}</td>
+                                    <td>
+                                        <span className={`badge badge-${admin.status === 'Active' ? 'success' : 'error'}`}>
+                                            {admin.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => handleEdit(admin)}
+                                            style={{ marginRight: '5px' }}
+                                            disabled={loading}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            className="btn btn-outline btn-sm"
+                                            onClick={() => handleDeactivate(admin)}
+                                            disabled={loading}
+                                        >
+                                            Deactivate
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                    No states found. Click "Add State Admin" to create one.
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -306,143 +247,105 @@ const ManageStateAdmins = () => {
                 title={currentAdmin ? "Edit State Admin" : "Add New State Admin"}
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <button
+                            onClick={() => setIsModalOpen(false)}
+                            style={{
+                                background: 'transparent',
+                                border: '2px solid #ddd',
+                                color: '#333',
+                                padding: '8px 14px',
+                                borderRadius: 8
+                            }}
+                            disabled={loading}
+                        >
                             Cancel
                         </button>
-                        <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 14px' }}>
-                            Save
+                        <button
+                            onClick={handleSave}
+                            className="btn btn-primary"
+                            style={{ padding: '8px 14px' }}
+                            disabled={loading}
+                        >
+                            {loading ? 'Saving...' : 'Confirm Release'}
                         </button>
                     </div>
                 }
             >
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                     <div className="form-group">
-                        <label className="form-label">State Name</label>
-                        <select
-                            className="form-control"
-                            value={formData.state}
-                            onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                        >
-                            <option value="">-- select state / UT --</option>
-                            {INDIA_STATES_AND_UT.map((name) => (
-                                <option key={name} value={name}>{name}</option>
-                            ))}
-                        </select>
-                        {errors.state && <div className="form-error">{errors.state}</div>}
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Admin Name</label>
+                        <label className="form-label">Name</label>
                         <input
                             type="text"
                             className="form-control"
                             placeholder="e.g. Rajesh Kumar"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            value={formData.admin_name}
+                            onChange={(e) => setFormData({ ...formData, admin_name: e.target.value })}
                             style={{ padding: '10px' }}
                         />
-                        {errors.name && <div className="form-error">{errors.name}</div>}
-                        <div className="form-helper">Enter the full name of the state admin</div>
-                    </div>
-
-                    {/* Admin Credentials Section */}
-                    <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#333' }}>Admin Credentials</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                            <div className="form-group">
-                                <label className="form-label">Username</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="e.g. rajesh.mah"
-                                    value={formData.username}
-                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    style={{ padding: '10px' }}
-                                />
-                                {errors.username && <div className="form-error">{errors.username}</div>}
-                                <div className="form-helper">Unique login username</div>
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Password</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="e.g. Mah@2024"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    style={{ padding: '10px' }}
-                                />
-                                {errors.password && <div className="form-error">{errors.password}</div>}
-                                <div className="form-helper">Minimum 6 characters</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                        <div className="form-group">
-                            <label className="form-label">Email Address</label>
-                            <input
-                                type="email"
-                                className="form-control"
-                                placeholder="e.g. admin@state.gov.in"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                style={{ padding: '10px' }}
-                            />
-                            {errors.email && <div className="form-error">{errors.email}</div>}
-                            <div className="form-helper">Official government email</div>
-                        </div>
-
-                        <div className="form-group">
-                            <label className="form-label">Phone Number</label>
-                            <input
-                                type="tel"
-                                className="form-control"
-                                placeholder="e.g. 9876543210"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                style={{ padding: '10px' }}
-                            />
-                            {errors.phone && <div className="form-error">{errors.phone}</div>}
-                            <div className="form-helper">10-digit mobile number</div>
-                        </div>
+                        {errors.admin_name && <div className="form-error">{errors.admin_name}</div>}
+                        <div className="form-helper">Enter the full name of the admin</div>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input
-                                type="checkbox"
-                                checked={formData.status}
-                                onChange={(e) => setFormData({ ...formData, status: e.target.checked })}
-                            />
-                            Active Status
-                        </label>
-                        <div className="form-helper">Uncheck to deactivate admin access</div>
+                        <label className="form-label">State Name</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g. Maharashtra"
+                            value={formData.state_name}
+                            onChange={(e) => setFormData({ ...formData, state_name: e.target.value })}
+                            style={{ padding: '10px' }}
+                        />
+                        {errors.state_name && <div className="form-error">{errors.state_name}</div>}
+                        <div className="form-helper">Enter the name of the state</div>
                     </div>
 
-                    <div style={{ fontSize: 13, color: '#555' }}>
-                        <strong>Note:</strong> The admin will receive login credentials via email after account creation.
+                    <div className="form-group">
+                        <label className="form-label">Email</label>
+                        <input
+                            type="email"
+                            className="form-control"
+                            placeholder="e.g. admin@state.gov.in"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            style={{ padding: '10px' }}
+                        />
+                        {errors.email && <div className="form-error">{errors.email}</div>}
+                        <div className="form-helper">Official government email</div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Phone No</label>
+                        <input
+                            type="tel"
+                            className="form-control"
+                            placeholder="e.g. 9876543210"
+                            value={formData.phone_no}
+                            onChange={(e) => setFormData({ ...formData, phone_no: e.target.value })}
+                            style={{ padding: '10px' }}
+                        />
+                        {errors.phone_no && <div className="form-error">{errors.phone_no}</div>}
+                        <div className="form-helper">10-digit mobile number</div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Bank Account Number</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g. 1234567890123456"
+                            value={formData.bank_account_number}
+                            onChange={(e) => setFormData({ ...formData, bank_account_number: e.target.value })}
+                            style={{ padding: '10px' }}
+                        />
+                        {errors.bank_account_number && <div className="form-error">{errors.bank_account_number}</div>}
+                        <div className="form-helper">Bank account number for fund transfers (stored in database, not displayed in table)</div>
+                    </div>
+
+                    <div style={{ fontSize: 13, color: '#555', marginTop: 10 }}>
+                        <strong>Note:</strong> The state admin will be added with "Active" status by default. Bank account number will be stored securely in the database.
                     </div>
                 </div>
-            </Modal>
-
-            <Modal
-                isOpen={isDeleteModalOpen}
-                onClose={() => setIsDeleteModalOpen(false)}
-                title="Confirm Deactivation"
-                footer={
-                    <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsDeleteModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
-                            Cancel
-                        </button>
-                        <button onClick={handleDeleteConfirm} className="btn btn-error" style={{ padding: '8px 14px' }}>
-                            Deactivate
-                        </button>
-                    </div>
-                }
-            >
-                <p>Are you sure you want to deactivate this admin? They will no longer be able to access the system.</p>
             </Modal>
         </div>
     );

@@ -6,6 +6,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const fundRoutes = require('./routes/fundRoutes');
+const stateAdminRoutes = require('./routes/stateAdminRoutes');
 
 const app = express();
 const PORT = 5001; // process.env.PORT;
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/funds', fundRoutes);
+app.use('/api/state-admins', stateAdminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -39,5 +41,6 @@ app.listen(PORT, () => {
   console.log(`- Auth Routes loaded at /api/auth`);
   console.log(`- Notification Routes loaded at /api/notifications`);
   console.log(`- Fund Routes loaded at /api/funds`);
+  console.log(`- State Admin Routes loaded at /api/state-admins`);
   console.log(`- Health check at /api/health`);
 });
