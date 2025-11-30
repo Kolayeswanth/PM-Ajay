@@ -93,3 +93,134 @@ exports.getProposalsByDistrict = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+exports.getProposalsByState = async (req, res) => {
+    try {
+        const { stateName } = req.query;
+
+        if (!stateName) {
+            return res.status(400).json({ success: false, error: 'State name is required' });
+        }
+
+        // 1. Get State ID
+        const { data: stateData, error: stateError } = await supabase
+            .from('states')
+            .select('id')
+            .eq('name', stateName)
+            .single();
+
+        if (stateError || !stateData) {
+            return res.status(404).json({ success: false, error: 'State not found' });
+        }
+
+        // 2. Get Districts in State
+        const { data: districtsData, error: districtsError } = await supabase
+            .from('districts')
+            .select('id, name')
+            .eq('state_id', stateData.id);
+
+        if (districtsError) {
+            return res.status(500).json({ success: false, error: districtsError.message });
+        }
+
+        const districtIds = districtsData.map(d => d.id);
+
+        if (districtIds.length === 0) {
+            return res.json({ success: true, data: [] });
+        }
+
+        // 3. Get Proposals for these Districts
+        const { data: proposals, error: proposalsError } = await supabase
+            .from('district_proposals')
+            .select('*')
+            .in('district_id', districtIds)
+            .order('created_at', { ascending: false });
+
+        if (proposalsError) {
+            return res.status(500).json({ success: false, error: proposalsError.message });
+        }
+
+        // Map district names to proposals
+        const districtMap = districtsData.reduce((acc, d) => {
+            acc[d.id] = d.name;
+            return acc;
+        }, {});
+
+        const enrichedProposals = proposals.map(p => ({
+            ...p,
+            district_name: districtMap[p.district_id]
+        }));
+
+        res.json({ success: true, data: enrichedProposals });
+
+    } catch (error) {
+        console.error('Error fetching state proposals:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+exports.updateProposalStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, rejectReason, remarks, userId } = req.body;
+
+        // 1. Get current status for history
+        const { data: currentProposal, error: fetchError } = await supabase
+            .from('district_proposals')
+            .select('status')
+            .eq('id', id)
+            .single();
+
+        if (fetchError) {
+            return res.status(404).json({ success: false, error: 'Proposal not found' });
+        }
+
+        const updateData = { status };
+        if (rejectReason) {
+            updateData.reject_reason = rejectReason;
+        }
+        if (remarks) {
+            updateData.remarks = remarks;
+        }
+        if (status.includes('APPROVED')) {
+            updateData.approved_at = new Date().toISOString();
+            if (userId) updateData.approved_by = userId;
+        }
+
+        // 2. Update Proposal
+        const { data, error } = await supabase
+            .from('district_proposals')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            console.error('Supabase update error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+
+        // 3. Insert into History
+        const { error: historyError } = await supabase
+            .from('proposal_history')
+            .insert([
+                {
+                    proposal_id: id,
+                    old_status: currentProposal.status,
+                    new_status: status,
+                    changed_by: userId || null,
+                    remarks: rejectReason || remarks || ''
+                }
+            ]);
+
+        if (historyError) {
+            console.error('Error logging history:', historyError);
+            // Don't fail the request just because history failed, but log it
+        }
+
+        res.json({ success: true, message: 'Proposal status updated', data: data[0] });
+
+    } catch (error) {
+        console.error('Error updating proposal status:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};

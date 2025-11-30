@@ -1,17 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 
 // List of major districts in Maharashtra (you can expand this)
-const MAHARASHTRA_DISTRICTS = [
-    "Ahmednagar", "Akola", "Amravati", "Aurangabad", "Beed", "Bhandara", "Buldhana", "Chandrapur",
-    "Dhule", "Gadchiroli", "Gondia", "Hingoli", "Jalgaon", "Jalna", "Kolhapur", "Latur",
-    "Mumbai City", "Mumbai Suburban", "Nagpur", "Nanded", "Nandurbar", "Nashik", "Osmanabad", "Palghar",
-    "Parbhani", "Pune", "Raigad", "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur",
-    "Thane", "Wardha", "Washim", "Yavatmal"
-];
+import { useAuth } from '../../../contexts/AuthContext';
 
 const ManageDistrictAdmins = () => {
+    const { user } = useAuth();
     const [admins, setAdmins] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [stateName, setStateName] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentAdmin, setCurrentAdmin] = useState(null);
     const [formData, setFormData] = useState({
@@ -30,15 +27,53 @@ const ManageDistrictAdmins = () => {
     // API Base URL
     const API_BASE_URL = 'http://localhost:5001/api/district-admins';
 
-    // Fetch admins on load
+    // Fetch state name from user profile
+    useEffect(() => {
+        const fetchStateName = async () => {
+            if (!user?.id) return;
+            try {
+                const response = await fetch(`http://localhost:5001/api/profile?userId=${user.id}`);
+                const result = await response.json();
+                if (result.success && result.data?.full_name) {
+                    let name = result.data.full_name;
+                    name = name.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
+                    setStateName(name);
+                }
+            } catch (error) {
+                console.error('Error fetching state name:', error);
+            }
+        };
+        fetchStateName();
+    }, [user]);
+
+    // Fetch admins and districts when stateName is available
     React.useEffect(() => {
-        fetchAdmins();
-    }, []);
+        if (stateName) {
+            fetchAdmins();
+            fetchDistricts();
+        }
+    }, [stateName]);
+
+    const fetchDistricts = async () => {
+        try {
+            const response = await fetch(`http://localhost:5001/api/state-admins/districts?stateName=${encodeURIComponent(stateName)}`);
+            const result = await response.json();
+            if (result.success) {
+                setDistricts(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching districts:', error);
+        }
+    };
 
     const fetchAdmins = async () => {
         try {
             setLoading(true);
-            const response = await fetch(API_BASE_URL);
+            const url = stateName
+                ? `${API_BASE_URL}?stateName=${encodeURIComponent(stateName)}`
+                : API_BASE_URL;
+
+            const response = await fetch(url);
             const result = await response.json();
             if (result.success) {
                 // Map backend fields to frontend state
@@ -317,7 +352,7 @@ const ManageDistrictAdmins = () => {
                             onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                         >
                             <option value="">-- select district --</option>
-                            {MAHARASHTRA_DISTRICTS.map((name) => (
+                            {districts.map((name) => (
                                 <option key={name} value={name}>{name}</option>
                             ))}
                         </select>
