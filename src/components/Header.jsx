@@ -27,7 +27,8 @@ const Header = () => {
     const getNavLinks = () => {
         if (!isAuthenticated) {
             return [
-                { path: '/', label: 'Home' }
+                { path: '/', label: 'Home' },
+                { path: '/contact-us', label: 'Contact Us' }
             ];
         }
 

@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import AdarshGram from './pages/AdarshGram';
+import ContactUs from './pages/pm-contactUs/ContactUs';
 import Login from './pages/Login';
 import DashboardRouter from './pages/dashboards/DashboardRouter';
 import PublicDashboard from './pages/dashboards/PublicDashboard';
@@ -60,6 +61,7 @@ function App() {
                         {/* Public Routes */}
                         <Route path="/" element={<Home />} />
                         <Route path="/adarsh-gram" element={<AdarshGram />} />
+                        <Route path="/contact-us" element={<ContactUs />} />
                         <Route path="/login" element={<Login />} />
 
                         {/* Protected Routes */}
