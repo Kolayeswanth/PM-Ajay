@@ -2,61 +2,59 @@ import React, { useState, useEffect } from 'react';
 import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
-import { stateStats } from '../../../data/mockData';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../../lib/supabaseConfig';
 
 const StateDashboardPanel = ({ formatCurrency, stateName }) => {
-    const [totalFundReleased, setTotalFundReleased] = useState(0);
+    const [dashboardStats, setDashboardStats] = useState({
+        totalFundReceived: 0,
+        fundUtilizedPercentage: 0,
+        districtsReporting: 0,
+        totalDistricts: 0,
+        pendingApprovals: 0,
+        districtFundStatus: []
+    });
     const [loading, setLoading] = useState(false);
     const [selectedDistrict, setSelectedDistrict] = useState(null);
 
+    const API_BASE_URL = 'http://localhost:5001/api';
+
     useEffect(() => {
-        const fetchTotalFunds = async () => {
+        const fetchDashboardStats = async () => {
             if (!stateName || stateName === 'Loading...' || stateName === 'State') return;
 
             // Clean the state name (remove 'State Admin', 'Admin', 'State')
             let cleanStateName = stateName;
             cleanStateName = cleanStateName.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
-            console.log('📊 Dashboard fetching funds for:', cleanStateName);
+            console.log('📊 Dashboard fetching stats for:', cleanStateName);
 
             setLoading(true);
             try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?select=amount_rupees,states!inner(name)`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
-                    }
-                });
+                const response = await fetch(`${API_BASE_URL}/dashboard/state-stats?stateName=${encodeURIComponent(cleanStateName)}`);
 
                 if (response.ok) {
-                    const data = await response.json();
-                    console.log('📊 All funds:', data);
+                    const result = await response.json();
+                    console.log('📊 Dashboard stats received:', result);
 
-                    // Filter for current state using cleaned name
-                    const stateFunds = data.filter(item => item.states.name === cleanStateName);
-                    console.log('📊 Filtered funds for', cleanStateName, ':', stateFunds);
-
-                    // Sum up
-                    const total = stateFunds.reduce((sum, item) => sum + (item.amount_rupees || 0), 0);
-                    console.log('📊 Total fund received:', total);
-                    setTotalFundReleased(total);
+                    if (result.success) {
+                        setDashboardStats(result.data);
+                    } else {
+                        console.error('Failed to fetch dashboard stats:', result.error);
+                    }
+                } else {
+                    console.error('API request failed with status:', response.status);
                 }
             } catch (error) {
-                console.error('Error fetching total funds:', error);
+                console.error('Error fetching dashboard stats:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchTotalFunds();
+        fetchDashboardStats();
     }, [stateName]);
 
     // Don't render map until we have a valid state name
     const isValidState = stateName && stateName !== 'Loading...' && stateName !== 'State';
-    const displayStateName = isValidState ? stateName : 'Maharashtra';
-
-    // Fallback stats if state not found in mock data
-    const stats = stateStats[displayStateName] || stateStats.Maharashtra || { districts: 0, projectsProposed: 0 };
+    const displayStateName = isValidState ? stateName.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim() : 'Maharashtra';
 
     const handleDistrictSelect = (districtName) => {
         setSelectedDistrict(districtName);
@@ -73,25 +71,25 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
             <div className="kpi-row">
                 <StatCard
                     icon="💰"
-                    value={loading ? "Loading..." : (formatCurrency ? formatCurrency(totalFundReleased) : `₹${totalFundReleased}`)}
+                    value={loading ? "Loading..." : (formatCurrency ? formatCurrency(dashboardStats.totalFundReceived) : `₹${dashboardStats.totalFundReceived}`)}
                     label="Total Fund Received"
                     color="var(--color-primary)"
                 />
                 <StatCard
                     icon="📈"
-                    value="76%"
+                    value={loading ? "Loading..." : `${dashboardStats.fundUtilizedPercentage}%`}
                     label="Fund Utilized"
                     color="var(--color-secondary)"
                 />
                 <StatCard
                     icon="🏘️"
-                    value={stats.districts}
+                    value={loading ? "Loading..." : dashboardStats.districtsReporting}
                     label="Districts Reporting"
                     color="var(--color-accent)"
                 />
                 <StatCard
                     icon="⏳"
-                    value={stats.projectsProposed}
+                    value={loading ? "Loading..." : dashboardStats.pendingApprovals}
                     label="Pending Approvals"
                     color="var(--color-warning)"
                 />
@@ -141,33 +139,40 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><strong>Pune</strong></td>
-                                <td>₹68 Cr</td>
-                                <td>₹52 Cr (76%)</td>
-                                <td>
-                                    <span className="badge badge-success">On Track</span>
-                                </td>
-                                <td><span className="badge badge-success">YES</span></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Mumbai</strong></td>
-                                <td>₹92 Cr</td>
-                                <td>₹71 Cr (77%)</td>
-                                <td>
-                                    <span className="badge badge-success">On Track</span>
-                                </td>
-                                <td><span className="badge badge-success">YES</span></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Nagpur</strong></td>
-                                <td>₹54 Cr</td>
-                                <td>₹38 Cr (70%)</td>
-                                <td>
-                                    <span className="badge badge-warning">Delayed</span>
-                                </td>
-                                <td><span className="badge badge-warning">NO</span></td>
-                            </tr>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        Loading district data...
+                                    </td>
+                                </tr>
+                            ) : dashboardStats.districtFundStatus && dashboardStats.districtFundStatus.length > 0 ? (
+                                dashboardStats.districtFundStatus.map((district, index) => (
+                                    <tr key={index}>
+                                        <td><strong>{district.districtName}</strong></td>
+                                        <td>{formatCurrency ? formatCurrency(district.fundReleased) : `₹${district.fundReleased}`}</td>
+                                        <td>
+                                            {formatCurrency ? formatCurrency(district.fundUtilized) : `₹${district.fundUtilized}`}
+                                            {' '}({district.utilizationPercent}%)
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${district.projectStatus === 'On Track' ? 'badge-success' : 'badge-warning'}`}>
+                                                {district.projectStatus}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${district.ucUploaded ? 'badge-success' : 'badge-warning'}`}>
+                                                {district.ucUploaded ? 'YES' : 'NO'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        No district data available for {displayStateName}
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

@@ -23,28 +23,50 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
 
     const [errors, setErrors] = useState({});
 
-    // Supabase Configuration
-    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+    // API Base URL
+    const API_BASE_URL = 'http://localhost:5001/api';
 
-    // Fetch Data on Mount
+    // Fetch state name from user profile
+    const [stateName, setStateName] = useState('');
+
     useEffect(() => {
-        fetchDistricts();
-        fetchReleasedFunds();
-    }, [stateCode]);
+        const fetchStateName = async () => {
+            if (!user?.id) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/profile?userId=${user.id}`);
+                const result = await response.json();
+                if (result.success && result.data?.full_name) {
+                    let name = result.data.full_name;
+                    name = name.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
+                    setStateName(name);
+                }
+            } catch (error) {
+                console.error('Error fetching state name:', error);
+            }
+        };
+        fetchStateName();
+    }, [user]);
+
+    // Fetch Data when stateName is available
+    useEffect(() => {
+        if (stateName && stateCode) {
+            fetchDistricts();
+            fetchReleasedFunds();
+        }
+    }, [stateName, stateCode]);
 
     const fetchDistricts = async () => {
         if (!stateCode) return;
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/districts?state_code=eq.${stateCode}&select=id,name&order=name.asc`, {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setDistricts(data);
+            const response = await fetch(`${API_BASE_URL}/state-admins/districts?stateName=${encodeURIComponent(stateName)}`);
+            const result = await response.json();
+            if (result.success) {
+                // Transform to match expected format
+                const formattedDistricts = result.data.map((name, index) => ({
+                    id: index + 1, // Temporary ID, should use real district IDs
+                    name: name
+                }));
+                setDistricts(formattedDistricts);
             }
         } catch (error) {
             console.error('Error fetching districts:', error);
@@ -54,31 +76,37 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     const fetchReleasedFunds = async () => {
         setLoading(true);
         try {
-            // Fetch releases and join with districts to get the name
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/fund_releases?select=*,districts(name)&order=created_at.desc`, {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                // Transform data to match UI structure
-                const formattedData = data.map(item => ({
-                    id: item.id,
-                    districtName: item.districts?.name || 'Unknown District',
-                    component: item.component,
-                    amountInRupees: item.amount_rupees,
-                    amountCr: item.amount_cr,
-                    date: item.release_date,
-                    officerId: item.officer_id,
-                    remarks: item.remarks
-                }));
-                setReleasedFunds(formattedData);
+            console.log('📊 Fetching fund releases for state:', stateName);
 
-                // Calculate total released
-                const total = formattedData.reduce((sum, item) => sum + (item.amountCr || 0), 0);
-                setTotalReleased(total);
+            // Use new backend API that filters by state
+            const response = await fetch(`${API_BASE_URL}/funds/district-releases?stateName=${encodeURIComponent(stateName)}`);
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('📊 Fund releases received:', result);
+
+                if (result.success) {
+                    // Transform data to match UI structure
+                    const formattedData = result.data.map(item => ({
+                        id: item.id,
+                        districtName: item.districts?.name || 'Unknown District',
+                        component: item.component,
+                        amountInRupees: item.amount_rupees,
+                        amountCr: item.amount_cr,
+                        date: item.release_date,
+                        officerId: item.officer_id,
+                        remarks: item.remarks
+                    }));
+                    setReleasedFunds(formattedData);
+
+                    // Calculate total released
+                    const total = formattedData.reduce((sum, item) => sum + (item.amountCr || 0), 0);
+                    setTotalReleased(total);
+                } else {
+                    console.error('Failed to fetch fund releases:', result.error);
+                }
+            } else {
+                console.error('API request failed with status:', response.status);
             }
         } catch (error) {
             console.error('Error fetching funds:', error);
@@ -90,25 +118,25 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     // Fetch Total Funds Received from Ministry
     useEffect(() => {
         const fetchReceivedFunds = async () => {
-            if (!stateId) return;
+            if (!stateId || !stateName) return;
             try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?state_id=eq.${stateId}&select=amount_cr`, {
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
-                    }
-                });
+                const response = await fetch(`${API_BASE_URL}/funds/releases`);
+
                 if (response.ok) {
-                    const data = await response.json();
-                    const total = data.reduce((sum, item) => sum + (item.amount_cr || 0), 0);
-                    setTotalReceived(total);
+                    const result = await response.json();
+                    if (result.success) {
+                        // Filter for current state and sum up
+                        const stateFunds = result.data.filter(item => item.states?.id === stateId);
+                        const total = stateFunds.reduce((sum, item) => sum + (item.amount_cr || 0), 0);
+                        setTotalReceived(total);
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching received funds:', error);
             }
         };
         fetchReceivedFunds();
-    }, [stateId]);
+    }, [stateId, stateName]);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -162,6 +190,13 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
         const amountCr = parseFloat(formData.amount);
         const amountInRupees = Math.round(amountCr * 10000000);
 
+        // CRITICAL VALIDATION: Check if sufficient balance is available
+        const availableBalance = totalReceived - totalReleased;
+        if (amountCr > availableBalance) {
+            showToast(`Insufficient balance! Available: ₹${availableBalance.toFixed(2)} Cr, Requested: ₹${amountCr.toFixed(2)} Cr`, 'error');
+            return;
+        }
+
         try {
             const payload = {
                 district_id: formData.districtId,
@@ -171,27 +206,28 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                 release_date: formData.date,
                 officer_id: formData.officerId,
                 remarks: formData.remarks,
-                created_by: user?.id
+                created_by: user?.id,
+                state_name: stateName
             };
 
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/fund_releases`, {
+            console.log('📤 Submitting fund release:', payload);
+
+            const response = await fetch(`${API_BASE_URL}/funds/release`, {
                 method: 'POST',
                 headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });
 
-            if (response.ok) {
-                showToast(`Successfully released ${amountCr} Cr`);
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showToast(`Successfully released ₹${amountCr} Cr`);
                 fetchReleasedFunds(); // Refresh the list
                 closeModal();
             } else {
-                const errorData = await response.json();
-                showToast(`Error: ${errorData.message || 'Failed to release funds'}`, 'error');
+                showToast(`Error: ${result.error || 'Failed to release funds'}`, 'error');
             }
         } catch (error) {
             console.error('Error saving fund release:', error);
@@ -384,6 +420,11 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
 
                     <div style={{ fontSize: 13, color: '#555' }}>
                         <strong>Note:</strong> Available balance is ₹{(totalReceived - totalReleased).toFixed(2)} Cr.
+                        {formData.amount && parseFloat(formData.amount) > (totalReceived - totalReleased) && (
+                            <div style={{ color: '#e74c3c', marginTop: 8, fontWeight: 600 }}>
+                                ⚠️ Warning: Requested amount (₹{parseFloat(formData.amount).toFixed(2)} Cr) exceeds available balance!
+                            </div>
+                        )}
                     </div>
                 </div>
             </Modal>
