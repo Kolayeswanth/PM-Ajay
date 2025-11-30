@@ -46,6 +46,7 @@ const CreateProposal = ({ districtId }) => {
             'SUBMITTED': 'badge-info',
             'APPROVED_BY_STATE': 'badge-warning',
             'APPROVED_BY_MINISTRY': 'badge-success',
+            'REJECTED_BY_STATE': 'badge-error',
             'REJECTED': 'badge-error'
         };
         return badges[status] || 'badge-info';
@@ -55,6 +56,7 @@ const CreateProposal = ({ districtId }) => {
         if (status === 'SUBMITTED') return 'Pending at State';
         if (status === 'APPROVED_BY_STATE') return 'Pending at Ministry';
         if (status === 'APPROVED_BY_MINISTRY') return 'Approved & Active';
+        if (status === 'REJECTED_BY_STATE') return 'Rejected by State';
         if (status === 'REJECTED') return 'Rejected';
         return 'Unknown';
     };
