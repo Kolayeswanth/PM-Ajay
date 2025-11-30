@@ -6,11 +6,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import DistrictDashboardPanel from './district/DistrictDashboardPanel';
 import ManageGPAdmins from './district/ManageGPAdmins';
 import FundsReceivedFromState from './district/FundsReceivedFromState';
-import ApproveGPProposals from './district/ApproveGPProposals';
 import UploadUCs from './district/UploadUCs';
 import DistrictReports from './district/DistrictReports';
 import DistrictNotifications from './district/DistrictNotifications';
 import DistrictHelp from './district/DistrictHelp';
+import CreateProposal from './district/CreateProposal';
 
 const DistrictDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -61,9 +61,9 @@ const DistrictDashboard = () => {
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: '📝', label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
         { icon: '👥', label: 'Manage GP Admins', action: () => setActiveTab('gp-admins'), active: activeTab === 'gp-admins' },
         { icon: '💰', label: 'Funds Received from State', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
-        { icon: '✅', label: 'Approve GP Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
         { icon: '📄', label: 'Upload UCs', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
         { icon: '📊', label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
         { icon: '🔔', label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
@@ -79,12 +79,12 @@ const DistrictDashboard = () => {
         switch (activeTab) {
             case 'dashboard':
                 return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} />;
+            case 'create-proposal':
+                return <CreateProposal districtId={districtId} />;
             case 'gp-admins':
                 return <ManageGPAdmins />;
             case 'funds-received':
                 return <FundsReceivedFromState formatCurrency={formatCurrency} districtId={districtId} />;
-            case 'proposals':
-                return <ApproveGPProposals />;
             case 'ucs':
                 return <UploadUCs />;
             case 'reports':
@@ -101,9 +101,9 @@ const DistrictDashboard = () => {
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'create-proposal': 'Create Proposal',
             'gp-admins': 'Manage GP Admins',
             'funds-received': 'Funds Received from State',
-            'proposals': 'Approve Proposals',
             'ucs': 'Upload UCs',
             'reports': 'Reports',
             'notifications': 'Notifications',

@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const fundRoutes = require('./routes/fundRoutes');
 const stateAdminRoutes = require('./routes/stateAdminRoutes');
+const proposalRoutes = require('./routes/proposalRoutes');
 
 const app = express();
 const PORT = 5001; // process.env.PORT;
@@ -21,6 +22,7 @@ app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/funds', fundRoutes);
 app.use('/api/state-admins', stateAdminRoutes);
+app.use('/api/proposals', proposalRoutes);
 app.use('/api/district-admins', require('./routes/districtAdminRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 
