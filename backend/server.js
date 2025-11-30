@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const fundRoutes = require('./routes/fundRoutes');
 const stateAdminRoutes = require('./routes/stateAdminRoutes');
+const proposalRoutes = require('./routes/proposalRoutes');
 
 const app = express();
 const PORT = 5001; // process.env.PORT;
@@ -20,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/funds', fundRoutes);
 app.use('/api/state-admins', stateAdminRoutes);
+app.use('/api/proposals', proposalRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

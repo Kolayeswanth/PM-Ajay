@@ -16,6 +16,24 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
         estimatedCost: '',
         description: ''
     });
+    const [myProposals, setMyProposals] = useState([]);
+
+    // Fetch my proposals
+    React.useEffect(() => {
+        if (!districtId) return;
+        const fetchProposals = async () => {
+            try {
+                const res = await fetch(`http://localhost:5001/api/proposals/district/${districtId}`);
+                const data = await res.json();
+                if (data.success) {
+                    setMyProposals(data.data);
+                }
+            } catch (err) {
+                console.error('Error fetching proposals:', err);
+            }
+        };
+        fetchProposals();
+    }, [districtId]);
 
     // Fetch allocated funds
     React.useEffect(() => {
@@ -270,6 +288,45 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                             </div>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            {/* My Submitted Proposals (To State) */}
+            <div className="dashboard-section">
+                <div className="section-header">
+                    <h2 className="section-title">My Submitted Proposals (To State)</h2>
+                </div>
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Component</th>
+                                <th>Est. Cost</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {myProposals.length > 0 ? (
+                                myProposals.map(p => (
+                                    <tr key={p.id}>
+                                        <td>{p.project_name}</td>
+                                        <td><span className="badge badge-primary">{p.component}</span></td>
+                                        <td>₹{p.estimated_cost} L</td>
+                                        <td><span className="badge badge-info">{p.status}</span></td>
+                                        <td>{new Date(p.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                                        No proposals submitted yet.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
