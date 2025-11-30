@@ -7,9 +7,8 @@ const FundsReceivedFromMinistry = ({ formatCurrency }) => {
     const [loading, setLoading] = useState(true);
     const [stateName, setStateName] = useState('');
 
-    // Supabase Configuration
-    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+    // Backend API Base URL
+    const API_BASE_URL = 'http://localhost:5001/api';
 
     useEffect(() => {
         fetchStateName();
@@ -25,17 +24,13 @@ const FundsReceivedFromMinistry = ({ formatCurrency }) => {
         if (!user?.id) return;
 
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
-                headers: {
-                    'apikey': SUPABASE_KEY
-                }
-            });
-            const data = await response.json();
-            if (data[0]?.full_name) {
+            const response = await fetch(`${API_BASE_URL}/profile?userId=${user.id}`);
+            const result = await response.json();
+
+            if (result.success && result.data?.full_name) {
                 // Remove 'State Admin', 'Admin', and 'State' from the name
-                let name = data[0].full_name;
+                let name = result.data.full_name;
                 name = name.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
-                console.log('📍 Original name:', data[0].full_name);
                 console.log('📍 Cleaned name:', name);
                 setStateName(name);
             }
@@ -46,32 +41,14 @@ const FundsReceivedFromMinistry = ({ formatCurrency }) => {
 
     const fetchReceivedFunds = async () => {
         setLoading(true);
-        console.log('=== FETCHING FUNDS FOR STATE ===');
-        console.log('State Name:', stateName);
-
         try {
-            const url = `${SUPABASE_URL}/rest/v1/state_fund_releases?select=*,states(name)&order=created_at.desc`;
+            const response = await fetch(`${API_BASE_URL}/funds/releases`);
+            const result = await response.json();
 
-            const response = await fetch(url, {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('All fund releases from DB:', data);
-
-                // Log each state name for debugging
-                data.forEach((item, idx) => {
-                    const dbStateName = item.states?.name;
-                    console.log(`Item ${idx}: DB state = "${dbStateName}", Profile state = "${stateName}", Match = ${dbStateName === stateName}`);
-                });
-
+            if (result.success) {
+                const data = result.data;
                 // Filter for current state
                 const stateFunds = data.filter(item => item.states?.name === stateName);
-                console.log('✅ Filtered funds for', stateName, ':', stateFunds);
 
                 const formattedData = stateFunds.map(item => ({
                     id: item.id,

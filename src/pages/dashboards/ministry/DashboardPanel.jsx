@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import StatCard from '../../../components/StatCard';
 import IndiaMap from '../../../components/maps/IndiaMap';
 import DistrictMap from '../../../components/maps/DistrictMap';
@@ -6,6 +6,40 @@ import CityMap from '../../../components/maps/CityMap';
 import { nationalStats, states, mockProjects } from '../../../data/mockData';
 
 const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, setSelectedDistrict, formatCurrency }) => {
+    const [stats, setStats] = useState({
+        totalStates: 0,
+        totalDistricts: 0,
+        totalProjects: 0,
+        totalFundAllocated: 0,
+        projectsCompleted: 0,
+        projectsOngoing: 0,
+        projectsApproved: 0,
+        projectsProposed: 0
+    });
+
+    // Fetch real dashboard statistics
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('http://localhost:5001/api/dashboard/ministry-stats');
+                const result = await response.json();
+
+                if (result.success) {
+                    setStats(result.data);
+                }
+            } catch (error) {
+                console.error('Error fetching dashboard stats:', error);
+                // Fallback to mock data if API fails
+                setStats({
+                    ...nationalStats,
+                    totalFundAllocated: nationalStats.totalFundAllocated
+                });
+            }
+        };
+
+        fetchStats();
+    }, []);
+
     const handleExportMapData = () => {
         try {
             // Prepare state-wise project data
@@ -71,19 +105,19 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
             <div className="kpi-row">
                 <StatCard
                     icon="🏛️"
-                    value={nationalStats.totalStates}
+                    value={stats.totalStates}
                     label="States/UTs"
                     color="var(--color-primary)"
                 />
                 <StatCard
                     icon="🏘️"
-                    value={nationalStats.totalDistricts}
+                    value={stats.totalDistricts}
                     label="Districts"
                     color="var(--color-secondary)"
                 />
                 <StatCard
                     icon="📊"
-                    value={nationalStats.totalProjects}
+                    value={stats.totalProjects}
                     label="Total Projects"
                     trend="positive"
                     trendValue="+12% this year"
@@ -91,7 +125,7 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
                 />
                 <StatCard
                     icon="💰"
-                    value={formatCurrency(nationalStats.totalFundAllocated)}
+                    value={formatCurrency(stats.totalFundAllocated)}
                     label="Fund Allocated"
                     color="var(--color-success)"
                 />
@@ -105,7 +139,7 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
                 <div className="kpi-row">
                     <StatCard
                         icon="✔️"
-                        value={nationalStats.projectsCompleted}
+                        value={stats.projectsCompleted}
                         label="Completed"
                         trend="positive"
                         trendValue="+8% this month"
@@ -113,19 +147,19 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
                     />
                     <StatCard
                         icon="🚧"
-                        value={nationalStats.projectsOngoing}
+                        value={stats.projectsOngoing}
                         label="Ongoing"
                         color="var(--color-warning)"
                     />
                     <StatCard
                         icon="✅"
-                        value={nationalStats.projectsApproved}
+                        value={stats.projectsApproved}
                         label="Approved"
                         color="var(--color-info)"
                     />
                     <StatCard
                         icon="📝"
-                        value={nationalStats.projectsProposed}
+                        value={stats.projectsProposed}
                         label="Pending"
                         color="var(--color-error)"
                     />
