@@ -58,28 +58,26 @@ const FundReleased = ({ formatCurrency }) => {
     const fetchReleasedFunds = async () => {
         setLoading(true);
         try {
-            // Fetch releases and join with states to get the name
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/state_fund_releases?select=*,states(name,id)&order=created_at.desc`, {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
-                }
-            });
+            // Fetch releases from backend API
+            const response = await fetch('http://localhost:5001/api/funds/releases');
             if (response.ok) {
-                const data = await response.json();
-                // Transform data to match UI structure
-                const formattedData = data.map(item => ({
-                    id: item.id,
-                    stateName: item.states?.name || 'Unknown State',
-                    stateId: item.states?.id,
-                    component: item.component,
-                    amountInRupees: item.amount_rupees,
-                    amountCr: item.amount_cr,
-                    date: item.release_date,
-                    officerId: item.officer_id || item.sanction_order_no, // Mapping sanction order or officer id
-                    remarks: item.remarks
-                }));
-                setReleasedFunds(formattedData);
+                const result = await response.json();
+                if (result.success) {
+                    const data = result.data;
+                    // Transform data to match UI structure
+                    const formattedData = data.map(item => ({
+                        id: item.id,
+                        stateName: item.states?.name || 'Unknown State',
+                        stateId: item.states?.id,
+                        component: item.component,
+                        amountInRupees: item.amount_rupees,
+                        amountCr: item.amount_cr,
+                        date: item.release_date,
+                        officerId: item.officer_id || item.sanction_order_no,
+                        remarks: item.remarks
+                    }));
+                    setReleasedFunds(formattedData);
+                }
             }
         } catch (error) {
             console.error('Error fetching funds:', error);
