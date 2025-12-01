@@ -26,7 +26,7 @@ const DistrictDashboard = () => {
         const fetchDistrictName = async () => {
             if (user?.id) {
                 try {
-                    const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
+                    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
                         headers: {
                             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
@@ -39,7 +39,7 @@ const DistrictDashboard = () => {
                         setDistrictName(name);
 
                         // Fetch District ID and State ID
-                        const districtRes = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/districts?name=eq.${name}&select=id,state_id`, {
+                        const districtRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/districts?name=eq.${name}&select=id,state_id`, {
                             headers: {
                                 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                                 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
