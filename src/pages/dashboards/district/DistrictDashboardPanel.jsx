@@ -8,21 +8,48 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
     const districtProjects = mockProjects.filter(p => p.district === 'Pune');
     const [fundAllocated, setFundAllocated] = useState(0);
     const [recentReleases, setRecentReleases] = useState([]);
-    const [showAddLocationModal, setShowAddLocationModal] = useState(false);
-    const [newLocation, setNewLocation] = useState({
-        name: '',
-        gp: '',
-        component: 'Adarsh Gram',
-        estimatedCost: '',
-        description: ''
-    });
+    const [stateName, setStateName] = useState('Maharashtra');
+    const [districtName, setDistrictName] = useState(null);
 
-    // Fetch allocated funds
+    const [selectedComponent, setSelectedComponent] = useState('All Components');
+    const [showComponentDropdown, setShowComponentDropdown] = useState(false);
+
+    // Fetch allocated funds and district info
     React.useEffect(() => {
-        const fetchFunds = async () => {
+        const fetchData = async () => {
             if (!districtId) return;
 
             try {
+                // Fetch district info to get state and district name
+                const districtResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/districts?id=eq.${districtId}&select=name,state_id`, {
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                    }
+                });
+
+                if (districtResponse.ok) {
+                    const districtData = await districtResponse.json();
+                    if (districtData && districtData.length > 0) {
+                        setDistrictName(districtData[0].name);
+
+                        // Fetch state name
+                        if (districtData[0].state_id) {
+                            const stateResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
+                                headers: {
+                                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                                }
+                            });
+                            if (stateResponse.ok) {
+                                const stateData = await stateResponse.json();
+                                if (stateData && stateData.length > 0) {
+                                    setStateName(stateData[0].name);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Fetch fund releases
                 const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
                     headers: {
                         'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
@@ -36,11 +63,11 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                     setRecentReleases(data.slice(0, 5)); // Keep top 5
                 }
             } catch (error) {
-                console.error('Error fetching funds:', error);
+                console.error('Error fetching data:', error);
             }
         };
 
-        fetchFunds();
+        fetchData();
     }, [districtId]);
 
     const getStatusBadge = (status) => {
@@ -144,97 +171,241 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                 </div>
             </div>
 
-            {/* GIS Map */}
+            {/* District Overview - Map and Stats */}
             <div className="dashboard-section" style={{ marginBottom: 'var(--space-6)' }}>
                 <div className="section-header" style={{ marginBottom: 'var(--space-4)' }}>
-                    <h2 className="section-title">Project Locations (GIS View)</h2>
-                    <button className="btn btn-primary btn-sm" onClick={() => setShowAddLocationModal(true)}>
-                        📍 Add New Location
-                    </button>
+                    <h2 className="section-title">District Overview</h2>
+
                 </div>
-                <div style={{ height: '500px', width: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
-                    <DistrictMap state="Maharashtra" />
-                </div>
-            </div>
 
-            {/* Add New Location Modal */}
-            {showAddLocationModal && (
-                <div className="modal-overlay" onClick={() => setShowAddLocationModal(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%' }}>
-                        <h2 style={{ marginBottom: 'var(--space-4)', color: 'var(--color-navy)' }}>Add New Project Location</h2>
-
-                        <div style={{ marginBottom: 'var(--space-4)' }}>
-                            <label className="form-label">Project Name</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={newLocation.name}
-                                onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
-                                placeholder="Enter project name"
-                            />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)' }}>
+                    {/* Left: Map with Legend */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                        <div style={{ height: '600px', width: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)', position: 'relative' }}>
+                            <DistrictMap state={stateName} district={districtName} />
                         </div>
+                    </div>
 
-                        <div style={{ marginBottom: 'var(--space-4)' }}>
-                            <label className="form-label">Gram Panchayat</label>
-                            <select
-                                className="form-control"
-                                value={newLocation.gp}
-                                onChange={(e) => setNewLocation({ ...newLocation, gp: e.target.value })}
+                    {/* Right: Fund Utilization & Component Progress */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+                        {/* Component Dropdown - Top Right */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-10px', position: 'relative' }}>
+                            <button
+                                className="btn"
+                                onClick={() => setShowComponentDropdown(!showComponentDropdown)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '10px 20px',
+                                    backgroundColor: 'white',
+                                    border: '2px solid #7C3AED',
+                                    borderRadius: '24px',
+                                    color: '#7C3AED',
+                                    fontWeight: '600',
+                                    fontSize: '14px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: '0 2px 4px rgba(124, 58, 237, 0.1)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#F3F4F6';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'white';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }}
                             >
-                                <option value="">Select GP</option>
-                                <option value="Shirur GP">Shirur GP</option>
-                                <option value="Khed GP">Khed GP</option>
-                                <option value="Baramati GP">Baramati GP</option>
-                                <option value="Junnar GP">Junnar GP</option>
-                            </select>
-                        </div>
-
-                        <div style={{ marginBottom: 'var(--space-4)' }}>
-                            <label className="form-label">Component</label>
-                            <select
-                                className="form-control"
-                                value={newLocation.component}
-                                onChange={(e) => setNewLocation({ ...newLocation, component: e.target.value })}
-                            >
-                                <option value="Adarsh Gram">Adarsh Gram</option>
-                                <option value="GIA (Grant-in-Aid)">GIA (Grant-in-Aid)</option>
-                                <option value="Hostel">Hostel</option>
-                            </select>
-                        </div>
-
-                        <div style={{ marginBottom: 'var(--space-4)' }}>
-                            <label className="form-label">Estimated Cost (in Lakhs)</label>
-                            <input
-                                type="number"
-                                className="form-control"
-                                value={newLocation.estimatedCost}
-                                onChange={(e) => setNewLocation({ ...newLocation, estimatedCost: e.target.value })}
-                                placeholder="Enter estimated cost"
-                            />
-                        </div>
-
-                        <div style={{ marginBottom: 'var(--space-6)' }}>
-                            <label className="form-label">Description</label>
-                            <textarea
-                                className="form-control"
-                                value={newLocation.description}
-                                onChange={(e) => setNewLocation({ ...newLocation, description: e.target.value })}
-                                placeholder="Enter project description"
-                                rows="3"
-                            />
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
-                            <button className="btn btn-outline" onClick={() => setShowAddLocationModal(false)}>
-                                Cancel
+                                <span>{selectedComponent}</span>
+                                <span style={{ fontSize: '12px' }}>▼</span>
                             </button>
-                            <button className="btn btn-primary" onClick={handleAddLocation}>
-                                Add Location
-                            </button>
+
+                            {/* Dropdown Menu */}
+                            {showComponentDropdown && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '8px',
+                                    backgroundColor: 'white',
+                                    border: '1px solid #E5E7EB',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                                    zIndex: 1000,
+                                    minWidth: '200px',
+                                    overflow: 'hidden'
+                                }}>
+                                    {['All Components', 'Adarsh Gram', 'GIA', 'Hostel'].map((component) => (
+                                        <div
+                                            key={component}
+                                            onClick={() => {
+                                                setSelectedComponent(component);
+                                                setShowComponentDropdown(false);
+                                            }}
+                                            style={{
+                                                padding: '12px 20px',
+                                                cursor: 'pointer',
+                                                transition: 'background-color 0.2s ease',
+                                                backgroundColor: selectedComponent === component ? '#F3F4F6' : 'white',
+                                                fontWeight: selectedComponent === component ? '600' : '500',
+                                                color: selectedComponent === component ? '#7C3AED' : '#374151',
+                                                fontSize: '14px'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (selectedComponent !== component) {
+                                                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (selectedComponent !== component) {
+                                                    e.currentTarget.style.backgroundColor = 'white';
+                                                }
+                                            }}
+                                        >
+                                            {component}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Fund Utilization Card */}
+                        <div className="card" style={{ padding: 'var(--space-6)' }}>
+                            <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
+                                Fund Utilization - {districtName || 'District'}
+                            </h3>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
+                                {/* Circular Progress */}
+                                <div style={{ position: 'relative', width: '200px', height: '200px' }}>
+                                    <svg height="200" width="200" style={{ transform: 'rotate(-90deg)' }}>
+                                        <circle stroke="#E5E7EB" strokeWidth="30" fill="transparent" r="70" cx="100" cy="100" />
+                                        <circle
+                                            stroke="#7C3AED"
+                                            strokeWidth="30"
+                                            strokeDasharray={`${2 * Math.PI * 70}`}
+                                            style={{ strokeDashoffset: `${2 * Math.PI * 70 * (1 - (fundAllocated / (fundAllocated + 49000000)))}`, transition: 'stroke-dashoffset 1.5s ease-out' }}
+                                            strokeLinecap="round"
+                                            fill="transparent"
+                                            r="70"
+                                            cx="100"
+                                            cy="100"
+                                        />
+                                    </svg>
+                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--color-navy)' }}>
+                                            {Math.round((fundAllocated / (fundAllocated + 49000000)) * 100)}%
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Utilized</div>
+                                    </div>
+                                </div>
+
+                                {/* Legend */}
+                                <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: '13px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#7C3AED' }}></div>
+                                        <span style={{ color: 'var(--color-navy)' }}>Utilized: ₹{(fundAllocated / 10000000).toFixed(2)} Cr</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#E5E7EB' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Remaining: ₹{(49000000 / 10000000).toFixed(2)} Cr</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Component Progress Card */}
+                        <div className="card" style={{ padding: 'var(--space-6)' }}>
+                            <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
+                                {selectedComponent === 'All Components' ? 'Component Progress' : `${selectedComponent} Progress`}
+                            </h3>
+
+                            {(() => {
+                                const componentData = {
+                                    'Adarsh Gram': { progress: 27, color: '#7C3AED', label: 'Adarsh Gram' },
+                                    'GIA': { progress: 42, color: '#EC4899', label: 'GIA (Grant-in-Aid)' },
+                                    'Hostel': { progress: 89, color: '#F59E0B', label: 'Hostel' }
+                                };
+
+                                if (selectedComponent === 'All Components') {
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 0' }}>
+                                            {Object.entries(componentData).map(([key, data]) => (
+                                                <div key={key}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                        <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-navy)' }}>{data.label}</span>
+                                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: data.color }}>{data.progress}%</span>
+                                                    </div>
+                                                    <div style={{ width: '100%', height: '12px', backgroundColor: '#E5E7EB', borderRadius: '6px', overflow: 'hidden' }}>
+                                                        <div style={{ width: `${data.progress}%`, height: '100%', backgroundColor: data.color, borderRadius: '6px', transition: 'width 0.8s ease' }}></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                } else {
+                                    const data = componentData[selectedComponent];
+                                    if (!data) return null;
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                                                {/* Large percentage display */}
+                                                <div style={{
+                                                    fontSize: '48px',
+                                                    fontWeight: 'bold',
+                                                    color: data.color,
+                                                    marginBottom: '16px'
+                                                }}>
+                                                    {data.progress}%
+                                                </div>
+
+                                                {/* Large vertical bar */}
+                                                <div style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    width: '60%',
+                                                    maxWidth: '200px'
+                                                }}>
+                                                    <div style={{
+                                                        width: '100%',
+                                                        height: `${data.progress * 2.5}px`,
+                                                        maxHeight: '250px',
+                                                        backgroundColor: data.color,
+                                                        borderRadius: '8px 8px 0 0',
+                                                        transition: 'height 0.8s ease',
+                                                        minHeight: '40px'
+                                                    }}></div>
+
+                                                    {/* Base line */}
+                                                    <div style={{
+                                                        width: '100%',
+                                                        height: '4px',
+                                                        backgroundColor: '#E5E7EB'
+                                                    }}></div>
+                                                </div>
+
+                                                {/* Component name */}
+                                                <div style={{
+                                                    fontSize: '18px',
+                                                    fontWeight: '600',
+                                                    color: 'var(--color-navy)',
+                                                    marginTop: '16px'
+                                                }}>
+                                                    {data.label}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                            })()}
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+
+
 
             {/* GP Proposals Pending */}
             <div className="dashboard-section">

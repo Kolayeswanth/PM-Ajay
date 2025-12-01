@@ -28,6 +28,202 @@ export const districts = {
         { id: 3, name: 'Nagpur', projects: 32, fundAllocated: 680000000, progress: 55 },
         { id: 4, name: 'Nashik', projects: 28, fundAllocated: 590000000, progress: 61 },
         { id: 5, name: 'Aurangabad', projects: 25, fundAllocated: 520000000, progress: 58 }
+    ],
+    Karnataka: [
+        { id: 1, name: 'Bidar', projects: 12, fundAllocated: 250000000, progress: 45 },
+        { id: 2, name: 'Gulbarga', projects: 18, fundAllocated: 320000000, progress: 52 },
+        { id: 3, name: 'Bijapur', projects: 15, fundAllocated: 280000000, progress: 48 },
+        { id: 4, name: 'Raichur', projects: 10, fundAllocated: 180000000, progress: 40 },
+        { id: 5, name: 'Bellary', projects: 22, fundAllocated: 450000000, progress: 65 },
+        { id: 6, name: 'Belgaum', projects: 25, fundAllocated: 500000000, progress: 70 },
+        { id: 7, name: 'Dharwad', projects: 20, fundAllocated: 380000000, progress: 62 },
+        { id: 8, name: 'Bangalore Urban', projects: 45, fundAllocated: 950000000, progress: 85 }
+    ],
+    'Uttar Pradesh': [
+        { id: 1, name: 'Lucknow', projects: 55, fundAllocated: 950000000, progress: 75 },
+        { id: 2, name: 'Kanpur Nagar', projects: 48, fundAllocated: 820000000, progress: 68 },
+        { id: 3, name: 'Varanasi', projects: 62, fundAllocated: 1100000000, progress: 82 },
+        { id: 4, name: 'Agra', projects: 40, fundAllocated: 750000000, progress: 60 },
+        { id: 5, name: 'Prayagraj', projects: 50, fundAllocated: 880000000, progress: 70 },
+        { id: 6, name: 'Gorakhpur', projects: 45, fundAllocated: 780000000, progress: 65 },
+        { id: 7, name: 'Meerut', projects: 38, fundAllocated: 650000000, progress: 58 },
+        { id: 8, name: 'Ghaziabad', projects: 42, fundAllocated: 720000000, progress: 62 }
+    ],
+    'Tamil Nadu': [
+        { id: 1, name: 'Chennai', projects: 65, fundAllocated: 1200000000, progress: 88 },
+        { id: 2, name: 'Coimbatore', projects: 52, fundAllocated: 950000000, progress: 78 },
+        { id: 3, name: 'Madurai', projects: 45, fundAllocated: 820000000, progress: 72 },
+        { id: 4, name: 'Tiruchirappalli', projects: 38, fundAllocated: 680000000, progress: 65 },
+        { id: 5, name: 'Salem', projects: 35, fundAllocated: 620000000, progress: 60 },
+        { id: 6, name: 'Tirunelveli', projects: 30, fundAllocated: 550000000, progress: 58 },
+        { id: 7, name: 'Erode', projects: 28, fundAllocated: 480000000, progress: 55 }
+    ],
+    Gujarat: [
+        { id: 1, name: 'Ahmedabad', projects: 58, fundAllocated: 1150000000, progress: 85 },
+        { id: 2, name: 'Surat', projects: 55, fundAllocated: 1050000000, progress: 82 },
+        { id: 3, name: 'Vadodara', projects: 42, fundAllocated: 850000000, progress: 75 },
+        { id: 4, name: 'Rajkot', projects: 38, fundAllocated: 720000000, progress: 70 },
+        { id: 5, name: 'Bhavnagar', projects: 30, fundAllocated: 580000000, progress: 65 },
+        { id: 6, name: 'Jamnagar', projects: 28, fundAllocated: 520000000, progress: 62 }
+    ],
+    Rajasthan: [
+        { id: 1, name: 'Jaipur', projects: 50, fundAllocated: 980000000, progress: 78 },
+        { id: 2, name: 'Jodhpur', projects: 42, fundAllocated: 820000000, progress: 70 },
+        { id: 3, name: 'Udaipur', projects: 35, fundAllocated: 680000000, progress: 65 },
+        { id: 4, name: 'Kota', projects: 32, fundAllocated: 620000000, progress: 62 },
+        { id: 5, name: 'Ajmer', projects: 28, fundAllocated: 550000000, progress: 58 },
+        { id: 6, name: 'Bikaner', projects: 25, fundAllocated: 480000000, progress: 55 }
+    ],
+    'West Bengal': [
+        { id: 1, name: 'Kolkata', projects: 60, fundAllocated: 1100000000, progress: 80 },
+        { id: 2, name: 'North 24 Parganas', projects: 55, fundAllocated: 950000000, progress: 75 },
+        { id: 3, name: 'South 24 Parganas', projects: 48, fundAllocated: 850000000, progress: 70 },
+        { id: 4, name: 'Howrah', projects: 42, fundAllocated: 780000000, progress: 68 },
+        { id: 5, name: 'Hooghly', projects: 38, fundAllocated: 650000000, progress: 62 },
+        { id: 6, name: 'Darjeeling', projects: 30, fundAllocated: 550000000, progress: 58 }
+    ],
+    'Madhya Pradesh': [
+        { id: 1, name: 'Indore', projects: 52, fundAllocated: 920000000, progress: 82 },
+        { id: 2, name: 'Bhopal', projects: 48, fundAllocated: 880000000, progress: 78 },
+        { id: 3, name: 'Jabalpur', projects: 40, fundAllocated: 720000000, progress: 70 },
+        { id: 4, name: 'Gwalior', projects: 35, fundAllocated: 650000000, progress: 65 },
+        { id: 5, name: 'Ujjain', projects: 30, fundAllocated: 550000000, progress: 60 }
+    ],
+    Telangana: [
+        { id: 1, name: 'Hyderabad', projects: 62, fundAllocated: 1250000000, progress: 88 },
+        { id: 2, name: 'Ranga Reddy', projects: 45, fundAllocated: 850000000, progress: 75 },
+        { id: 3, name: 'Medchal Malkajgiri', projects: 38, fundAllocated: 720000000, progress: 70 },
+        { id: 4, name: 'Warangal Urban', projects: 32, fundAllocated: 620000000, progress: 65 },
+        { id: 5, name: 'Karimnagar', projects: 28, fundAllocated: 550000000, progress: 60 }
+    ],
+    'Andhra Pradesh': [
+        { id: 1, name: 'Visakhapatnam', projects: 55, fundAllocated: 980000000, progress: 80 },
+        { id: 2, name: 'Krishna', projects: 48, fundAllocated: 850000000, progress: 75 },
+        { id: 3, name: 'Guntur', projects: 45, fundAllocated: 820000000, progress: 72 },
+        { id: 4, name: 'East Godavari', projects: 40, fundAllocated: 750000000, progress: 68 },
+        { id: 5, name: 'Chittoor', projects: 35, fundAllocated: 650000000, progress: 62 }
+    ],
+    Kerala: [
+        { id: 1, name: 'Thiruvananthapuram', projects: 45, fundAllocated: 850000000, progress: 82 },
+        { id: 2, name: 'Ernakulam', projects: 42, fundAllocated: 820000000, progress: 80 },
+        { id: 3, name: 'Kozhikode', projects: 38, fundAllocated: 750000000, progress: 75 },
+        { id: 4, name: 'Thrissur', projects: 35, fundAllocated: 680000000, progress: 72 },
+        { id: 5, name: 'Kollam', projects: 30, fundAllocated: 580000000, progress: 68 }
+    ],
+    Odisha: [
+        { id: 1, name: 'Khordha', projects: 40, fundAllocated: 750000000, progress: 72 },
+        { id: 2, name: 'Cuttack', projects: 35, fundAllocated: 650000000, progress: 68 },
+        { id: 3, name: 'Ganjam', projects: 32, fundAllocated: 580000000, progress: 62 },
+        { id: 4, name: 'Sundargarh', projects: 28, fundAllocated: 520000000, progress: 58 },
+        { id: 5, name: 'Puri', projects: 25, fundAllocated: 450000000, progress: 55 }
+    ],
+    Uttarakhand: [
+        { id: 1, name: 'Dehradun', projects: 35, fundAllocated: 650000000, progress: 75 },
+        { id: 2, name: 'Haridwar', projects: 30, fundAllocated: 550000000, progress: 70 },
+        { id: 3, name: 'Nainital', projects: 25, fundAllocated: 450000000, progress: 65 },
+        { id: 4, name: 'Udham Singh Nagar', projects: 22, fundAllocated: 400000000, progress: 60 }
+    ],
+    Bihar: [
+        { id: 1, name: 'Patna', projects: 50, fundAllocated: 850000000, progress: 65 },
+        { id: 2, name: 'Gaya', projects: 40, fundAllocated: 680000000, progress: 58 },
+        { id: 3, name: 'Muzaffarpur', projects: 35, fundAllocated: 580000000, progress: 55 },
+        { id: 4, name: 'Bhagalpur', projects: 30, fundAllocated: 520000000, progress: 52 },
+        { id: 5, name: 'Nalanda', projects: 28, fundAllocated: 480000000, progress: 50 }
+    ],
+    Jharkhand: [
+        { id: 1, name: 'Ranchi', projects: 42, fundAllocated: 720000000, progress: 62 },
+        { id: 2, name: 'Dhanbad', projects: 38, fundAllocated: 650000000, progress: 58 },
+        { id: 3, name: 'East Singhbhum', projects: 35, fundAllocated: 580000000, progress: 55 },
+        { id: 4, name: 'Bokaro', projects: 30, fundAllocated: 520000000, progress: 52 }
+    ],
+    Chhattisgarh: [
+        { id: 1, name: 'Raipur', projects: 40, fundAllocated: 680000000, progress: 65 },
+        { id: 2, name: 'Durg', projects: 35, fundAllocated: 580000000, progress: 60 },
+        { id: 3, name: 'Bilaspur', projects: 32, fundAllocated: 520000000, progress: 58 },
+        { id: 4, name: 'Rajnandgaon', projects: 28, fundAllocated: 450000000, progress: 55 }
+    ],
+    Haryana: [
+        { id: 1, name: 'Gurugram', projects: 48, fundAllocated: 950000000, progress: 85 },
+        { id: 2, name: 'Faridabad', projects: 45, fundAllocated: 880000000, progress: 80 },
+        { id: 3, name: 'Karnal', projects: 35, fundAllocated: 650000000, progress: 70 },
+        { id: 4, name: 'Panipat', projects: 32, fundAllocated: 580000000, progress: 65 },
+        { id: 5, name: 'Ambala', projects: 30, fundAllocated: 520000000, progress: 62 }
+    ],
+    Punjab: [
+        { id: 1, name: 'Ludhiana', projects: 50, fundAllocated: 920000000, progress: 78 },
+        { id: 2, name: 'Amritsar', projects: 45, fundAllocated: 850000000, progress: 75 },
+        { id: 3, name: 'Jalandhar', projects: 40, fundAllocated: 750000000, progress: 72 },
+        { id: 4, name: 'Patiala', projects: 35, fundAllocated: 650000000, progress: 68 },
+        { id: 5, name: 'Bathinda', projects: 30, fundAllocated: 550000000, progress: 65 }
+    ],
+    'Himachal Pradesh': [
+        { id: 1, name: 'Shimla', projects: 25, fundAllocated: 450000000, progress: 70 },
+        { id: 2, name: 'Kangra', projects: 22, fundAllocated: 400000000, progress: 65 },
+        { id: 3, name: 'Mandi', projects: 20, fundAllocated: 350000000, progress: 60 }
+    ],
+    'Jammu and Kashmir': [
+        { id: 1, name: 'Srinagar', projects: 30, fundAllocated: 550000000, progress: 65 },
+        { id: 2, name: 'Jammu', projects: 28, fundAllocated: 500000000, progress: 62 },
+        { id: 3, name: 'Anantnag', projects: 25, fundAllocated: 450000000, progress: 60 }
+    ],
+    Goa: [
+        { id: 1, name: 'North Goa', projects: 15, fundAllocated: 250000000, progress: 75 },
+        { id: 2, name: 'South Goa', projects: 12, fundAllocated: 200000000, progress: 70 }
+    ],
+    Assam: [
+        { id: 1, name: 'Kamrup Metropolitan', projects: 35, fundAllocated: 600000000, progress: 72 },
+        { id: 2, name: 'Dibrugarh', projects: 30, fundAllocated: 500000000, progress: 68 },
+        { id: 3, name: 'Cachar', projects: 25, fundAllocated: 450000000, progress: 65 }
+    ],
+    Manipur: [
+        { id: 1, name: 'Imphal West', projects: 20, fundAllocated: 350000000, progress: 65 },
+        { id: 2, name: 'Imphal East', projects: 18, fundAllocated: 300000000, progress: 60 }
+    ],
+    Meghalaya: [
+        { id: 1, name: 'East Khasi Hills', projects: 22, fundAllocated: 400000000, progress: 68 },
+        { id: 2, name: 'West Garo Hills', projects: 18, fundAllocated: 320000000, progress: 62 }
+    ],
+    Mizoram: [
+        { id: 1, name: 'Aizawl', projects: 15, fundAllocated: 280000000, progress: 70 },
+        { id: 2, name: 'Lunglei', projects: 12, fundAllocated: 220000000, progress: 65 }
+    ],
+    Nagaland: [
+        { id: 1, name: 'Dimapur', projects: 18, fundAllocated: 320000000, progress: 65 },
+        { id: 2, name: 'Kohima', projects: 15, fundAllocated: 280000000, progress: 60 }
+    ],
+    Sikkim: [
+        { id: 1, name: 'East Sikkim', projects: 12, fundAllocated: 200000000, progress: 75 },
+        { id: 2, name: 'South Sikkim', projects: 10, fundAllocated: 180000000, progress: 70 }
+    ],
+    Tripura: [
+        { id: 1, name: 'West Tripura', projects: 20, fundAllocated: 350000000, progress: 72 },
+        { id: 2, name: 'Gomati', projects: 15, fundAllocated: 280000000, progress: 68 }
+    ],
+    'Arunachal Pradesh': [
+        { id: 1, name: 'Papum Pare', projects: 15, fundAllocated: 250000000, progress: 65 },
+        { id: 2, name: 'Changlang', projects: 12, fundAllocated: 200000000, progress: 60 }
+    ],
+    'NCT of Delhi': [
+        { id: 1, name: 'New Delhi', projects: 40, fundAllocated: 800000000, progress: 85 },
+        { id: 2, name: 'North West Delhi', projects: 35, fundAllocated: 700000000, progress: 80 }
+    ],
+    Puducherry: [
+        { id: 1, name: 'Puducherry', projects: 15, fundAllocated: 250000000, progress: 75 },
+        { id: 2, name: 'Karaikal', projects: 10, fundAllocated: 180000000, progress: 70 }
+    ],
+    Chandigarh: [
+        { id: 1, name: 'Chandigarh', projects: 20, fundAllocated: 350000000, progress: 82 }
+    ],
+    'Dadra & Nagar Haveli and Daman & Diu': [
+        { id: 1, name: 'Daman', projects: 12, fundAllocated: 200000000, progress: 70 },
+        { id: 2, name: 'Dadra & Nagar Haveli', projects: 10, fundAllocated: 180000000, progress: 65 }
+    ],
+    'Andaman & Nicobar Islands': [
+        { id: 1, name: 'South Andaman', projects: 15, fundAllocated: 250000000, progress: 72 },
+        { id: 2, name: 'North & Middle Andaman', projects: 10, fundAllocated: 180000000, progress: 65 }
+    ],
+    Lakshadweep: [
+        { id: 1, name: 'Lakshadweep', projects: 8, fundAllocated: 150000000, progress: 68 }
     ]
 };
 
