@@ -11,7 +11,7 @@ const FundsReceivedFromState = ({ formatCurrency, districtId }) => {
 
             setLoading(true);
             try {
-                const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
+                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
                     headers: {
                         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`

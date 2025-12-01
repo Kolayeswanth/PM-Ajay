@@ -7,6 +7,7 @@ router.post('/allocate', fundController.allocateFund);
 router.post('/release', fundController.releaseFund);
 router.get('/releases', fundController.getAllStateFundReleases);
 router.get('/district-releases', fundController.getDistrictFundReleasesByState);
+router.get('/district-stats', fundController.getDistrictStats);
 router.get('/fix-allocations', fundController.fixFundAllocations);
 
 module.exports = router;

@@ -312,6 +312,13 @@ const Home = () => {
             if (user?.id) {
                 try {
                     // Get user role
+                    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+                    const roleResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${user.id}&select=role`, {
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${supabaseKey}`
                     const roleResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=role`, {
                         headers: {
                             'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
@@ -321,6 +328,10 @@ const Home = () => {
 
                     // If user is a district admin, fetch their district info
                     if (roleData[0]?.role === 'district_admin') {
+                        const districtResponse = await fetch(`${supabaseUrl}/rest/v1/districts?id=eq.${user.id}&select=name,state_id`, {
+                            headers: {
+                                'apikey': supabaseKey,
+                                'Authorization': `Bearer ${supabaseKey}`
                         const districtResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/districts?id=eq.${user.id}&select=name,state_id`, {
                             headers: {
                                 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
@@ -332,6 +343,10 @@ const Home = () => {
                             const districtName = districtData[0].name;
 
                             // Fetch state name
+                            const stateResponse = await fetch(`${supabaseUrl}/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
+                                headers: {
+                                    'apikey': supabaseKey,
+                                    'Authorization': `Bearer ${supabaseKey}`
                             const stateResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
                                 headers: {
                                     'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'

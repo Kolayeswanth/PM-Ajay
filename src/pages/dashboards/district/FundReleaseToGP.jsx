@@ -41,7 +41,7 @@ const FundReleaseToGP = ({ formatCurrency = (amount) => `₹${amount} Cr`, distr
         const fetchTotalFunds = async () => {
             if (!districtId) return;
             try {
-                const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=amount_cr`, {
+                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/fund_releases?district_id=eq.${districtId}&select=amount_cr`, {
                     headers: {
                         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
