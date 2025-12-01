@@ -77,7 +77,7 @@ const DistrictDashboard = () => {
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
         { icon: '📝', label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
         { icon: '✍️', label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
-        { icon: '👥', label: 'Manage GP Admins', action: () => setActiveTab('gp-admins'), active: activeTab === 'gp-admins' },
+        { icon: '🏢', label: 'Manage Implementing Agencies', action: () => setActiveTab('gp-admins'), active: activeTab === 'gp-admins' },
         { icon: '💰', label: 'Funds Received from State', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
         { icon: '📄', label: 'Upload UCs', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
         { icon: '📊', label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
@@ -120,7 +120,7 @@ const DistrictDashboard = () => {
             'dashboard': 'Dashboard',
             'create-proposal': 'Create Proposal',
             'assign-projects': 'Assign Projects',
-            'gp-admins': 'Manage GP Admins',
+            'gp-admins': 'Manage Implementing Agencies',
             'funds-received': 'Funds Received from State',
             'ucs': 'Upload UCs',
             'reports': 'Reports',
@@ -143,7 +143,7 @@ const DistrictDashboard = () => {
                         </p>
                     </div>
                     <div className="dashboard-actions">
-                        <NotificationBell />
+                        <NotificationBell userRole="district" districtName={districtName} />
                     </div>
                 </div>
 

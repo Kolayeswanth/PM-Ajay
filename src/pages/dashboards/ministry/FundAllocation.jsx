@@ -177,7 +177,38 @@ const FundAllocation = ({ formatCurrency }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ margin: 0 }}>State-wise Fund Allocation</h2>
                 <div style={{ display: 'flex', gap: 12 }}>
-                    <button className="btn btn-outline" onClick={openAddAllocation} style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
+                    <button
+                        className="btn"
+                        onClick={openAddAllocation}
+                        style={{
+                            backgroundColor: 'var(--color-saffron)',
+                            color: 'white',
+                            border: '2px solid var(--color-saffron)',
+                            transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#d97706';
+                            e.currentTarget.style.borderColor = '#d97706';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--color-saffron)';
+                            e.currentTarget.style.borderColor = 'var(--color-saffron)';
+                        }}
+                        onFocus={(e) => {
+                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 153, 0, 0.3)';
+                        }}
+                        onBlur={(e) => {
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                        onMouseDown={(e) => {
+                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 153, 0, 0.3)';
+                        }}
+                        onMouseUp={(e) => {
+                            if (!e.currentTarget.matches(':focus')) {
+                                e.currentTarget.style.boxShadow = 'none';
+                            }
+                        }}
+                    >
                         + Add Allocation
                     </button>
                 </div>

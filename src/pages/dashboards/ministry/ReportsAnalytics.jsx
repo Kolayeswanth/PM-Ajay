@@ -312,25 +312,64 @@ const ReportsAnalytics = () => {
         }
     };
 
+    const InfoCard = ({ icon, value, label, colorBg, colorText }) => (
+        <div className="card" style={{
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            border: 'none',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)'
+        }}>
+            <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                backgroundColor: colorBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: colorText,
+                fontSize: '1.5rem'
+            }}>
+                {icon}
+            </div>
+            <div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+            </div>
+        </div>
+    );
+
+
+
     return (
-        <div className="dashboard-panel" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ margin: 0 }}>Reports & Analytics</h2>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <select
-                        className="form-control"
-                        value={reportType}
-                        onChange={(e) => setReportType(e.target.value)}
-                        style={{ width: '200px' }}
-                    >
-                        <option value="Fund Utilization">Fund Utilization</option>
-                        <option value="Project Progress">Project Progress</option>
-                        <option value="Annual Plan Summary">Annual Plan Summary</option>
-                        <option value="UCs submitted">UCs submitted</option>
-                        <option value="State-wise Comparison">State-wise Comparison</option>
-                    </select>
-                    <button className="btn btn-primary btn-sm" onClick={handleExportPDF}>📥 Export Report</button>
-                </div>
+        <div className="dashboard-panel" style={{ backgroundColor: '#FFFFFF', padding: 20 }}>
+            <h2 style={{ margin: '0 0 1.5rem 0' }}>Reports & Analytics</h2>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <select
+                    className="form-control"
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
+                    style={{ width: '200px' }}
+                >
+                    <option value="Fund Utilization">Fund Utilization</option>
+                    <option value="Project Progress">Project Progress</option>
+                    <option value="Annual Plan Summary">Annual Plan Summary</option>
+                    <option value="UCs submitted">UCs submitted</option>
+                    <option value="State-wise Comparison">State-wise Comparison</option>
+                </select>
+                <button className="btn btn-primary btn-sm" onClick={handleExportPDF}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export Report
+                </button>
             </div>
 
             {toast && (
@@ -339,25 +378,25 @@ const ReportsAnalytics = () => {
                 </div>
             )}
 
-            <div className="dashboard-section">
-                <div className="kpi-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                    <StatCard
-                        icon="📊"
-                        value="12"
-                        label="Reports Generated"
-                        color="var(--color-primary)"
-                    />
-                    <StatCard
-                        icon="📥"
-                        value="45"
-                        label="Downloads"
-                        color="var(--color-secondary)"
-                    />
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                <InfoCard
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>}
+                    value="12"
+                    label="Reports Generated"
+                    colorBg="#F5F3FF"
+                    colorText="#7C3AED"
+                />
+                <InfoCard
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>}
+                    value="45"
+                    label="Downloads"
+                    colorBg="#DBEAFE"
+                    colorText="#2563EB"
+                />
             </div>
 
             <div className="dashboard-section">
-                <h3 className="section-title">{reportType} Report</h3>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: '600' }}>{reportType} Report</h3>
                 <div className="card" style={{ padding: 'var(--space-4)', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border-light)' }}>
                     <p style={{ color: 'var(--text-secondary)' }}>
                         Graphical representation and detailed data for <strong>{reportType}</strong> will be displayed here.
