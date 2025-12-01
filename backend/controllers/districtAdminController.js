@@ -189,12 +189,14 @@ exports.activateDistrictAdmin = async (req, res) => {
 
             if (watiApiBaseUrl && watiApiKey && tenantId) {
                 const messageContent =
+                    `⚠️ *Important Notification*\n\n` +
                     `DISTRICT ADMIN ACTIVATION - ` +
                     `Dear ${adminData.admin_name}, ` +
                     `Your account has been successfully ACTIVATED as District Admin for ${adminData.district_name}. ` +
                     `Email: ${adminData.email}. ` +
                     `Status: Activated. ` +
-                    `You can now access the PM-AJAY Dashboard. ` +
+                    `You can now access the PM-AJAY Dashboard and manage your district's fund allocations. ` +
+                    `Please login to the portal to view your dashboard. ` +
                     `Thank you, Ministry of Social Justice & Empowerment`;
 
                 const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
