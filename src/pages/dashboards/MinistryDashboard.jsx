@@ -113,7 +113,7 @@ const MinistryDashboard = () => {
                         </p>
                     </div>
                     <div className="dashboard-actions">
-                        <NotificationBell />
+                        <NotificationBell userRole="ministry" />
                     </div>
                 </div>
 

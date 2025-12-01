@@ -1,11 +1,75 @@
-import React, { useState } from 'react';
-import { mockNotifications } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
-const NotificationBell = () => {
+
+
+
+const NotificationBell = ({ userRole, stateName, districtName }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [notifications, setNotifications] = useState(mockNotifications);
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const unreadCount = notifications.filter(n => !n.read).length;
+
+    const fetchNotifications = async () => {
+        if (!userRole) return;
+
+        console.log('🔔 Fetching notifications for:', { userRole, stateName, districtName });
+
+        try {
+            setLoading(true);
+            let query = supabase
+                .from('notifications')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(20);
+
+            // Filter by user role
+            query = query.eq('user_role', userRole);
+
+            // If state admin, filter by state
+            if (userRole === 'state' && stateName) {
+                query = query.eq('state_name', stateName);
+            }
+
+            // If district admin, filter by district
+            if (userRole === 'district' && districtName) {
+                query = query.eq('district_name', districtName);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error('Error fetching notifications:', error);
+            } else {
+                console.log('✅ Notifications fetched:', data?.length || 0);
+                setNotifications(data || []);
+            }
+        } catch (err) {
+            console.error('Error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+
+        // Auto-refresh every 5 seconds (faster updates)
+        const interval = setInterval(fetchNotifications, 5000);
+
+        // Also refresh when window gains focus
+        const handleFocus = () => {
+            console.log('🔄 Window focused - refreshing notifications');
+            fetchNotifications();
+        };
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [userRole, stateName, districtName]);
 
     const getNotificationClass = (type) => {
         const classes = {
@@ -17,10 +81,32 @@ const NotificationBell = () => {
         return classes[type] || 'alert-info';
     };
 
-    const markAsRead = (id) => {
-        setNotifications(notifications.map(n =>
-            n.id === id ? { ...n, read: true } : n
-        ));
+    const markAsRead = async (id) => {
+        try {
+            const { error } = await supabase
+                .from('notifications')
+                .update({ read: true })
+                .eq('id', id);
+
+            if (!error) {
+                setNotifications(notifications.map(n =>
+                    n.id === id ? { ...n, read: true } : n
+                ));
+            }
+        } catch (err) {
+            console.error('Error marking notification as read:', err);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000); // difference in seconds
+
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return date.toLocaleDateString();
     };
 
     return (
@@ -41,8 +127,8 @@ const NotificationBell = () => {
                     backgroundColor: 'var(--bg-primary)',
                     borderRadius: 'var(--radius-lg)',
                     boxShadow: 'var(--shadow-xl)',
-                    width: '350px',
-                    maxHeight: '400px',
+                    width: '380px',
+                    maxHeight: '500px',
                     overflowY: 'auto',
                     zIndex: 'var(--z-dropdown)',
                     border: '1px solid var(--border-light)'
@@ -55,7 +141,7 @@ const NotificationBell = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center'
                     }}>
-                        <span>Notifications</span>
+                        <span>Notifications {unreadCount > 0 && `(${unreadCount})`}</span>
                         <button
                             onClick={() => setIsOpen(false)}
                             style={{
@@ -70,7 +156,11 @@ const NotificationBell = () => {
                         </button>
                     </div>
 
-                    {notifications.length === 0 ? (
+                    {loading ? (
+                        <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                            Loading...
+                        </div>
+                    ) : notifications.length === 0 ? (
                         <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-secondary)' }}>
                             No notifications
                         </div>
@@ -118,7 +208,7 @@ const NotificationBell = () => {
                                         {notification.message}
                                     </p>
                                     <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                                        {notification.date}
+                                        {formatDate(notification.created_at)}
                                     </span>
                                 </div>
                             ))}

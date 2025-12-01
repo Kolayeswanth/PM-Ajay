@@ -22,7 +22,7 @@ const ManageGPAdmins = () => {
     const validate = () => {
         const errs = {};
         if (!formData.name.trim()) errs.name = 'Name is required';
-        if (!formData.gp.trim()) errs.gp = 'Gram Panchayat name is required';
+        if (!formData.gp.trim()) errs.gp = 'Agency name is required';
         if (!formData.email.trim()) errs.email = 'Email is required';
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errs.email = 'Invalid email format';
         if (!formData.phone.trim()) errs.phone = 'Phone is required';
@@ -47,7 +47,7 @@ const ManageGPAdmins = () => {
         };
 
         setAdmins([...admins, newAdmin]);
-        showToast(`Admin for ${formData.gp} GP added successfully`);
+        showToast(`Implementing Agency '${formData.gp}' added successfully`);
         setIsModalOpen(false);
         setFormData({ name: '', gp: '', email: '', phone: '', username: '', password: '' });
         setErrors({});
@@ -71,7 +71,7 @@ const ManageGPAdmins = () => {
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Gram Panchayat Admins List</title>
+                    <title>Implementing Agencies List</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         h1 { text-align: center; color: #2c3e50; }
@@ -84,12 +84,12 @@ const ManageGPAdmins = () => {
                     </style>
                 </head>
                 <body>
-                    <h1>Gram Panchayat Admins List - Pune District</h1>
+                    <h1>Implementing Agencies List - District</h1>
                     <table>
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Gram Panchayat</th>
+                                <th>Agency Name</th>
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th>Status</th>
@@ -133,17 +133,17 @@ const ManageGPAdmins = () => {
     return (
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ margin: 0 }}>Manage Gram Panchayat Admins</h2>
+                <h2 style={{ margin: 0 }}>Manage Implementing Agencies</h2>
                 <div style={{ display: 'flex', gap: 12 }}>
                     <input
                         type="text"
-                        placeholder="Search by Name or GP..."
+                        placeholder="Search by Name or Agency..."
                         className="form-control"
                         style={{ width: '250px' }}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button className="btn btn-primary btn-sm" onClick={() => setIsModalOpen(true)}>+ Add New Admin</button>
+                    <button className="btn btn-primary btn-sm" onClick={() => setIsModalOpen(true)}>+ Add New Agency</button>
                     <button className="btn btn-secondary btn-sm" onClick={handleExportPDF}>📥 Export List</button>
                 </div>
             </div>
@@ -159,7 +159,7 @@ const ManageGPAdmins = () => {
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Gram Panchayat</th>
+                            <th>Agency Name</th>
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Status</th>
@@ -205,7 +205,7 @@ const ManageGPAdmins = () => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); setErrors({}); }}
-                title="Add New GP Admin"
+                title="Add New Implementing Agency"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button onClick={() => { setIsModalOpen(false); setErrors({}); }} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
@@ -229,7 +229,7 @@ const ManageGPAdmins = () => {
                         {errors.name && <div className="form-error">{errors.name}</div>}
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Gram Panchayat</label>
+                        <label className="form-label">Agency Name</label>
                         <input
                             type="text"
                             className="form-control"

@@ -143,7 +143,7 @@ const StateDashboard = () => {
                         </p>
                     </div>
                     <div className="dashboard-actions">
-                        <NotificationBell />
+                        <NotificationBell userRole="state" stateName={stateName} />
                     </div>
                 </div>
 
