@@ -10,6 +10,8 @@ import DepartmentReports from './department/DepartmentReports';
 import DepartmentNotifications from './department/DepartmentNotifications';
 import DepartmentHelp from './department/DepartmentHelp';
 import ManageExecutingAgencies from './department/ManageExecutingAgencies';
+import AssignProjects from './department/AssignProjects';
+import AgencyProjects from './department/AgencyProjects';
 import { mockProjects } from '../../data/mockData';
 
 const DepartmentDashboard = () => {
@@ -29,14 +31,43 @@ const DepartmentDashboard = () => {
     );
 
     // Work Orders (Initialize with data from WorkService)
+    // Work Orders (Initialize with data from WorkService)
     const [workOrders, setWorkOrders] = useState([]);
 
-    const loadWorkOrders = () => {
-        import('../../services/WorkService').then(({ WorkService }) => {
+    const loadWorkOrders = async () => {
+        if (!user) return;
+
+        const { WorkService } = await import('../../services/WorkService');
+        const { supabase } = await import('../../lib/supabaseClient');
+
+        if (user.role === 'implementing_agency') {
+            // Fetch the Agency ID for this user
+            try {
+                const { data: agencies, error: agencyError } = await supabase
+                    .from('implementing_agencies')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .limit(1);
+
+                if (agencyError) {
+                    console.error('Error fetching agency ID:', agencyError);
+                    return;
+                }
+
+                if (agencies && agencies.length > 0) {
+                    const agencyData = agencies[0];
+                    const data = await WorkService.getWorksByAgency(agencyData.id);
+                    setWorkOrders(data);
+                }
+            } catch (err) {
+                console.error('Error loading agency works:', err);
+            }
+        } else {
+            // For Department/Admin, fetch all (or filter by department if needed later)
             WorkService.getAllWorks().then(data => {
                 setWorkOrders(data);
             });
-        });
+        }
     };
 
     useEffect(() => {
@@ -44,7 +75,7 @@ const DepartmentDashboard = () => {
         // Add event listener for storage changes to sync across tabs/windows
         window.addEventListener('storage', loadWorkOrders);
         return () => window.removeEventListener('storage', loadWorkOrders);
-    }, []);
+    }, [user]);
 
     // DPRs (Initialize with sample data from DPRUpload.jsx)
     const [dprs, setDprs] = useState([
@@ -75,7 +106,6 @@ const DepartmentDashboard = () => {
     const handleTabChange = (tab) => {
         setActiveTab(tab);
     };
-
     // Calculate Stats for Dashboard Panel
     const stats = {
         totalWorks: workOrders.length,
@@ -88,7 +118,9 @@ const DepartmentDashboard = () => {
 
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: '📂', label: 'Projects', action: () => setActiveTab('projects'), active: activeTab === 'projects' },
         { icon: '👥', label: 'Manage Executing Agency', action: () => setActiveTab('executing-agencies'), active: activeTab === 'executing-agencies' },
+        { icon: '✍️', label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
         { icon: '📋', label: 'Work Progress', action: () => setActiveTab('work-orders'), active: activeTab === 'work-orders' },
         { icon: '📤', label: 'DPR Upload', action: () => setActiveTab('dpr-upload'), active: activeTab === 'dpr-upload' },
         { icon: '📊', label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
@@ -111,8 +143,12 @@ const DepartmentDashboard = () => {
                     projects={projects}
                     onNavigate={handleTabChange}
                 />;
+            case 'projects':
+                return <AgencyProjects projects={workOrders} />;
             case 'executing-agencies':
                 return <ManageExecutingAgencies />;
+            case 'assign-projects':
+                return <AssignProjects />;
             case 'work-orders':
                 return <WorkOrders
                     orders={workOrders}
@@ -139,6 +175,7 @@ const DepartmentDashboard = () => {
         const labels = {
             'dashboard': 'Dashboard',
             'executing-agencies': 'Manage Executing Agencies',
+            'assign-projects': 'Assign Projects',
             'work-orders': 'Work Progress',
             'dpr-upload': 'DPR Upload',
             'reports': 'Reports',
@@ -154,18 +191,7 @@ const DepartmentDashboard = () => {
 
             <main className="dashboard-main">
                 <div className="dashboard-header">
-                    <div className="dashboard-title-section">
-                        <h1>{user?.role === 'implementing_agency' ? `${user?.full_name || user?.user_metadata?.full_name || 'Implementing Agency'} Dashboard` : 'Department Dashboard - PWD'}</h1>
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
-                            {getBreadcrumb()}
-                        </p>
-                    </div>
-                    <div className="dashboard-actions">
-                        <NotificationBell />
-                    </div>
-                </div>
-
-                {renderContent()}
+                    {renderContent()}
             </main>
         </div>
     );
