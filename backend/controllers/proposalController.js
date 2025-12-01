@@ -65,6 +65,53 @@ exports.createProposal = async (req, res) => {
             return res.status(500).json({ success: false, error: error.message });
         }
 
+        // Get district info to find state
+        const { data: districtData, error: districtError } = await supabase
+            .from('districts')
+            .select('name, state_id')
+            .eq('id', districtId)
+            .single();
+
+        if (!districtError && districtData) {
+            // Get state info
+            const { data: stateData, error: stateError } = await supabase
+                .from('states')
+                .select('name')
+                .eq('id', districtData.state_id)
+                .single();
+
+            if (!stateError && stateData) {
+                // Create notification for State Admin
+                const notificationData = {
+                    user_role: 'state',
+                    state_name: stateData.name,
+                    title: 'New Proposal Received',
+                    message: `New proposal "${projectName}" submitted by ${districtData.name} district for ${component} component (₹${estimatedCost} Lakhs)`,
+                    type: 'info',
+                    read: false,
+                    metadata: {
+                        proposal_id: data[0].id,
+                        district_id: districtId,
+                        district_name: districtData.name,
+                        project_name: projectName,
+                        component: component,
+                        estimated_cost: estimatedCost
+                    }
+                };
+
+                const { error: notifError } = await supabase
+                    .from('notifications')
+                    .insert([notificationData]);
+
+                if (notifError) {
+                    console.error('Failed to create notification:', notifError);
+                    // Don't fail the request, just log it
+                } else {
+                    console.log('✅ Notification created for state:', stateData.name);
+                }
+            }
+        }
+
         res.json({ success: true, message: 'Proposal submitted successfully', data: data[0] });
     } catch (error) {
         console.error('Error creating proposal:', error);
@@ -215,6 +262,62 @@ exports.updateProposalStatus = async (req, res) => {
         if (historyError) {
             console.error('Error logging history:', historyError);
             // Don't fail the request just because history failed, but log it
+        }
+
+        // 4. Create notification for District Admin when approved/rejected by state
+        if (status === 'APPROVED_BY_STATE' || status === 'REJECTED_BY_STATE') {
+            try {
+                // Get full proposal details with district info
+                const { data: proposalData, error: proposalError } = await supabase
+                    .from('district_proposals')
+                    .select('project_name, estimated_cost, component, district_id')
+                    .eq('id', id)
+                    .single();
+
+                if (!proposalError && proposalData) {
+                    // Get district name
+                    const { data: districtData, error: districtError } = await supabase
+                        .from('districts')
+                        .select('name')
+                        .eq('id', proposalData.district_id)
+                        .single();
+
+                    if (!districtError && districtData) {
+                        const isApproved = status === 'APPROVED_BY_STATE';
+                        const notificationData = {
+                            user_role: 'district',
+                            district_name: districtData.name,
+                            title: isApproved ? 'Proposal Approved by State' : 'Proposal Rejected by State',
+                            message: isApproved
+                                ? `Your proposal "${proposalData.project_name}" for ${proposalData.component} (₹${proposalData.estimated_cost} Lakhs) has been approved by the State Government!`
+                                : `Your proposal "${proposalData.project_name}" has been rejected. Reason: ${rejectReason || 'Not specified'}`,
+                            type: isApproved ? 'success' : 'error',
+                            read: false,
+                            metadata: {
+                                proposal_id: id,
+                                project_name: proposalData.project_name,
+                                component: proposalData.component,
+                                estimated_cost: proposalData.estimated_cost,
+                                status: status,
+                                reject_reason: rejectReason || null
+                            }
+                        };
+
+                        const { error: notifError } = await supabase
+                            .from('notifications')
+                            .insert([notificationData]);
+
+                        if (notifError) {
+                            console.error('Failed to create notification:', notifError);
+                        } else {
+                            console.log(`✅ Notification created for district: ${districtData.name} (${isApproved ? 'Approved' : 'Rejected'})`);
+                        }
+                    }
+                }
+            } catch (notifErr) {
+                console.error('Error creating notification:', notifErr);
+                // Don't fail the request, just log it
+            }
         }
 
         res.json({ success: true, message: 'Proposal status updated', data: data[0] });
