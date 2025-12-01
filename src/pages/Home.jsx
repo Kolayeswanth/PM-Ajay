@@ -319,6 +319,9 @@ const Home = () => {
                         headers: {
                             'apikey': supabaseKey,
                             'Authorization': `Bearer ${supabaseKey}`
+                    const roleResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=role`, {
+                        headers: {
+                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
                         }
                     });
                     const roleData = await roleResponse.json();
@@ -329,6 +332,9 @@ const Home = () => {
                             headers: {
                                 'apikey': supabaseKey,
                                 'Authorization': `Bearer ${supabaseKey}`
+                        const districtResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/districts?id=eq.${user.id}&select=name,state_id`, {
+                            headers: {
+                                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
                             }
                         });
                         const districtData = await districtResponse.json();
@@ -341,6 +347,9 @@ const Home = () => {
                                 headers: {
                                     'apikey': supabaseKey,
                                     'Authorization': `Bearer ${supabaseKey}`
+                            const stateResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
+                                headers: {
+                                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
                                 }
                             });
                             const stateData = await stateResponse.json();

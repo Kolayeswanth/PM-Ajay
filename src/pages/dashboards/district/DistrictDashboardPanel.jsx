@@ -92,6 +92,37 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
 
                 // Fetch fund releases
                 const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
+                const districtResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/districts?id=eq.${districtId}&select=name,state_id`, {
+                    headers: {
+                        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (districtResponse.ok) {
+                    const districtData = await districtResponse.json();
+                    if (districtData && districtData.length > 0) {
+                        setDistrictName(districtData[0].name);
+
+                        // Fetch state name
+                        if (districtData[0].state_id) {
+                            const stateResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
+                                headers: {
+                                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                                }
+                            });
+                            if (stateResponse.ok) {
+                                const stateData = await stateResponse.json();
+                                if (stateData && stateData.length > 0) {
+                                    setStateName(stateData[0].name);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Fetch fund releases
+                const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
                     headers: {
                         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
@@ -331,6 +362,32 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                             <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
                                 Fund Utilization - {districtName || 'District'}
                             </h3>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
+                                {/* Circular Progress */}
+                                <div style={{ position: 'relative', width: '200px', height: '200px' }}>
+                                    <svg height="200" width="200" style={{ transform: 'rotate(-90deg)' }}>
+                                        <circle stroke="#E5E7EB" strokeWidth="30" fill="transparent" r="70" cx="100" cy="100" />
+                                        <circle
+                                            stroke="#7C3AED"
+                                            strokeWidth="30"
+                                            strokeDasharray={`${2 * Math.PI * 70}`}
+                                            style={{ strokeDashoffset: `${2 * Math.PI * 70 * (1 - (fundAllocated / (fundAllocated + 49000000)))}`, transition: 'stroke-dashoffset 1.5s ease-out' }}
+                                            strokeLinecap="round"
+                                            fill="transparent"
+                                            r="70"
+                                            cx="100"
+                                            cy="100"
+                                        />
+                                    </svg>
+                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--color-navy)' }}>
+                                            {Math.round((fundAllocated / (fundAllocated + 49000000)) * 100)}%
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Utilized</div>
+                                    </div>
+                                </div>
+
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
                                 {/* Circular Progress */}
