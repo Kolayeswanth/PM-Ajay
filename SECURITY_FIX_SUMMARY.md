@@ -64,7 +64,7 @@ git filter-branch --force --index-filter \
 ### 4. **Verify No Secrets Remain**
 Run this command to search for any remaining hardcoded secrets:
 ```powershell
-git grep "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+git grep "eyJ..."
 ```
 
 ## 🔐 Best Practices Going Forward

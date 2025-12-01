@@ -1,3 +1,4 @@
+
 # Environment variables
 .env
 .env.local
@@ -7,6 +8,7 @@
 CREDENTIALS_REFERENCE.md
 *credentials*.txt
 *passwords*.txt
+temp_key.txt
 
 # Node modules
 node_modules/

@@ -106,6 +106,7 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                     fundsUsed: Number(progressData.fundsUsed) || 0,
                     fundsRemaining: Number(progressData.fundsRemaining) || 0,
                     remarks: progressData.remarks,
+                    photos: progressData.photos, // Pass the File objects array
                     progress: Number(progressData.progress) || 0,
                     status: (Number(progressData.progress) >= 100)
                         ? 'Completed'
@@ -250,7 +251,12 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                         <div className="form-helper">Upload current photos of the construction site.</div>
                         {progressData.photos.length > 0 && (
                             <div style={{ marginTop: 10, fontSize: '14px', color: '#2c3e50' }}>
-                                {progressData.photos.length} photo(s) selected
+                                <strong>{progressData.photos.length} photo(s) selected:</strong>
+                                <ul style={{ margin: '5px 0', paddingLeft: '20px', color: '#555' }}>
+                                    {progressData.photos.map((file, index) => (
+                                        <li key={index}>{file.name}</li>
+                                    ))}
+                                </ul>
                             </div>
                         )}
                     </div>
