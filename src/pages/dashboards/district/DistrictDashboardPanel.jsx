@@ -90,39 +90,9 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                     }
                 }
 
-                // Fetch fund releases
-                const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
-                const districtResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/districts?id=eq.${districtId}&select=name,state_id`, {
-                    headers: {
-                        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-                    }
-                });
-
-                if (districtResponse.ok) {
-                    const districtData = await districtResponse.json();
-                    if (districtData && districtData.length > 0) {
-                        setDistrictName(districtData[0].name);
-
-                        // Fetch state name
-                        if (districtData[0].state_id) {
-                            const stateResponse = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
-                                headers: {
-                                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
-                                }
-                            });
-                            if (stateResponse.ok) {
-                                const stateData = await stateResponse.json();
-                                if (stateData && stateData.length > 0) {
-                                    setStateName(stateData[0].name);
-                                }
-                            }
-                        }
-                    }
-                }
 
                 // Fetch fund releases
-                const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
+                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
                     headers: {
                         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
@@ -363,31 +333,6 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                                 Fund Utilization - {districtName || 'District'}
                             </h3>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
-                                {/* Circular Progress */}
-                                <div style={{ position: 'relative', width: '200px', height: '200px' }}>
-                                    <svg height="200" width="200" style={{ transform: 'rotate(-90deg)' }}>
-                                        <circle stroke="#E5E7EB" strokeWidth="30" fill="transparent" r="70" cx="100" cy="100" />
-                                        <circle
-                                            stroke="#7C3AED"
-                                            strokeWidth="30"
-                                            strokeDasharray={`${2 * Math.PI * 70}`}
-                                            style={{ strokeDashoffset: `${2 * Math.PI * 70 * (1 - (fundAllocated / (fundAllocated + 49000000)))}`, transition: 'stroke-dashoffset 1.5s ease-out' }}
-                                            strokeLinecap="round"
-                                            fill="transparent"
-                                            r="70"
-                                            cx="100"
-                                            cy="100"
-                                        />
-                                    </svg>
-                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--color-navy)' }}>
-                                            {Math.round((fundAllocated / (fundAllocated + 49000000)) * 100)}%
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Utilized</div>
-                                    </div>
-                                </div>
-
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
                                 {/* Circular Progress */}
@@ -428,93 +373,94 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                             </div>
                         </div>
 
-                        {/* Component Progress Card */}
-                        <div className="card" style={{ padding: 'var(--space-6)' }}>
-                            <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
-                                {selectedComponent === 'All Components' ? 'Component Progress' : `${selectedComponent} Progress`}
-                            </h3>
+                    </div>
+                    {/* Component Progress Card */}
+                    <div className="card" style={{ padding: 'var(--space-6)' }}>
+                        <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
+                            {selectedComponent === 'All Components' ? 'Component Progress' : `${selectedComponent} Progress`}
+                        </h3>
 
-                            {(() => {
-                                const componentData = {
-                                    'Adarsh Gram': { progress: 27, color: '#7C3AED', label: 'Adarsh Gram' },
-                                    'GIA': { progress: 42, color: '#EC4899', label: 'GIA (Grant-in-Aid)' },
-                                    'Hostel': { progress: 89, color: '#F59E0B', label: 'Hostel' }
-                                };
+                        {(() => {
+                            const componentData = {
+                                'Adarsh Gram': { progress: 27, color: '#7C3AED', label: 'Adarsh Gram' },
+                                'GIA': { progress: 42, color: '#EC4899', label: 'GIA (Grant-in-Aid)' },
+                                'Hostel': { progress: 89, color: '#F59E0B', label: 'Hostel' }
+                            };
 
-                                if (selectedComponent === 'All Components') {
-                                    return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 0' }}>
-                                            {Object.entries(componentData).map(([key, data]) => (
-                                                <div key={key}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                        <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-navy)' }}>{data.label}</span>
-                                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: data.color }}>{data.progress}%</span>
-                                                    </div>
-                                                    <div style={{ width: '100%', height: '12px', backgroundColor: '#E5E7EB', borderRadius: '6px', overflow: 'hidden' }}>
-                                                        <div style={{ width: `${data.progress}%`, height: '100%', backgroundColor: data.color, borderRadius: '6px', transition: 'width 0.8s ease' }}></div>
-                                                    </div>
+                            if (selectedComponent === 'All Components') {
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 0' }}>
+                                        {Object.entries(componentData).map(([key, data]) => (
+                                            <div key={key}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                    <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-navy)' }}>{data.label}</span>
+                                                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: data.color }}>{data.progress}%</span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    );
-                                } else {
-                                    const data = componentData[selectedComponent];
-                                    if (!data) return null;
-                                    return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                                                {/* Large percentage display */}
-                                                <div style={{
-                                                    fontSize: '48px',
-                                                    fontWeight: 'bold',
-                                                    color: data.color,
-                                                    marginBottom: '16px'
-                                                }}>
-                                                    {data.progress}%
-                                                </div>
-
-                                                {/* Large vertical bar */}
-                                                <div style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                    width: '60%',
-                                                    maxWidth: '200px'
-                                                }}>
-                                                    <div style={{
-                                                        width: '100%',
-                                                        height: `${data.progress * 2.5}px`,
-                                                        maxHeight: '250px',
-                                                        backgroundColor: data.color,
-                                                        borderRadius: '8px 8px 0 0',
-                                                        transition: 'height 0.8s ease',
-                                                        minHeight: '40px'
-                                                    }}></div>
-
-                                                    {/* Base line */}
-                                                    <div style={{
-                                                        width: '100%',
-                                                        height: '4px',
-                                                        backgroundColor: '#E5E7EB'
-                                                    }}></div>
-                                                </div>
-
-                                                {/* Component name */}
-                                                <div style={{
-                                                    fontSize: '18px',
-                                                    fontWeight: '600',
-                                                    color: 'var(--color-navy)',
-                                                    marginTop: '16px'
-                                                }}>
-                                                    {data.label}
+                                                <div style={{ width: '100%', height: '12px', backgroundColor: '#E5E7EB', borderRadius: '6px', overflow: 'hidden' }}>
+                                                    <div style={{ width: `${data.progress}%`, height: '100%', backgroundColor: data.color, borderRadius: '6px', transition: 'width 0.8s ease' }}></div>
                                                 </div>
                                             </div>
+                                        ))}
+                                    </div>
+                                );
+                            } else {
+                                const data = componentData[selectedComponent];
+                                if (!data) return null;
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                                            {/* Large percentage display */}
+                                            <div style={{
+                                                fontSize: '48px',
+                                                fontWeight: 'bold',
+                                                color: data.color,
+                                                marginBottom: '16px'
+                                            }}>
+                                                {data.progress}%
+                                            </div>
+
+                                            {/* Large vertical bar */}
+                                            <div style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                width: '60%',
+                                                maxWidth: '200px'
+                                            }}>
+                                                <div style={{
+                                                    width: '100%',
+                                                    height: `${data.progress * 2.5}px`,
+                                                    maxHeight: '250px',
+                                                    backgroundColor: data.color,
+                                                    borderRadius: '8px 8px 0 0',
+                                                    transition: 'height 0.8s ease',
+                                                    minHeight: '40px'
+                                                }}></div>
+
+                                                {/* Base line */}
+                                                <div style={{
+                                                    width: '100%',
+                                                    height: '4px',
+                                                    backgroundColor: '#E5E7EB'
+                                                }}></div>
+                                            </div>
+
+                                            {/* Component name */}
+                                            <div style={{
+                                                fontSize: '18px',
+                                                fontWeight: '600',
+                                                color: 'var(--color-navy)',
+                                                marginTop: '16px'
+                                            }}>
+                                                {data.label}
+                                            </div>
                                         </div>
-                                    );
-                                }
-                            })()}
-                        </div>
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
+
                 </div>
             </div>
 
