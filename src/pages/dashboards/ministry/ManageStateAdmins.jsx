@@ -3,6 +3,9 @@ import Modal from '../../../components/Modal';
 
 const ManageStateAdmins = () => {
     const [admins, setAdmins] = useState([]);
+    const [filteredAdmins, setFilteredAdmins] = useState([]);
+    const [selectedState, setSelectedState] = useState('all');
+    const [states, setStates] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentAdmin, setCurrentAdmin] = useState(null);
     const [formData, setFormData] = useState({
@@ -19,9 +22,10 @@ const ManageStateAdmins = () => {
     // API Base URL
     const API_BASE_URL = 'http://localhost:5001/api/state-admins';
 
-    // Fetch all state admins from backend
+    // Fetch all state admins and states from backend
     useEffect(() => {
         fetchStateAdmins();
+        fetchStates();
     }, []);
 
     const fetchStateAdmins = async () => {
@@ -32,6 +36,7 @@ const ManageStateAdmins = () => {
 
             if (result.success) {
                 setAdmins(result.data);
+                setFilteredAdmins(result.data);
             } else {
                 showToast('Error fetching state admins', 'error');
             }
@@ -43,10 +48,64 @@ const ManageStateAdmins = () => {
         }
     };
 
+    // Fetch all states from Backend (replacing direct Supabase call)
+    const fetchStates = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/states`);
+            const result = await response.json();
+            if (result.success) {
+                setStates(result.data.map(s => s.name));
+            } else {
+                console.error('Error fetching states:', result.error);
+            }
+        } catch (error) {
+            console.error('Error fetching states:', error);
+        }
+    };
+
     // Show toast notification
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
+    };
+
+    // Handle state filter change
+    const handleStateFilter = (e) => {
+        const state = e.target.value;
+        setSelectedState(state);
+        if (state === 'all') {
+            setFilteredAdmins(admins);
+        } else {
+            setFilteredAdmins(admins.filter(admin => admin.state_name === state));
+        }
+    };
+
+    // Get unique states from admins
+    const uniqueStates = ['all', ...new Set(admins.map(admin => admin.state_name))];
+
+    // Handle status button click to activate
+    const handleStatusClick = async (admin) => {
+        if (admin.status === 'Active') {
+            try {
+                console.log('🔵 Activating admin:', admin.id);
+                const response = await fetch(`${API_BASE_URL}/${admin.id}/activate`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                console.log('🔵 Activation response:', result);
+
+                if (result.success) {
+                    showToast('Admin activated successfully and WhatsApp sent!', 'success');
+                    fetchStateAdmins();
+                } else {
+                    showToast(result.error || 'Failed to activate admin', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error activating admin:', error);
+                showToast('Failed to activate admin', 'error');
+            }
+        }
     };
 
     // Open modal to add new admin
@@ -130,39 +189,32 @@ const ManageStateAdmins = () => {
         }
     };
 
-    // Deactivate state admin (deletes from database)
-    const handleDeactivate = async (admin) => {
-        if (!confirm(`Are you sure you want to deactivate and remove "${admin.admin_name}" from the database? This action cannot be undone.`)) return;
-
-        try {
-            setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/${admin.id}/deactivate`, {
-                method: 'PATCH'
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showToast(`Admin "${admin.admin_name}" deactivated and removed successfully`, 'success');
-                fetchStateAdmins(); // Refresh the list
-            } else {
-                showToast(result.error || 'Failed to deactivate admin', 'error');
-            }
-        } catch (error) {
-            console.error('Error deactivating admin:', error);
-            showToast('Failed to deactivate admin', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return (
         <div className="dashboard-panel" style={{ padding: 20, height: '100%', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ margin: 0 }}>Manage State Admins</h2>
-                <button className="btn btn-primary btn-sm" onClick={handleAdd}>
-                    + Add State Admin
-                </button>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <select
+                        value={selectedState}
+                        onChange={handleStateFilter}
+                        style={{
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid #ddd',
+                            backgroundColor: '#fff',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                        }}
+                    >
+                        <option value="all">All States</option>
+                        {uniqueStates.filter(s => s !== 'all').map(state => (
+                            <option key={state} value={state}>{state}</option>
+                        ))}
+                    </select>
+                    <button className="btn btn-primary btn-sm" onClick={handleAdd}>
+                        + Add State Admin
+                    </button>
+                </div>
             </div>
 
             {toast && (
@@ -193,46 +245,46 @@ const ManageStateAdmins = () => {
                             <th>State Name</th>
                             <th>Phone No</th>
                             <th>Email</th>
-                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {admins.length > 0 ? (
-                            admins.map(admin => (
+                        {filteredAdmins.length > 0 ? (
+                            filteredAdmins.map(admin => (
                                 <tr key={admin.id}>
                                     <td style={{ fontWeight: 600 }}>{admin.admin_name}</td>
                                     <td>{admin.state_name}</td>
                                     <td>{admin.phone_no}</td>
                                     <td>{admin.email}</td>
                                     <td>
-                                        <span className={`badge badge-${admin.status === 'Active' ? 'success' : 'error'}`}>
+                                        <button
+                                            className={`btn btn-sm ${admin.status === 'Active' ? 'btn-success' : admin.status === 'Activated' ? 'btn-info' : 'btn-secondary'}`}
+                                            onClick={() => handleStatusClick(admin)}
+                                            disabled={admin.status !== 'Active' || loading}
+                                            style={{
+                                                cursor: admin.status === 'Active' ? 'pointer' : 'not-allowed',
+                                                opacity: admin.status === 'Active' ? 1 : 0.7,
+                                                minWidth: '90px',
+                                                marginRight: '8px'
+                                            }}
+                                            title={admin.status === 'Active' ? 'Click to activate and send WhatsApp' : ''}
+                                        >
                                             {admin.status}
-                                        </span>
-                                    </td>
-                                    <td>
+                                        </button>
                                         <button
                                             className="btn btn-secondary btn-sm"
                                             onClick={() => handleEdit(admin)}
-                                            style={{ marginRight: '5px' }}
                                             disabled={loading}
                                         >
                                             Edit
-                                        </button>
-                                        <button
-                                            className="btn btn-outline btn-sm"
-                                            onClick={() => handleDeactivate(admin)}
-                                            disabled={loading}
-                                        >
-                                            Deactivate
                                         </button>
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
-                                    No states found. Click "Add State Admin" to create one.
+                                <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                    {selectedState === 'all' ? 'No state admins found. Click "+ Add State Admin" to create one.' : `No admins found for ${selectedState}.`}
                                 </td>
                             </tr>
                         )}
@@ -266,7 +318,7 @@ const ManageStateAdmins = () => {
                             style={{ padding: '8px 14px' }}
                             disabled={loading}
                         >
-                            {loading ? 'Saving...' : 'Confirm Release'}
+                            {loading ? 'Saving...' : 'Save'}
                         </button>
                     </div>
                 }
@@ -288,16 +340,19 @@ const ManageStateAdmins = () => {
 
                     <div className="form-group">
                         <label className="form-label">State Name</label>
-                        <input
-                            type="text"
+                        <select
                             className="form-control"
-                            placeholder="e.g. Maharashtra"
                             value={formData.state_name}
                             onChange={(e) => setFormData({ ...formData, state_name: e.target.value })}
                             style={{ padding: '10px' }}
-                        />
+                        >
+                            <option value="">Select a state</option>
+                            {states.map(state => (
+                                <option key={state} value={state}>{state}</option>
+                            ))}
+                        </select>
                         {errors.state_name && <div className="form-error">{errors.state_name}</div>}
-                        <div className="form-helper">Enter the name of the state</div>
+                        <div className="form-helper">Select the state from the dropdown</div>
                     </div>
 
                     <div className="form-group">

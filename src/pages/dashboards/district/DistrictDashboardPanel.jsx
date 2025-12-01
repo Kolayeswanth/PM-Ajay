@@ -4,12 +4,51 @@ import DistrictMap from '../../../components/maps/DistrictMap';
 import { districtStats, mockProjects } from '../../../data/mockData';
 
 const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
-    const stats = districtStats.Pune;
-    const districtProjects = mockProjects.filter(p => p.district === 'Pune');
+    const [stats, setStats] = useState({
+        gramPanchayats: 0,
+        totalProjects: 0,
+        fundAllocated: 0,
+        completedProjects: 0
+    });
     const [fundAllocated, setFundAllocated] = useState(0);
     const [recentReleases, setRecentReleases] = useState([]);
     const [stateName, setStateName] = useState('Maharashtra');
     const [districtName, setDistrictName] = useState(null);
+    const [myProposals, setMyProposals] = useState([]);
+
+    // Fetch district statistics
+    React.useEffect(() => {
+        if (!districtId) return;
+        const fetchStats = async () => {
+            try {
+                const response = await fetch(`http://localhost:5001/api/dashboard/district-stats/${districtId}`);
+                const result = await response.json();
+                if (result.success) {
+                    setStats(result.data);
+                }
+            } catch (error) {
+                console.error('Error fetching district stats:', error);
+            }
+        };
+        fetchStats();
+    }, [districtId]);
+
+    // Fetch my proposals
+    React.useEffect(() => {
+        if (!districtId) return;
+        const fetchProposals = async () => {
+            try {
+                const res = await fetch(`http://localhost:5001/api/proposals/district/${districtId}`);
+                const data = await res.json();
+                if (data.success) {
+                    setMyProposals(data.data);
+                }
+            } catch (err) {
+                console.error('Error fetching proposals:', err);
+            }
+        };
+        fetchProposals();
+    }, [districtId]);
 
     const [selectedComponent, setSelectedComponent] = useState('All Components');
     const [showComponentDropdown, setShowComponentDropdown] = useState(false);
@@ -76,9 +115,23 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
             'APPROVED': 'badge-info',
             'ONGOING': 'badge-warning',
             'COMPLETED': 'badge-success',
-            'DELAYED': 'badge-error'
+            'DELAYED': 'badge-error',
+            'SUBMITTED': 'badge-info',
+            'APPROVED_BY_STATE': 'badge-warning',
+            'APPROVED_BY_MINISTRY': 'badge-success',
+            'REJECTED_BY_STATE': 'badge-error',
+            'REJECTED': 'badge-error'
         };
         return badges[status] || 'badge-info';
+    };
+
+    const getReadableStatus = (status) => {
+        if (status === 'SUBMITTED') return 'Pending at State';
+        if (status === 'APPROVED_BY_STATE') return 'Pending at Ministry';
+        if (status === 'APPROVED_BY_MINISTRY') return 'Approved & Active';
+        if (status === 'REJECTED_BY_STATE') return 'Rejected by State';
+        if (status === 'REJECTED') return 'Rejected';
+        return status;
     };
 
     const handleAddLocation = () => {
@@ -100,25 +153,25 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
             <div className="kpi-row">
                 <StatCard
                     icon="🏡"
-                    value={stats.gps}
+                    value={stats.gramPanchayats}
                     label="Gram Panchayats"
                     color="var(--color-primary)"
                 />
                 <StatCard
                     icon="📊"
-                    value={stats.projects}
+                    value={stats.totalProjects}
                     label="Total Projects"
                     color="var(--color-secondary)"
                 />
                 <StatCard
                     icon="💰"
-                    value={formatCurrency(fundAllocated)}
+                    value={`₹${stats.fundAllocated.toFixed(2)} Cr`}
                     label="Fund Allocated"
                     color="var(--color-success)"
                 />
                 <StatCard
                     icon="✔️"
-                    value={stats.projectsCompleted}
+                    value={stats.completedProjects}
                     label="Completed"
                     trend="positive"
                     trendValue="+5 this month"
@@ -444,6 +497,45 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                 </div>
             </div>
 
+            {/* My Submitted Proposals (To State) */}
+            <div className="dashboard-section">
+                <div className="section-header">
+                    <h2 className="section-title">My Submitted Proposals (To State)</h2>
+                </div>
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Component</th>
+                                <th>Est. Cost</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {myProposals.length > 0 ? (
+                                myProposals.map(p => (
+                                    <tr key={p.id}>
+                                        <td>{p.project_name}</td>
+                                        <td><span className="badge badge-primary">{p.component}</span></td>
+                                        <td>₹{p.estimated_cost} L</td>
+                                        <td><span className={`badge ${getStatusBadge(p.status)}`}>{getReadableStatus(p.status)}</span></td>
+                                        <td>{new Date(p.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                                        No proposals submitted yet.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             {/* All Projects Table */}
             <div className="dashboard-section">
                 <div className="section-header">
@@ -467,30 +559,30 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {districtProjects.map(project => (
+                            {myProposals.map(project => (
                                 <tr key={project.id}>
                                     <td>
-                                        <strong>{project.name}</strong>
+                                        <strong>{project.project_name}</strong>
                                         <br />
                                         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
                                             ID: PRJ-{project.id.toString().padStart(4, '0')}
                                         </span>
                                     </td>
-                                    <td style={{ fontSize: 'var(--text-sm)' }}>{project.gp}</td>
+                                    <td style={{ fontSize: 'var(--text-sm)' }}>-</td>
                                     <td>
                                         <span className="badge badge-primary">{project.component}</span>
                                     </td>
                                     <td>
                                         <span className={`badge ${getStatusBadge(project.status)}`}>
-                                            {project.status}
+                                            {getReadableStatus(project.status)}
                                         </span>
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                                             <div className="progress-bar" style={{ flex: 1, height: '6px', minWidth: '80px' }}>
-                                                <div className="progress-fill" style={{ width: `${project.progress}%` }}></div>
+                                                <div className="progress-fill" style={{ width: '0%' }}></div>
                                             </div>
-                                            <span style={{ fontSize: 'var(--text-sm)' }}>{project.progress}%</span>
+                                            <span style={{ fontSize: 'var(--text-sm)' }}>0%</span>
                                         </div>
                                     </td>
                                     <td>

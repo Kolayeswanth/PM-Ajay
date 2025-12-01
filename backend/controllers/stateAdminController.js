@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const axios = require('axios');
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -187,10 +188,91 @@ exports.updateStateAdmin = async (req, res) => {
 // Activate state admin (not used since we do hard delete)
 exports.activateStateAdmin = async (req, res) => {
     try {
-        return res.status(400).json({
-            success: false,
-            error: 'Cannot activate a deleted admin. Please add them as a new admin instead.'
+        const { id } = req.params;
+
+        // First check if the admin exists and has 'Active' status
+        const { data: adminData, error: fetchError } = await supabase
+            .from('state_assignment')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !adminData) {
+            return res.status(404).json({
+                success: false,
+                error: 'State admin not found'
+            });
+        }
+
+        if (adminData.status !== 'Active') {
+            return res.status(400).json({
+                success: false,
+                error: 'Admin status is not Active. Current status: ' + adminData.status
+            });
+        }
+
+        // Update status to 'Activated'
+        const { data, error } = await supabase
+            .from('state_assignment')
+            .update({ status: 'Activated' })
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            console.error('Supabase update error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+
+        // Send WhatsApp notification
+        try {
+            let formattedPhone = adminData.phone_no.replace(/\D/g, '');
+            if (formattedPhone.startsWith('91')) {
+                formattedPhone = formattedPhone.substring(2);
+            }
+            formattedPhone = `91${formattedPhone}`;
+
+            const watiApiBaseUrl = process.env.WATI_API_URL;
+            const watiApiKey = process.env.WATI_API_KEY;
+            const tenantId = process.env.TENANT_ID;
+            const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
+
+            if (watiApiBaseUrl && watiApiKey && tenantId) {
+                const messageContent =
+                    `STATE ADMIN ACTIVATION - ` +
+                    `Dear ${adminData.admin_name}, ` +
+                    `Your account has been successfully ACTIVATED as State Admin for ${adminData.state_name}. ` +
+                    `Email: ${adminData.email}. ` +
+                    `Status: Activated. ` +
+                    `You can now access the PM-AJAY Dashboard and manage your state's fund allocations. ` +
+                    `Please login to the portal to view your dashboard. ` +
+                    `Thank you, Ministry of Social Justice & Empowerment`;
+
+                const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
+                const payload = {
+                    template_name: templateName,
+                    broadcast_name: 'State Admin Activation',
+                    parameters: [{ name: "message_body", value: messageContent }]
+                };
+
+                console.log('📱 Sending WhatsApp notification to:', formattedPhone);
+                await axios.post(endpoint, payload, {
+                    headers: {
+                        'Authorization': `Bearer ${watiApiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log('✅ WhatsApp notification sent successfully!');
+            }
+        } catch (whatsappError) {
+            console.error('❌ Error sending WhatsApp:', whatsappError.message);
+        }
+
+        res.json({
+            success: true,
+            message: 'State admin activated successfully and notification sent',
+            data: data[0]
         });
+
     } catch (error) {
         console.error('Error activating state admin:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -270,6 +352,60 @@ exports.deleteStateAdmin = async (req, res) => {
 
     } catch (error) {
         console.error('Error deleting state admin:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Get all states
+
+exports.getAllStates = async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('states')
+            .select('name')
+            .order('name', { ascending: true });
+
+        if (error) {
+            console.error('Supabase error fetching states:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+
+        res.json({ success: true, data: data.map(s => ({ name: s.name })) });
+
+    } catch (error) {
+        console.error('Error fetching states:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Get districts by state name
+exports.getDistricts = async (req, res) => {
+    try {
+        const { stateName } = req.query;
+        if (!stateName) return res.status(400).json({ success: false, error: 'State name required' });
+
+        // First get state ID
+        const { data: stateData, error: stateError } = await supabase
+            .from('states')
+            .select('id')
+            .eq('name', stateName)
+            .single();
+
+        if (stateError || !stateData) return res.status(404).json({ success: false, error: 'State not found' });
+
+        // Get districts
+        const { data, error } = await supabase
+            .from('districts')
+            .select('name')
+            .eq('state_id', stateData.id)
+            .order('name', { ascending: true });
+
+        if (error) return res.status(500).json({ success: false, error: error.message });
+
+        res.json({ success: true, data: data.map(d => d.name) });
+
+    } catch (error) {
+        console.error('Error fetching districts:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };

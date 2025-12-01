@@ -5,5 +5,8 @@ const fundController = require('../controllers/fundController');
 router.get('/', fundController.getAllFunds);
 router.post('/allocate', fundController.allocateFund);
 router.post('/release', fundController.releaseFund);
+router.get('/releases', fundController.getAllStateFundReleases);
+router.get('/district-releases', fundController.getDistrictFundReleasesByState);
+router.get('/fix-allocations', fundController.fixFundAllocations);
 
 module.exports = router;

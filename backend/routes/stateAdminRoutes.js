@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const stateAdminController = require('../controllers/stateAdminController');
 
+// Get all states (must be before /:id routes if any GET /:id existed, but safe here)
+router.get('/states', stateAdminController.getAllStates);
+
+// Get districts by state
+router.get('/districts', stateAdminController.getDistricts);
+
 // Get all state admins
 router.get('/', stateAdminController.getAllStateAdmins);
 

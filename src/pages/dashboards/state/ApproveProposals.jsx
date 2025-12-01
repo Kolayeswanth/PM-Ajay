@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
 import Modal from '../../../components/Modal';
 
 const ApproveProposals = () => {
-    const [proposals, setProposals] = useState([
-        { id: 1, district: 'Pune', title: 'Community Development Projects', date: '2025-11-18', status: 'Pending', budget: '15.5 Cr', description: 'Development of community centers and public facilities' },
-        { id: 2, district: 'Nashik', title: 'Infrastructure Upgrades', date: '2025-11-19', status: 'Pending', budget: '22.0 Cr', description: 'Road and bridge infrastructure improvements' },
-        { id: 3, district: 'Mumbai City', title: 'Skill Development Center', date: '2025-11-10', status: 'Approved', budget: '10.0 Cr', description: 'Establishment of vocational training centers' },
-        { id: 4, district: 'Nagpur', title: 'Healthcare Facilities', date: '2025-11-05', status: 'Rejected', budget: '18.0 Cr', description: 'Construction of primary health centers', rejectReason: 'Insufficient documentation' },
-    ]);
+    const { user } = useAuth();
+    const [proposals, setProposals] = useState([]);
+    const [stateName, setStateName] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const [selectedProposal, setSelectedProposal] = useState(null);
     const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
@@ -21,31 +20,128 @@ const ApproveProposals = () => {
         setTimeout(() => setToast(null), 3000);
     };
 
+    // Fetch state name
+    useEffect(() => {
+        const fetchStateName = async () => {
+            if (!user?.id) return;
+            try {
+                const response = await fetch(`http://localhost:5001/api/profile?userId=${user.id}`);
+                const result = await response.json();
+                if (result.success && result.data?.full_name) {
+                    let name = result.data.full_name;
+                    name = name.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
+                    setStateName(name);
+                }
+            } catch (error) {
+                console.error('Error fetching state name:', error);
+            }
+        };
+        fetchStateName();
+    }, [user]);
+
+    // Fetch proposals
+    useEffect(() => {
+        if (stateName) {
+            fetchProposals();
+        }
+    }, [stateName]);
+
+    const fetchProposals = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`http://localhost:5001/api/proposals/state?stateName=${encodeURIComponent(stateName)}`);
+            const result = await response.json();
+            if (result.success) {
+                // Transform data for UI
+                const formatted = result.data.map(p => ({
+                    id: p.id,
+                    district: p.district_name,
+                    title: p.project_name,
+                    date: new Date(p.created_at).toLocaleDateString(),
+                    status: p.status === 'SUBMITTED' ? 'Pending' :
+                        p.status === 'APPROVED_BY_STATE' ? 'Approved' :
+                            p.status === 'REJECTED_BY_STATE' ? 'Rejected' : p.status,
+                    budget: p.estimated_cost,
+                    description: p.description,
+                    rejectReason: p.reject_reason
+                }));
+                setProposals(formatted);
+            }
+        } catch (error) {
+            console.error('Error fetching proposals:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleApproveClick = (proposal) => {
+        if (!proposal.id) {
+            alert("Error: This proposal is missing an ID. Please refresh the page.");
+            return;
+        }
         setSelectedProposal(proposal);
         setIsApproveModalOpen(true);
     };
 
     const handleRejectClick = (proposal) => {
+        if (!proposal.id) {
+            alert("Error: This proposal is missing an ID. Please refresh the page.");
+            return;
+        }
         setSelectedProposal(proposal);
         setRejectReason('');
         setIsRejectModalOpen(true);
     };
 
-    const confirmApprove = () => {
-        setProposals(proposals.map(p => p.id === selectedProposal.id ? { ...p, status: 'Approved' } : p));
-        showToast(`Proposal "${selectedProposal.title}" approved successfully`);
-        setIsApproveModalOpen(false);
+    const confirmApprove = async () => {
+        try {
+            const response = await fetch(`http://localhost:5001/api/proposals/${selectedProposal.id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: 'APPROVED_BY_STATE',
+                    userId: user?.id
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast(`Proposal "${selectedProposal.title}" approved successfully`);
+                fetchProposals(); // Refresh
+                setIsApproveModalOpen(false);
+            } else {
+                alert('Failed to approve: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error approving proposal:', error);
+        }
     };
 
-    const confirmReject = () => {
+    const confirmReject = async () => {
         if (!rejectReason.trim()) {
             alert('Please provide a reason for rejection');
             return;
         }
-        setProposals(proposals.map(p => p.id === selectedProposal.id ? { ...p, status: 'Rejected', rejectReason } : p));
-        showToast(`Proposal "${selectedProposal.title}" rejected`);
-        setIsRejectModalOpen(false);
+        try {
+            const response = await fetch(`http://localhost:5001/api/proposals/${selectedProposal.id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: 'REJECTED_BY_STATE',
+                    rejectReason,
+                    userId: user?.id
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast(`Proposal "${selectedProposal.title}" rejected`);
+                fetchProposals(); // Refresh
+                setIsRejectModalOpen(false);
+            } else {
+                alert('Failed to reject: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error rejecting proposal:', error);
+        }
     };
 
     // View/Download PDF function

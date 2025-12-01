@@ -1,53 +1,135 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 
 // List of major districts in Maharashtra (you can expand this)
-const MAHARASHTRA_DISTRICTS = [
-    "Ahmednagar", "Akola", "Amravati", "Aurangabad", "Beed", "Bhandara", "Buldhana", "Chandrapur",
-    "Dhule", "Gadchiroli", "Gondia", "Hingoli", "Jalgaon", "Jalna", "Kolhapur", "Latur",
-    "Mumbai City", "Mumbai Suburban", "Nagpur", "Nanded", "Nandurbar", "Nashik", "Osmanabad", "Palghar",
-    "Parbhani", "Pune", "Raigad", "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur",
-    "Thane", "Wardha", "Washim", "Yavatmal"
-];
+import { useAuth } from '../../../contexts/AuthContext';
 
 const ManageDistrictAdmins = () => {
-    const [admins, setAdmins] = useState([
-        { id: 1, district: 'Pune', name: 'Rahul Deshmukh', email: 'rahul.d@pune.gov.in', phone: '9876543210', status: 'Active', username: 'rahul.pun', password: 'Pun@2024' },
-        { id: 2, district: 'Mumbai City', name: 'Priya Sharma', email: 'priya.s@mumbai.gov.in', phone: '9876543211', status: 'Active', username: 'priya.mum', password: 'Mum@2024' },
-        { id: 3, district: 'Nagpur', name: 'Vikram Singh', email: 'vikram.s@nagpur.gov.in', phone: '9876543212', status: 'Inactive', username: 'vikram.nag', password: 'Nag@2024' },
-    ]);
-
+    const { user } = useAuth();
+    const [admins, setAdmins] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [stateName, setStateName] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [currentAdmin, setCurrentAdmin] = useState(null);
-    const [formData, setFormData] = useState({ district: '', name: '', email: '', phone: '', status: true, username: '', password: '' });
+    const [formData, setFormData] = useState({
+        district: '',
+        name: '',
+        email: '',
+        phone: '',
+        status: 'Active',
+        bank_account_number: ''
+    });
     const [errors, setErrors] = useState({});
     const [toast, setToast] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedDistrict, setSelectedDistrict] = useState('all');
+    const [loading, setLoading] = useState(false);
+
+    // API Base URL
+    const API_BASE_URL = 'http://localhost:5001/api/district-admins';
+
+    // Fetch state name from user profile
+    useEffect(() => {
+        const fetchStateName = async () => {
+            if (!user?.id) return;
+            try {
+                const response = await fetch(`http://localhost:5001/api/profile?userId=${user.id}`);
+                const result = await response.json();
+                if (result.success && result.data?.full_name) {
+                    let name = result.data.full_name;
+                    name = name.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
+                    setStateName(name);
+                }
+            } catch (error) {
+                console.error('Error fetching state name:', error);
+            }
+        };
+        fetchStateName();
+    }, [user]);
+
+    // Fetch admins and districts when stateName is available
+    React.useEffect(() => {
+        if (stateName) {
+            fetchAdmins();
+            fetchDistricts();
+        }
+    }, [stateName]);
+
+    const fetchDistricts = async () => {
+        try {
+            const response = await fetch(`http://localhost:5001/api/state-admins/districts?stateName=${encodeURIComponent(stateName)}`);
+            const result = await response.json();
+            if (result.success) {
+                setDistricts(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching districts:', error);
+        }
+    };
+
+    const fetchAdmins = async () => {
+        try {
+            setLoading(true);
+            const url = stateName
+                ? `${API_BASE_URL}?stateName=${encodeURIComponent(stateName)}`
+                : API_BASE_URL;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                // Map backend fields to frontend state
+                const mappedAdmins = result.data.map(admin => ({
+                    id: admin.id,
+                    name: admin.admin_name,
+                    district: admin.district_name,
+                    phone: admin.phone_no,
+                    email: admin.email,
+                    status: admin.status,
+                    bank_account_number: admin.bank_account_number
+                }));
+                setAdmins(mappedAdmins);
+            } else {
+                showToast('Failed to fetch admins', 'error');
+            }
+        } catch (error) {
+            console.error('Error fetching admins:', error);
+            showToast('Error connecting to server', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // small helper to show transient messages
-    const showToast = (message) => {
-        setToast(message);
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
     };
 
     const handleAdd = () => {
         setCurrentAdmin(null);
-        setFormData({ district: '', name: '', email: '', phone: '', status: true, username: '', password: '' });
+        setFormData({
+            district: '',
+            name: '',
+            email: '',
+            phone: '',
+            status: 'Active',
+            bank_account_number: ''
+        });
         setErrors({});
         setIsModalOpen(true);
     };
 
     const handleEdit = (admin) => {
         setCurrentAdmin(admin);
-        setFormData({ ...admin, status: admin.status === 'Active', username: admin.username || '', password: admin.password || '' });
+        setFormData({
+            district: admin.district,
+            name: admin.name,
+            email: admin.email,
+            phone: admin.phone,
+            status: admin.status,
+            bank_account_number: admin.bank_account_number || ''
+        });
         setErrors({});
         setIsModalOpen(true);
-    };
-
-    const handleDeleteClick = (admin) => {
-        setCurrentAdmin(admin);
-        setIsDeleteModalOpen(true);
     };
 
     // Basic validation
@@ -55,189 +137,142 @@ const ManageDistrictAdmins = () => {
         const errs = {};
         if (!formData.district) errs.district = 'Please select a district.';
         if (!formData.name.trim()) errs.name = 'Please enter admin name.';
-        if (!formData.username.trim()) errs.username = 'Please enter username.';
-        else if (formData.username.length < 4) errs.username = 'Username must be at least 4 characters.';
-        if (!formData.password.trim()) errs.password = 'Please enter password.';
-        else if (formData.password.length < 6) errs.password = 'Password must be at least 6 characters.';
         if (!formData.email.trim()) errs.email = 'Please enter email address.';
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errs.email = 'Please enter a valid email address.';
         if (!formData.phone.trim()) errs.phone = 'Please enter phone number.';
         else if (!/^[0-9]{10}$/.test(formData.phone)) errs.phone = 'Please enter a valid 10-digit phone number.';
+        if (!formData.bank_account_number.trim()) errs.bank_account_number = 'Please enter bank account number.';
+
         setErrors(errs);
         return Object.keys(errs).length === 0;
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!validate()) return;
 
-        if (currentAdmin) {
-            setAdmins(admins.map(a => a.id === currentAdmin.id ? { ...formData, id: a.id, status: formData.status ? 'Active' : 'Inactive' } : a));
-            showToast(`Admin "${formData.name}" updated successfully`);
-        } else {
-            setAdmins([...admins, { ...formData, id: Date.now(), status: formData.status ? 'Active' : 'Inactive' }]);
-            showToast(`Admin "${formData.name}" added successfully`);
-        }
-        setIsModalOpen(false);
-    };
-
-    const handleDeleteConfirm = () => {
-        setAdmins(admins.map(a => a.id === currentAdmin.id ? { ...a, status: 'Inactive' } : a)); // Soft delete/Deactivate
-        showToast(`Admin "${currentAdmin.name}" deactivated successfully`);
-        setIsDeleteModalOpen(false);
-    };
-
-    const handleActivate = (admin) => {
-        setAdmins(admins.map(a => a.id === admin.id ? { ...a, status: 'Active' } : a));
-        showToast(`Admin "${admin.name}" activated successfully`);
-    };
-
-    // Export to PDF function using print
-    const handleExportPDF = () => {
         try {
-            console.log('Export PDF button clicked!');
-
-            // Create a new window for printing
-            const printWindow = window.open('', '_blank');
-
-            // Generate HTML content
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>District Admins List</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            padding: 20px;
-                        }
-                        h1 {
-                            color: #2c3e50;
-                            border-bottom: 3px solid #3498db;
-                            padding-bottom: 10px;
-                        }
-                        .metadata {
-                            margin: 20px 0;
-                            color: #666;
-                        }
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin-top: 20px;
-                        }
-                        th {
-                            background-color: #3498db;
-                            color: white;
-                            padding: 12px;
-                            text-align: left;
-                            font-weight: bold;
-                        }
-                        td {
-                            padding: 10px;
-                            border: 1px solid #ddd;
-                        }
-                        tr:nth-child(even) {
-                            background-color: #f9f9f9;
-                        }
-                        .status-active {
-                            color: green;
-                            font-weight: bold;
-                        }
-                        .status-inactive {
-                            color: red;
-                            font-weight: bold;
-                        }
-                        @media print {
-                            body {
-                                padding: 10px;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>District Admins List</h1>
-                    <div class="metadata">
-                        <p><strong>Generated on:</strong> ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
-                        <p><strong>Total Admins:</strong> ${admins.length}</p>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>District</th>
-                                <th>Admin Name</th>
-                                <th>Username</th>
-                                <th>Password</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${admins.map(admin => `
-                                <tr>
-                                    <td>${admin.district}</td>
-                                    <td>${admin.name}</td>
-                                    <td>${admin.username}</td>
-                                    <td>${admin.password}</td>
-                                    <td>${admin.email}</td>
-                                    <td>${admin.phone}</td>
-                                    <td class="${admin.status === 'Active' ? 'status-active' : 'status-inactive'}">${admin.status}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </body>
-                </html>
-            `;
-
-            // Write content to new window
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-
-            // Wait for content to load, then trigger print dialog
-            printWindow.onload = function () {
-                printWindow.print();
+            setLoading(true);
+            const payload = {
+                name: formData.name,
+                district: formData.district,
+                phone: formData.phone,
+                email: formData.email,
+                bank_account_number: formData.bank_account_number
             };
 
-            showToast('Print dialog opened! Use "Save as PDF" option.');
-            console.log('Print window opened successfully');
+            let response;
+            if (currentAdmin) {
+                response = await fetch(`${API_BASE_URL}/${currentAdmin.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(result.message, 'success');
+                fetchAdmins(); // Refresh list
+                setIsModalOpen(false);
+            } else {
+                showToast(result.error || 'Failed to save admin', 'error');
+            }
         } catch (error) {
-            console.error('Error exporting PDF:', error);
-            showToast('Error exporting PDF. Please try again.');
+            console.error('Error saving admin:', error);
+            showToast('Error saving admin', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Filter admins based on search query
+    // Handle status button click to activate
+    const handleStatusClick = async (admin) => {
+        if (admin.status === 'Active') {
+            try {
+                setLoading(true);
+                console.log('🔵 Activating district admin:', admin.id);
+
+                const response = await fetch(`${API_BASE_URL}/${admin.id}/activate`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Admin activated successfully and WhatsApp sent!', 'success');
+                    fetchAdmins();
+                } else {
+                    showToast(result.error || 'Failed to activate admin', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error activating admin:', error);
+                showToast('Failed to activate admin', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    // Filter admins based on selected district
     const filteredAdmins = admins.filter(admin => {
-        const query = searchQuery.toLowerCase();
-        return (
-            admin.name.toLowerCase().includes(query) ||
-            admin.district.toLowerCase().includes(query) ||
-            admin.email.toLowerCase().includes(query) ||
-            admin.phone.includes(query)
-        );
+        const matchesDistrict = selectedDistrict === 'all' || admin.district === selectedDistrict;
+        return matchesDistrict;
     });
+
+    // Get unique districts from admins for filter
+    const uniqueDistricts = ['all', ...new Set(admins.map(admin => admin.district))];
 
     return (
         <div className="dashboard-panel" style={{ padding: 20, height: '100%', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ margin: 0 }}>Manage District Admins</h2>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <input
-                        type="text"
-                        placeholder="Search by name, district, email, or phone..."
-                        className="form-input"
-                        style={{ width: '300px' }}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <select
+                        value={selectedDistrict}
+                        onChange={(e) => setSelectedDistrict(e.target.value)}
+                        style={{
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid #ddd',
+                            backgroundColor: '#fff',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            height: '38px'
+                        }}
+                    >
+                        <option value="all">All Districts</option>
+                        {uniqueDistricts.filter(d => d !== 'all').map(district => (
+                            <option key={district} value={district}>{district}</option>
+                        ))}
+                    </select>
                     <button className="btn btn-primary btn-sm" onClick={handleAdd}>+ Add New Admin</button>
-                    <button className="btn btn-outline btn-sm" onClick={handleExportPDF}>📥 Export</button>
                 </div>
             </div>
 
             {toast && (
                 <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'inline-block', background: '#00B894', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{toast}</div>
+                    <div style={{
+                        display: 'inline-block',
+                        background: toast.type === 'error' ? '#E74C3C' : '#00B894',
+                        color: '#fff',
+                        padding: '8px 12px',
+                        borderRadius: 6
+                    }}>
+                        {toast.message}
+                    </div>
+                </div>
+            )}
+
+            {loading && (
+                <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>
+                    Loading...
                 </div>
             )}
 
@@ -245,42 +280,49 @@ const ManageDistrictAdmins = () => {
                 <table className="table" style={{ minWidth: 800 }}>
                     <thead>
                         <tr>
-                            <th>District</th>
                             <th>Admin Name</th>
-                            <th>Email</th>
+                            <th>District</th>
                             <th>Phone</th>
-                            <th>Status</th>
+                            <th>Email</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredAdmins.map(admin => (
-                            <tr key={admin.id}>
-                                <td>{admin.district}</td>
-                                <td style={{ padding: '12px 16px' }}>
-                                    <div style={{ fontWeight: 700 }}>{admin.name}</div>
-                                    <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-                                        <div>Username: <span style={{ fontWeight: 600, color: '#333' }}>{admin.username}</span></div>
-                                        <div>Password: <span style={{ fontWeight: 600, color: '#333' }}>{admin.password}</span></div>
-                                    </div>
-                                </td>
-                                <td>{admin.email}</td>
-                                <td>{admin.phone}</td>
-                                <td>
-                                    <span className={`badge badge-${admin.status === 'Active' ? 'success' : 'error'}`}>
-                                        {admin.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(admin)} style={{ marginRight: '5px' }}>Edit</button>
-                                    {admin.status === 'Active' ? (
-                                        <button className="btn btn-outline btn-sm" onClick={() => handleDeleteClick(admin)}>Deactivate</button>
-                                    ) : (
-                                        <button className="btn btn-primary btn-sm" onClick={() => handleActivate(admin)}>Activate</button>
-                                    )}
+                        {filteredAdmins.length > 0 ? (
+                            filteredAdmins.map(admin => (
+                                <tr key={admin.id}>
+                                    <td style={{ padding: '12px 16px', fontWeight: 700 }}>
+                                        {admin.name}
+                                    </td>
+                                    <td>{admin.district}</td>
+                                    <td>{admin.phone}</td>
+                                    <td>{admin.email}</td>
+                                    <td>
+                                        <button
+                                            className={`btn btn-sm ${admin.status === 'Active' ? 'btn-success' : admin.status === 'Activated' ? 'btn-info' : 'btn-secondary'}`}
+                                            onClick={() => handleStatusClick(admin)}
+                                            disabled={admin.status !== 'Active' || loading}
+                                            style={{
+                                                cursor: admin.status === 'Active' ? 'pointer' : 'not-allowed',
+                                                opacity: admin.status === 'Active' ? 1 : 0.7,
+                                                minWidth: '90px',
+                                                marginRight: '8px'
+                                            }}
+                                            title={admin.status === 'Active' ? 'Click to activate and send WhatsApp' : ''}
+                                        >
+                                            {admin.status}
+                                        </button>
+                                        <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(admin)}>Edit</button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                    No district admins found.
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -292,11 +334,11 @@ const ManageDistrictAdmins = () => {
                 title={currentAdmin ? "Edit District Admin" : "Add New District Admin"}
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }} disabled={loading}>
                             Cancel
                         </button>
-                        <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 14px' }}>
-                            Save
+                        <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 14px' }} disabled={loading}>
+                            {loading ? 'Saving...' : 'Save'}
                         </button>
                     </div>
                 }
@@ -310,7 +352,7 @@ const ManageDistrictAdmins = () => {
                             onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                         >
                             <option value="">-- select district --</option>
-                            {MAHARASHTRA_DISTRICTS.map((name) => (
+                            {districts.map((name) => (
                                 <option key={name} value={name}>{name}</option>
                             ))}
                         </select>
@@ -328,41 +370,6 @@ const ManageDistrictAdmins = () => {
                             style={{ padding: '10px' }}
                         />
                         {errors.name && <div className="form-error">{errors.name}</div>}
-                        <div className="form-helper">Enter the full name of the district admin</div>
-                    </div>
-
-                    {/* Admin Credentials Section */}
-                    <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#333' }}>Admin Credentials</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                            <div className="form-group">
-                                <label className="form-label">Username</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="e.g. rahul.pun"
-                                    value={formData.username}
-                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    style={{ padding: '10px' }}
-                                />
-                                {errors.username && <div className="form-error">{errors.username}</div>}
-                                <div className="form-helper">Unique login username</div>
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Password</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="e.g. Pun@2024"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    style={{ padding: '10px' }}
-                                />
-                                {errors.password && <div className="form-error">{errors.password}</div>}
-                                <div className="form-helper">Minimum 6 characters</div>
-                            </div>
-                        </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -377,7 +384,6 @@ const ManageDistrictAdmins = () => {
                                 style={{ padding: '10px' }}
                             />
                             {errors.email && <div className="form-error">{errors.email}</div>}
-                            <div className="form-helper">Official government email</div>
                         </div>
 
                         <div className="form-group">
@@ -391,44 +397,27 @@ const ManageDistrictAdmins = () => {
                                 style={{ padding: '10px' }}
                             />
                             {errors.phone && <div className="form-error">{errors.phone}</div>}
-                            <div className="form-helper">10-digit mobile number</div>
                         </div>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input
-                                type="checkbox"
-                                checked={formData.status}
-                                onChange={(e) => setFormData({ ...formData, status: e.target.checked })}
-                            />
-                            Active Status
-                        </label>
-                        <div className="form-helper">Uncheck to deactivate admin access</div>
+                        <label className="form-label">Bank Account Number</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g. 123456789012"
+                            value={formData.bank_account_number}
+                            onChange={(e) => setFormData({ ...formData, bank_account_number: e.target.value })}
+                            style={{ padding: '10px' }}
+                        />
+                        {errors.bank_account_number && <div className="form-error">{errors.bank_account_number}</div>}
+                        <div className="form-helper">This will be stored securely and not displayed in the public list.</div>
                     </div>
 
                     <div style={{ fontSize: 13, color: '#555' }}>
                         <strong>Note:</strong> The admin will receive login credentials via email after account creation.
                     </div>
                 </div>
-            </Modal>
-
-            <Modal
-                isOpen={isDeleteModalOpen}
-                onClose={() => setIsDeleteModalOpen(false)}
-                title="Confirm Deactivation"
-                footer={
-                    <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsDeleteModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
-                            Cancel
-                        </button>
-                        <button onClick={handleDeleteConfirm} className="btn btn-error" style={{ padding: '8px 14px' }}>
-                            Deactivate
-                        </button>
-                    </div>
-                }
-            >
-                <p>Are you sure you want to deactivate this admin? They will no longer be able to access the system.</p>
             </Modal>
         </div>
     );

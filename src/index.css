@@ -493,19 +493,6 @@ a:hover {
   color: var(--text-inverse);
 }
 
-.btn-sm {
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--text-sm);
-}
-
-.btn-lg {
-  padding: var(--space-4) var(--space-8);
-  font-size: var(--text-lg);
-}
-
-/* ===================================
-   Card Components
-   =================================== */
 
 .card {
   background-color: var(--bg-primary);
@@ -899,14 +886,21 @@ textarea.form-control {
 .login-card {
   background: rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-2xl);
+
+  /* Saffron border */
+  border: 2px solid #FF9933;
+
+  /* Saffron shadow */
+  box-shadow: 0 0 25px rgba(255, 153, 51, 0.45);
+
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: var(--space-10);
   max-width: 450px;
   width: 100%;
 }
+
+
 
 .login-header {
   text-align: center;

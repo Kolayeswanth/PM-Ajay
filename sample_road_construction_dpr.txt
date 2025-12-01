@@ -1,0 +1,34 @@
+DETAILED PROJECT REPORT (DPR)
+PROJECT: CONSTRUCTION OF CONCRETE ROAD IN ADARSH GRAM
+
+1. PROJECT OVERVIEW
+   - Project Name: Construction of CC Road from Main Highway to Village School
+   - Scheme Component: Adarsh Gram (PM-AJAY)
+   - District: Pune
+   - Gram Panchayat: Shirur GP
+
+2. TECHNICAL SPECIFICATIONS
+   - Length: 1.5 KM
+   - Width: 3.75 Meters
+   - Type: Cement Concrete (M30 Grade)
+   - Shoulder: 1.0 Meter hard shoulder on both sides
+
+3. ESTIMATED COST
+   - Material Cost: ₹ 15,00,000
+   - Labour Cost: ₹ 8,00,000
+   - Machinery & Transport: ₹ 2,50,000
+   - Total Estimated Cost: ₹ 25.50 Lakhs
+
+4. JUSTIFICATION
+   The existing road is a mud track which becomes inaccessible during monsoons. 
+   This road connects the village to the primary school and healthcare center. 
+   Construction is essential for all-weather connectivity.
+
+5. IMPLEMENTATION TIMELINE
+   - Survey & Design: 1 Month
+   - Tendering: 1 Month
+   - Execution: 4 Months
+   - Total Duration: 6 Months
+
+Submitted by: District Administration
+Date: November 30, 2025
