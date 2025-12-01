@@ -66,9 +66,104 @@ export const WorkService = {
         }
     },
 
+    getWorksByAgency: async (agencyId) => {
+        try {
+            // 1. Fetch Work Orders for specific agency
+            const { data: workOrders, error: workError } = await supabase
+                .from('work_orders')
+                .select('*')
+                .eq('implementing_agency_id', agencyId)
+                .order('id', { ascending: true });
+
+            if (workError) {
+                console.error('Error fetching work orders:', workError);
+                return [];
+            }
+
+            // 2. Get the latest progress for each work order
+            // Note: We could optimize this to only fetch progress for these work orders, 
+            // but for now fetching all progress is simpler as we filter in memory.
+            // Or better, fetch progress where work_order_id is in the list.
+            const workOrderIds = workOrders.map(w => w.id);
+
+            if (workOrderIds.length === 0) return [];
+
+            const { data: progressData, error: progressError } = await supabase
+                .from('work_progress')
+                .select('*')
+                .in('work_order_id', workOrderIds)
+                .order('created_at', { ascending: false });
+
+            if (progressError) {
+                console.error('Error fetching progress:', progressError);
+                return workOrders;
+            }
+
+            // 3. Merge with latest progress
+            const mergedWorks = workOrders.map(work => {
+                const latestUpdate = progressData.find(p => p.work_order_id === work.id);
+
+                if (latestUpdate) {
+                    return {
+                        ...work,
+                        progress: latestUpdate.progress_percentage,
+                        fundsReleased: latestUpdate.funds_released,
+                        fundsUsed: latestUpdate.funds_used,
+                        fundsRemaining: latestUpdate.funds_remaining,
+                        remarks: latestUpdate.remarks,
+                        lastUpdated: new Date(latestUpdate.created_at).toISOString().split('T')[0],
+                        officerName: latestUpdate.officer_name,
+                        officerPhone: latestUpdate.officer_phone,
+                        viewedByAgency: latestUpdate.viewed_by_agency,
+                        viewedAt: latestUpdate.viewed_at
+                    };
+                }
+                return {
+                    ...work,
+                    progress: work.progress || 0,
+                    fundsReleased: work.funds_released || 0,
+                    fundsUsed: work.funds_used || 0,
+                    fundsRemaining: work.funds_remaining || 0,
+                    remarks: work.remarks || '',
+                    lastUpdated: null
+                };
+            });
+
+            return mergedWorks;
+        } catch (err) {
+            console.error('WorkService Error:', err);
+            return [];
+        }
+    },
+
     updateWork: async (updatedWork, officerDetails) => {
         try {
-            // 1. Insert new progress record into Supabase
+            // 1. Upload Photos to Storage (if any)
+            let photoUrls = [];
+            if (updatedWork.photos && updatedWork.photos.length > 0) {
+                for (const file of updatedWork.photos) {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${updatedWork.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                    const filePath = `${fileName}`;
+
+                    const { error: uploadError } = await supabase.storage
+                        .from('work-photos')
+                        .upload(filePath, file);
+
+                    if (uploadError) {
+                        console.error('Error uploading photo:', uploadError);
+                        continue; // Skip failed uploads but continue with others
+                    }
+
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('work-photos')
+                        .getPublicUrl(filePath);
+
+                    photoUrls.push(publicUrl);
+                }
+            }
+
+            // 2. Insert new progress record into Supabase
             const { data, error } = await supabase
                 .from('work_progress')
                 .insert([
@@ -76,7 +171,6 @@ export const WorkService = {
                         work_order_id: updatedWork.id,
                         executing_agency_id: (await (async () => {
                             const { data: { user } } = await supabase.auth.getUser();
-                            console.log("Current User for Update:", user);
                             if (!user) throw new Error("User not authenticated");
                             return user.id;
                         })()),
@@ -87,7 +181,8 @@ export const WorkService = {
                         funds_used: updatedWork.fundsUsed,
                         funds_remaining: updatedWork.fundsRemaining,
                         remarks: updatedWork.remarks,
-                        viewed_by_agency: false // Default to false on new update
+                        photos: photoUrls, // Save the array of URLs
+                        viewed_by_agency: false
                     }
                 ])
                 .select();
