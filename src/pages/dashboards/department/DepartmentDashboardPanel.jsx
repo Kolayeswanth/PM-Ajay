@@ -111,13 +111,13 @@ const DepartmentDashboardPanel = ({ formatCurrency, stats, recentOrders, project
                             {projects.map(project => (
                                 <tr key={project.id}>
                                     <td>
-                                        <strong>{project.name}</strong>
+                                        <strong>{project.title}</strong>
                                         <br />
                                         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
                                             WO-{project.id + 100}
                                         </span>
                                     </td>
-                                    <td>{project.gp}</td>
+                                    <td>{project.location || 'N/A'}</td>
                                     <td>M/s Patil Constructions</td>
                                     <td>
                                         <span className={`badge ${getStatusBadge(project.status)}`}>
@@ -134,7 +134,7 @@ const DepartmentDashboardPanel = ({ formatCurrency, stats, recentOrders, project
                                     </td>
                                     <td>
                                         <div style={{ fontSize: 'var(--text-sm)' }}>
-                                            {formatCurrency(project.budget * (project.progress / 100))} / {formatCurrency(project.budget)}
+                                            {formatCurrency((project.amount || 0) * (project.progress / 100))} / {formatCurrency(project.amount || 0)}
                                         </div>
                                     </td>
                                     <td>
