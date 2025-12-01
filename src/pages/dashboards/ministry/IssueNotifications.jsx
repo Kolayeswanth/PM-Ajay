@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const IssueNotifications = () => {
     const [notifications, setNotifications] = useState([
@@ -237,7 +238,7 @@ const IssueNotifications = () => {
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h2 style={{ margin: 0 }}>Notifications & Circulars</h2>
-                <button className="btn btn-primary btn-sm" onClick={() => setIsModalOpen(true)}>+ Create New Notification</button>
+                <InteractiveButton variant="primary" size="sm" onClick={() => setIsModalOpen(true)}>+ Create New Notification</InteractiveButton>
             </div>
 
             {toast && (
@@ -276,9 +277,9 @@ const IssueNotifications = () => {
                                 </td>
                                 <td>
                                     <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(notif)}>View</button>
+                                        <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(notif)}>View</InteractiveButton>
                                         {notif.status !== 'Deactivated' && (
-                                            <button className="btn btn-outline btn-sm" onClick={() => handleDeactivate(notif.id)}>Deactivate</button>
+                                            <InteractiveButton variant="danger" size="sm" onClick={() => handleDeactivate(notif.id)}>Deactivate</InteractiveButton>
                                         )}
                                     </div>
                                 </td>
@@ -294,12 +295,12 @@ const IssueNotifications = () => {
                 title="Create New Notification"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => { setIsModalOpen(false); setErrors({}); }} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <InteractiveButton variant="secondary" onClick={() => { setIsModalOpen(false); setErrors({}); }}>
                             Cancel
-                        </button>
-                        <button onClick={handleCreate} className="btn btn-primary" style={{ padding: '8px 14px' }}>
+                        </InteractiveButton>
+                        <InteractiveButton variant="primary" onClick={handleCreate}>
                             Send / Schedule
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >

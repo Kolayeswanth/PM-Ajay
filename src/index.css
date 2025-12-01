@@ -380,7 +380,7 @@ a:hover {
 
 .logout-link:hover {
 
-  background-color: #ffa5a5;
+  background-color: #ec4b4b;
   border-bottom: 5px solid var(--color-error);
   color: var(--text-primary);
 }
@@ -471,51 +471,7 @@ a:hover {
   box-shadow: var(--shadow-md);
 }
 
-.btn-accent {
-  background-color: var(--color-accent);
-  color: var(--text-inverse);
-}
-
-.btn-accent:hover:not(:disabled) {
-  background-color: var(--color-accent-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-outline {
-  background-color: transparent;
-  border: 2px solid var(--color-primary);
-  color: var(--color-primary);
-}
-
-.btn-outline:hover:not(:disabled) {
-  background-color: var(--color-primary);
-  color: var(--text-inverse);
-}
-
-
-.card {
-  background-color: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-6);
-  transition: all var(--transition-base);
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.card-header {
-  border-bottom: 2px solid var(--border-light);
-  padding-bottom: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.card-title {
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
+.btn-secondary:hover:not(:disabled) {
   color: var(--text-primary);
   margin: 0;
 }

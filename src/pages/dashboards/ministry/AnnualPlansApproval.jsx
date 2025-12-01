@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../../../components/Modal';
 import { states } from '../../../data/mockData';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const AnnualPlansApproval = () => {
     const [plans, setPlans] = useState(states.slice(0, 5).map((state, index) => ({
@@ -153,11 +154,11 @@ const AnnualPlansApproval = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(plan)} style={{ marginRight: '5px' }}>View</button>
+                                        <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(plan)} style={{ marginRight: '5px' }}>View</InteractiveButton>
                                         {plan.status === 'Pending' && (
                                             <>
-                                                <button className="btn btn-primary btn-sm" onClick={() => handleApproveClick(plan)} style={{ marginRight: '5px' }}>Approve</button>
-                                                <button className="btn btn-error btn-sm" onClick={() => handleRejectClick(plan)}>Reject</button>
+                                                <InteractiveButton variant="success" size="sm" onClick={() => handleApproveClick(plan)} style={{ marginRight: '5px' }}>Approve</InteractiveButton>
+                                                <InteractiveButton variant="danger" size="sm" onClick={() => handleRejectClick(plan)}>Reject</InteractiveButton>
                                             </>
                                         )}
                                     </td>
@@ -180,8 +181,8 @@ const AnnualPlansApproval = () => {
                 title="Confirm Approval"
                 footer={
                     <>
-                        <button className="btn btn-outline" onClick={() => setIsApproveModalOpen(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={confirmApprove}>Confirm Approve</button>
+                        <InteractiveButton variant="secondary" onClick={() => setIsApproveModalOpen(false)}>Cancel</InteractiveButton>
+                        <InteractiveButton variant="success" onClick={confirmApprove}>Confirm Approve</InteractiveButton>
                     </>
                 }
             >
@@ -194,8 +195,8 @@ const AnnualPlansApproval = () => {
                 title="Reject Plan"
                 footer={
                     <>
-                        <button className="btn btn-outline" onClick={() => setIsRejectModalOpen(false)}>Cancel</button>
-                        <button className="btn btn-error" onClick={confirmReject}>Reject Plan</button>
+                        <InteractiveButton variant="secondary" onClick={() => setIsRejectModalOpen(false)}>Cancel</InteractiveButton>
+                        <InteractiveButton variant="danger" onClick={confirmReject}>Reject Plan</InteractiveButton>
                     </>
                 }
             >

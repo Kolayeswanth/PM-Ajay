@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import IndiaMap from '../../../components/maps/IndiaMap';
-import StatCard from '../../../components/StatCard';
 
 const THEME = {
     primary: '#7C3AED',
@@ -69,7 +68,6 @@ const generateStateData = (stateName) => {
     };
 };
 
-// Generate national overview data for each component
 const generateNationalOverview = (component) => {
     const baseValue = component === 'All Components' ? 78 :
         component === 'Adarsh Gram' ? 85 :
@@ -89,7 +87,7 @@ const generateNationalOverview = (component) => {
     };
 };
 
-const AnimatedLineChart = ({ data, height = 300 }) => {
+const AnimatedLineChart = ({ data, height = 200 }) => {
     const [hoveredIndex, setHoveredIndex] = useState(null);
     const [animate, setAnimate] = useState(false);
 
@@ -100,7 +98,7 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
     }, [data]);
 
     const width = 500;
-    const padding = 50;
+    const padding = 40;
     const graphWidth = width - padding * 2;
     const graphHeight = height - padding * 2;
     const maxY = 100;
@@ -132,7 +130,7 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
     };
 
     return (
-        <div style={{ width: '100%', position: 'relative', padding: '10px 0' }}>
+        <div style={{ width: '100%', position: 'relative', padding: '5px 0' }}>
             <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
                 {[0, 25, 50, 75, 100].map((tick, i) => {
                     const y = height - padding - (tick / maxY) * graphHeight;
@@ -202,7 +200,7 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
                 })}
             </svg>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
                 {data.datasets.map((dataset, idx) => (
                     <div
                         key={idx}
@@ -210,8 +208,8 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
                         onMouseEnter={() => setHoveredIndex(idx)}
                         onMouseLeave={() => setHoveredIndex(null)}
                     >
-                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: dataset.color }}></div>
-                        <span style={{ fontSize: '11px', fontWeight: '500', color: THEME.text }}>{dataset.label}</span>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: dataset.color }}></div>
+                        <span style={{ fontSize: '10px', fontWeight: '500', color: THEME.text }}>{dataset.label}</span>
                     </div>
                 ))}
             </div>
@@ -219,7 +217,7 @@ const AnimatedLineChart = ({ data, height = 300 }) => {
     );
 };
 
-const PieChart = ({ data, size = 200 }) => {
+const PieChart = ({ data, size = 160 }) => {
     const [animate, setAnimate] = useState(false);
 
     useEffect(() => {
@@ -230,13 +228,13 @@ const PieChart = ({ data, size = 200 }) => {
 
     const percentage = (data.utilized / data.total) * 100;
     const radius = size / 2;
-    const strokeWidth = 30;
+    const strokeWidth = 20;
     const normalizedRadius = radius - strokeWidth / 2;
     const circumference = normalizedRadius * 2 * Math.PI;
     const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
             <div style={{ position: 'relative', width: size, height: size }}>
                 <svg height={size} width={size} style={{ transform: 'rotate(-90deg)' }}>
                     <circle
@@ -269,19 +267,19 @@ const PieChart = ({ data, size = 200 }) => {
                     transform: 'translate(-50%, -50%)',
                     textAlign: 'center'
                 }}>
-                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: THEME.text }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: THEME.text }}>
                         {Math.round(percentage)}%
                     </div>
-                    <div style={{ fontSize: '12px', color: THEME.textLight }}>Utilized</div>
+                    <div style={{ fontSize: '11px', color: THEME.textLight }}>Utilized</div>
                 </div>
             </div>
-            <div style={{ display: 'flex', gap: '20px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', gap: '16px', fontSize: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: THEME.primary }}></div>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: THEME.primary }}></div>
                     <span style={{ color: THEME.text }}>Utilized: ₹{data.utilized} Cr</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#E5E7EB' }}></div>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#E5E7EB' }}></div>
                     <span style={{ color: THEME.textLight }}>Remaining: ₹{data.total - data.utilized} Cr</span>
                 </div>
             </div>
@@ -299,31 +297,31 @@ const ComponentProgressChart = ({ component, progress }) => {
     }, [component, progress]);
 
     const maxValue = 100;
-    const chartHeight = 200;
-    const barHeight = (progress / maxValue) * (chartHeight - 50);
+    const chartHeight = 150;
+    const barHeight = (progress / maxValue) * (chartHeight - 40);
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h4 style={{ fontSize: '16px', fontWeight: '600', color: THEME.text, marginBottom: '16px', textAlign: 'center' }}>
+        <div style={{ padding: '16px' }}>
+            <h4 style={{ fontSize: '14px', fontWeight: '600', color: THEME.text, marginBottom: '12px', textAlign: 'center' }}>
                 {component} Progress
             </h4>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: chartHeight }}>
-                <div style={{ width: '60%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '60%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     <div style={{
                         width: '100%',
                         height: animate ? `${barHeight}px` : '0px',
                         backgroundColor: component === 'Adarsh Gram' ? '#7C3AED' : component === 'GIA' ? '#EC4899' : '#F59E0B',
-                        borderRadius: '8px 8px 0 0',
+                        borderRadius: '6px 6px 0 0',
                         transition: 'height 1s ease-out',
                         position: 'relative',
                         boxShadow: `0 4px 12px ${component === 'Adarsh Gram' ? '#7C3AED' : component === 'GIA' ? '#EC4899' : '#F59E0B'}40`
                     }}>
                         <div style={{
                             position: 'absolute',
-                            top: '-25px',
+                            top: '-20px',
                             left: '50%',
                             transform: 'translateX(-50%)',
-                            fontSize: '14px',
+                            fontSize: '12px',
                             fontWeight: 'bold',
                             color: component === 'Adarsh Gram' ? '#7C3AED' : component === 'GIA' ? '#EC4899' : '#F59E0B',
                             opacity: animate ? 1 : 0,
@@ -334,7 +332,7 @@ const ComponentProgressChart = ({ component, progress }) => {
                         </div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: THEME.text }}>{component}</div>
+                        <div style={{ fontSize: '11px', fontWeight: '600', color: THEME.text }}>{component}</div>
                     </div>
                 </div>
             </div>
@@ -364,80 +362,130 @@ const MonitorProgress = () => {
         setSelectedComponent(e.target.value);
     };
 
+    const InfoCard = ({ icon, value, label, colorBg, colorText }) => (
+        <div className="card" style={{
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            border: 'none',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)'
+        }}>
+            <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                backgroundColor: colorBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: colorText,
+                fontSize: '1.5rem'
+            }}>
+                {icon}
+            </div>
+            <div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="dashboard-panel" style={{ backgroundColor: '#F9FAFB' }}>
-            <div className="section-header" style={{ marginBottom: '24px' }}>
-                <h2 className="section-title" style={{ color: THEME.text }}>Monitor Progress</h2>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div style={{ position: 'relative' }}>
-                        <select
-                            className="form-select"
-                            value={selectedComponent}
-                            onChange={handleComponentChange}
-                            style={{
-                                appearance: 'none',
-                                padding: '10px 40px 10px 20px',
-                                borderRadius: '50px',
-                                border: `1px solid ${THEME.primary}`,
-                                backgroundColor: 'white',
-                                color: THEME.text,
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 6px -1px rgba(124, 58, 237, 0.1)',
-                                outline: 'none',
-                                backgroundImage: 'none',
-                                minWidth: '180px'
-                            }}
-                        >
-                            <option>All Components</option>
-                            <option>Adarsh Gram</option>
-                            <option>GIA</option>
-                            <option>Hostel</option>
-                        </select>
-                        <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: THEME.primary, fontSize: '12px' }}>
-                            ▼
-                        </div>
+        <div className="dashboard-panel" style={{ backgroundColor: '#FFFFFF' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 className="section-title" style={{ margin: 0 }}>Monitor Progress</h2>
+
+                <div style={{ position: 'relative' }}>
+                    <select
+                        className="form-select"
+                        value={selectedComponent}
+                        onChange={handleComponentChange}
+                        style={{
+                            appearance: 'none',
+                            padding: '8px 36px 8px 16px',
+                            borderRadius: '50px',
+                            border: `1px solid ${THEME.primary}`,
+                            backgroundColor: 'white',
+                            color: THEME.text,
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 4px -1px rgba(124, 58, 237, 0.1)',
+                            outline: 'none',
+                            backgroundImage: 'none',
+                            minWidth: '160px',
+                            fontSize: '14px'
+                        }}
+                    >
+                        <option>All Components</option>
+                        <option>Adarsh Gram</option>
+                        <option>GIA</option>
+                        <option>Hostel</option>
+                    </select>
+                    <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: THEME.primary, fontSize: '10px' }}>
+                        ▼
                     </div>
                 </div>
             </div>
 
-            <div className="dashboard-section">
-                <div className="kpi-row">
-                    <StatCard icon="📈" value={`${nationalOverview.utilization}%`} label={`${selectedComponent} Utilization`} color={THEME.primary} />
-                    <StatCard icon="🏗" value={`${nationalOverview.completed}%`} label="Projects Completed" color={THEME.secondary} />
-                    <StatCard icon="👥" value={nationalOverview.beneficiaries} label="Total Beneficiaries" color={THEME.accent} />
-                </div>
+            {/* Stats Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                <InfoCard
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>}
+                    value={`${nationalOverview.utilization}%`}
+                    label="Fund Utilization"
+                    colorBg="#F5F3FF"
+                    colorText="#7C3AED"
+                />
+                <InfoCard
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>}
+                    value={`${nationalOverview.completed}%`}
+                    label="Completed Projects"
+                    colorBg="#D1FAE5"
+                    colorText="#10B981"
+                />
+                <InfoCard
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>}
+                    value={nationalOverview.beneficiaries}
+                    label="Beneficiaries"
+                    colorBg="#FEF3C7"
+                    colorText="#F59E0B"
+                />
             </div>
 
-            <div className="dashboard-section" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>
-                <div className="card" style={{ padding: '0', minHeight: '700px', overflow: 'hidden', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-                    <div style={{ padding: '20px', borderBottom: '1px solid #F3F4F6', backgroundColor: 'white' }}>
-                        <h3 className="section-title" style={{ marginBottom: '4px', color: THEME.text, fontSize: '20px' }}>
+            <div className="dashboard-section" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px' }}>
+                <div className="card" style={{ padding: '0', minHeight: '850px', overflow: 'hidden', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                    <div style={{ padding: '16px', borderBottom: '1px solid #F3F4F6', backgroundColor: 'white' }}>
+                        <h3 className="section-title" style={{ marginBottom: '4px', color: THEME.text, fontSize: '18px' }}>
                             {selectedComponent} - Geographic Overview
                         </h3>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: '0' }}>
+                        <p style={{ fontSize: '13px', color: '#6B7280', margin: '0' }}>
                             {selectedState ? `Selected: ${selectedState}` : 'Click on a state to view detailed progress'}
                         </p>
                     </div>
-                    <div style={{ height: '650px', width: '100%' }}>
+                    <div style={{ height: '800px', width: '100%' }}>
                         <IndiaMap onStateSelect={setSelectedState} />
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div className="card" style={{ padding: '20px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div className="card" style={{ padding: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                         {stateData ? (
                             <>
-                                <h4 style={{ fontSize: '16px', fontWeight: '600', color: THEME.text, marginBottom: '16px', textAlign: 'center' }}>
+                                <h4 style={{ fontSize: '14px', fontWeight: '600', color: THEME.text, marginBottom: '12px', textAlign: 'center' }}>
                                     Fund Utilization - {stateData.name}
                                 </h4>
-                                <PieChart data={stateData.fundUtilization} size={180} />
+                                <PieChart data={stateData.fundUtilization} size={150} />
                             </>
                         ) : (
-                            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9CA3AF' }}>
-                                <div style={{ fontSize: '40px', marginBottom: '8px', opacity: 0.5 }}>💰</div>
-                                <h4 style={{ fontSize: '14px', color: THEME.text, marginBottom: '4px' }}>No State Selected</h4>
-                                <p style={{ fontSize: '12px', color: '#6B7280' }}>Click on a state to view fund utilization</p>
+                            <div style={{ padding: '30px 16px', textAlign: 'center', color: '#9CA3AF' }}>
+                                <div style={{ fontSize: '32px', marginBottom: '8px', opacity: 0.5, display: 'flex', justifyContent: 'center' }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                                </div>
+                                <h4 style={{ fontSize: '13px', color: THEME.text, marginBottom: '4px' }}>No State Selected</h4>
+                                <p style={{ fontSize: '11px', color: '#6B7280' }}>Click on a state to view fund utilization</p>
                             </div>
                         )}
                     </div>
@@ -449,18 +497,18 @@ const MonitorProgress = () => {
                                 progress={stateData.components[selectedComponent].progress}
                             />
                         ) : stateData && selectedComponent === 'All Components' ? (
-                            <div style={{ padding: '20px' }}>
-                                <h4 style={{ fontSize: '16px', fontWeight: '600', color: THEME.text, marginBottom: '16px', textAlign: 'center' }}>
+                            <div style={{ padding: '16px' }}>
+                                <h4 style={{ fontSize: '14px', fontWeight: '600', color: THEME.text, marginBottom: '12px', textAlign: 'center' }}>
                                     All Components Progress
                                 </h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                     {Object.entries(stateData.components).map(([name, data]) => (
                                         <div key={name}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: THEME.text }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: THEME.text }}>
                                                 <span>{name}</span>
                                                 <span>{data.progress}%</span>
                                             </div>
-                                            <div style={{ height: '8px', backgroundColor: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{ height: '6px', backgroundColor: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
                                                 <div style={{
                                                     width: `${data.progress}%`,
                                                     height: '100%',
@@ -474,10 +522,12 @@ const MonitorProgress = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9CA3AF' }}>
-                                <div style={{ fontSize: '40px', marginBottom: '8px', opacity: 0.5 }}>📊</div>
-                                <h4 style={{ fontSize: '14px', color: THEME.text, marginBottom: '4px' }}>No State Selected</h4>
-                                <p style={{ fontSize: '12px', color: '#6B7280' }}>Click on a state to view components</p>
+                            <div style={{ padding: '30px 16px', textAlign: 'center', color: '#9CA3AF' }}>
+                                <div style={{ fontSize: '32px', marginBottom: '8px', opacity: 0.5, display: 'flex', justifyContent: 'center' }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+                                </div>
+                                <h4 style={{ fontSize: '13px', color: THEME.text, marginBottom: '4px' }}>No State Selected</h4>
+                                <p style={{ fontSize: '11px', color: '#6B7280' }}>Click on a state to view components</p>
                             </div>
                         )}
                     </div>
@@ -485,16 +535,18 @@ const MonitorProgress = () => {
                     <div className="card" style={{ padding: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', flex: 1 }}>
                         {stateData ? (
                             <>
-                                <h4 style={{ fontSize: '15px', fontWeight: '600', color: THEME.text, marginBottom: '8px', textAlign: 'center' }}>
+                                <h4 style={{ fontSize: '14px', fontWeight: '600', color: THEME.text, marginBottom: '8px', textAlign: 'center' }}>
                                     Project Trends
                                 </h4>
-                                <AnimatedLineChart data={stateData.projectTrends} height={180} />
+                                <AnimatedLineChart data={stateData.projectTrends} height={160} />
                             </>
                         ) : (
-                            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9CA3AF' }}>
-                                <div style={{ fontSize: '40px', marginBottom: '8px', opacity: 0.5 }}>📈</div>
-                                <h4 style={{ fontSize: '14px', color: THEME.text, marginBottom: '4px' }}>No State Selected</h4>
-                                <p style={{ fontSize: '12px', color: '#6B7280' }}>Click on a state to view trends</p>
+                            <div style={{ padding: '30px 16px', textAlign: 'center', color: '#9CA3AF' }}>
+                                <div style={{ fontSize: '32px', marginBottom: '8px', opacity: 0.5, display: 'flex', justifyContent: 'center' }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>
+                                </div>
+                                <h4 style={{ fontSize: '13px', color: THEME.text, marginBottom: '4px' }}>No State Selected</h4>
+                                <p style={{ fontSize: '11px', color: '#6B7280' }}>Click on a state to view trends</p>
                             </div>
                         )}
                     </div>
