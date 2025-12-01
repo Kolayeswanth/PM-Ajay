@@ -226,9 +226,18 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
                 </div>
                 <div style={{ height: '800px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                     {selectedDistrict ? (
-                        <CityMap district={selectedDistrict} state={selectedState} />
+                        <DistrictMap
+                            key={selectedDistrict}
+                            state={selectedState}
+                            district={selectedDistrict}
+                        />
                     ) : selectedState ? (
-                        <DistrictMap state={selectedState} onDistrictSelect={handleDistrictSelect} />
+                        <DistrictMap
+                            key={selectedState}
+                            state={selectedState}
+                            district={null}
+                            onDistrictSelect={handleDistrictSelect}
+                        />
                     ) : (
                         <IndiaMap onStateSelect={setSelectedState} />
                     )}

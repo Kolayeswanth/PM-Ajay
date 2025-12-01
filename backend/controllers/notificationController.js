@@ -72,8 +72,11 @@ exports.sendAllocationNotification = async (req, res) => {
             `Please acknowledge receipt of this notification. ` +
             `Thank you, Ministry of Social Justice & Empowerment`;
 
+        // Sanitize message content
+        const sanitizedMessage = messageContent.replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
         const templateParams = [
-            { name: "message_body", value: messageContent }
+            { name: "message_body", value: sanitizedMessage }
         ];
 
         console.log('📱 Sending WhatsApp notification to:', messageContent);
@@ -99,7 +102,8 @@ exports.sendAllocationNotification = async (req, res) => {
             }
         });
 
-        console.log('✅ WATI API Response:', response);
+        console.log('✅ WATI API Response Status:', response.status);
+        console.log('✅ WATI API Response Data:', JSON.stringify(response.data, null, 2));
 
         // Return success response
         return res.status(200).json({
@@ -194,8 +198,11 @@ exports.sendReleaseNotification = async (req, res) => {
             `Please check your dashboard for details. ` +
             `Thank you, Ministry of Social Justice & Empowerment`;
 
+        // Sanitize message content
+        const sanitizedMessage = messageContent.replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
         const templateParams = [
-            { name: "message_body", value: messageContent }
+            { name: "message_body", value: sanitizedMessage }
         ];
 
         const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
@@ -218,6 +225,8 @@ exports.sendReleaseNotification = async (req, res) => {
             }
         });
 
+        console.log('✅ WATI API Response Status:', response.status);
+        console.log('✅ WATI API Response Data:', JSON.stringify(response.data, null, 2));
         console.log('✅ WhatsApp notification sent successfully!');
 
         return res.status(200).json({
@@ -309,8 +318,11 @@ exports.sendActivationWhatsApp = async (req, res) => {
             `You can now proceed with your assigned tasks. ` +
             `Thank you, PM-AJAY Portal`;
 
+        // Sanitize message content
+        const sanitizedMessage = messageContent.replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
         const templateParams = [
-            { name: "message_body", value: messageContent }
+            { name: "message_body", value: sanitizedMessage }
         ];
 
         const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;

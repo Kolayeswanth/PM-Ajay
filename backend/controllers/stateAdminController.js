@@ -247,20 +247,25 @@ exports.activateStateAdmin = async (req, res) => {
                     `Please login to the portal to view your dashboard. ` +
                     `Thank you, Ministry of Social Justice & Empowerment`;
 
+                // Sanitize message content
+                const sanitizedMessage = messageContent.replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
                 const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
                 const payload = {
                     template_name: templateName,
                     broadcast_name: 'State Admin Activation',
-                    parameters: [{ name: "message_body", value: messageContent }]
+                    parameters: [{ name: "message_body", value: sanitizedMessage }]
                 };
 
                 console.log('📱 Sending WhatsApp notification to:', formattedPhone);
-                await axios.post(endpoint, payload, {
+                const response = await axios.post(endpoint, payload, {
                     headers: {
                         'Authorization': `Bearer ${watiApiKey}`,
                         'Content-Type': 'application/json'
                     }
                 });
+                console.log('✅ WATI API Response Status:', response.status);
+                console.log('✅ WATI API Response Data:', JSON.stringify(response.data, null, 2));
                 console.log('✅ WhatsApp notification sent successfully!');
             }
         } catch (whatsappError) {

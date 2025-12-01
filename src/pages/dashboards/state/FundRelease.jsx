@@ -11,6 +11,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [toast, setToast] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [districtStats, setDistrictStats] = useState(null);
 
     const [formData, setFormData] = useState({
         districtId: '',
@@ -137,6 +138,26 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
         };
         fetchReceivedFunds();
     }, [stateId, stateName]);
+
+    // Fetch District Stats when district is selected
+    useEffect(() => {
+        const fetchDistrictStats = async () => {
+            if (!formData.districtId) {
+                setDistrictStats(null);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/funds/district-stats?districtId=${formData.districtId}`);
+                const result = await response.json();
+                if (result.success) {
+                    setDistrictStats(result.data);
+                }
+            } catch (error) {
+                console.error('Error fetching district stats:', error);
+            }
+        };
+        fetchDistrictStats();
+    }, [formData.districtId]);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -352,6 +373,18 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                                 <option key={d.id} value={d.id}>{d.name}</option>
                             ))}
                         </select>
+                        {districtStats && (
+                            <div style={{ marginTop: 10, padding: '10px 12px', background: '#f8f9fa', borderRadius: 6, border: '1px solid #e9ecef', fontSize: '13px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span style={{ color: '#666' }}>Total Released to District:</span>
+                                    <span style={{ fontWeight: 600, color: '#2980b9' }}>₹{districtStats.totalReleased.toFixed(2)} Cr</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: '#666' }}>State Available Balance:</span>
+                                    <span style={{ fontWeight: 600, color: '#27ae60' }}>₹{(totalReceived - totalReleased).toFixed(2)} Cr</span>
+                                </div>
+                            </div>
+                        )}
                         {errors.districtId && <div className="form-error">{errors.districtId}</div>}
                     </div>
 

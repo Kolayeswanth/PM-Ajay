@@ -11,19 +11,25 @@ const MapUpdater = ({ bounds }) => {
 
     useEffect(() => {
         if (bounds && bounds.isValid()) {
-            map.fitBounds(bounds, { padding: [20, 20] });
+            // Minimal top padding, more bottom padding to shift map upward
+            map.fitBounds(bounds, {
+                paddingTopLeft: [30, 10],      // Minimal top padding (10px)
+                paddingBottomRight: [30, 100], // More bottom padding (100px)
+                animate: true,
+                maxZoom: 9,
+                duration: 0.5
+            });
         }
     }, [bounds, map]);
 
     return null;
 };
 
-const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
+const DistrictMap = ({ state = 'Maharashtra', district = null, highlightedDistrict = null, onDistrictSelect }) => {
     const [selectedDistrict, setSelectedDistrict] = useState(null);
-    const [showProjects, setShowProjects] = useState(true);
 
     const districtData = districts[state] || [];
-    const stateProjects = mockProjects.filter(p => p.state === state);
+    const stateProjects = mockProjects.filter(p => p.state === state && (!district || p.district === district));
 
     const normalizeStateName = (geoJsonName) => {
         const nameMapping = {
@@ -36,17 +42,6 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
             'Telangana': 'Andhra Pradesh', // Mapping Telangana to AP for pre-2014 data
             'Andhra Pradesh': 'Andhra Pradesh'
         };
-        // If the input is one of our keys (modern name), map it to the GeoJSON name (legacy)
-        // Wait, the input here is from GeoJSON (legacy). 
-        // We need to match the PROP passed to the component (modern) with the GeoJSON property (legacy).
-
-        // Actually, the filter logic is: normalize(feature.NAME_1) === state (modern).
-        // So normalize should take Legacy -> Modern.
-        // 'Andhra Pradesh' (Legacy) -> 'Andhra Pradesh' (Modern).
-        // But 'Telangana' (Modern) passed as prop.
-        // So we need to check if feature.NAME_1 matches the mapped version of state.
-
-        // Let's reverse the logic slightly for clarity in the filter.
         return nameMapping[geoJsonName] || geoJsonName;
     };
 
@@ -97,11 +92,20 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
         const targetGeoJSONName = getGeoJSONStateName(state);
         console.log('DistrictMap: Looking for state:', state, '-> GeoJSON name:', targetGeoJSONName);
 
+        let features = indiaDistrictsGeoJSON.features.filter(feature =>
+            feature.properties.NAME_1 === targetGeoJSONName
+        );
+
+        if (district) {
+            console.log('DistrictMap: Filtering for district:', district);
+            features = features.filter(feature =>
+                (feature.properties.NAME_2 || feature.properties.name) === district
+            );
+        }
+
         const filtered = {
             ...indiaDistrictsGeoJSON,
-            features: indiaDistrictsGeoJSON.features.filter(feature =>
-                feature.properties.NAME_1 === targetGeoJSONName
-            )
+            features: features
         };
 
         console.log('DistrictMap: Found', filtered.features.length, 'districts for', targetGeoJSONName);
@@ -112,7 +116,7 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
         }
 
         return filtered;
-    }, [state]);
+    }, [state, district]);
 
     // Calculate bounds
     const mapBounds = useMemo(() => {
@@ -123,19 +127,25 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
     }, [stateDistrictsGeoJSON]);
 
     const getDistrictColor = (districtName) => {
-        // Uniform color to match the requested style (Pink)
-        return '#FCE7F3';
+        if (highlightedDistrict && districtName === highlightedDistrict) {
+            return '#4F46E5'; // Highlight color (Indigo-600)
+        }
+        const isImplemented = districtData.some(d => d.name === districtName);
+
+        return isImplemented ? '#C7D2FE' : '#FFFFFF';
     };
 
     const onEachDistrict = (feature, layer) => {
         const districtName = feature.properties.NAME_2 || feature.properties.name; // NAME_2 is usually district name in this dataset
         const district = districtData.find(d => d.name === districtName);
 
+        const isImplemented = !!district;
+
         layer.setStyle({
             fillColor: getDistrictColor(districtName),
             weight: 1.5,
             opacity: 1,
-            color: '#DB2777', // Dark Pink border
+            color: '#4338CA', // Indigo border
             fillOpacity: 1
         });
 
@@ -143,23 +153,25 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
             mouseover: (e) => {
                 e.target.setStyle({
                     weight: 2.5,
-                    color: '#9D174D', // Darker Pink on hover
+                    color: '#312E81', // Darker Navy on hover
                     fillOpacity: 0.9,
-                    fillColor: '#FBCFE8' // Slightly darker pink fill
+                    fillColor: isImplemented ? '#C7D2FE' : '#F3F4F6'
                 });
             },
             mouseout: (e) => {
                 e.target.setStyle({
                     weight: 1.5,
-                    color: '#DB2777',
+                    color: '#4338CA',
                     fillOpacity: 1,
-                    fillColor: '#FCE7F3'
+                    fillColor: getDistrictColor(districtName)
                 });
             },
             click: (e) => {
-                setSelectedDistrict(districtName);
-                if (onDistrictSelect) {
-                    onDistrictSelect(districtName);
+                if (isImplemented) {
+                    setSelectedDistrict(districtName);
+                    if (onDistrictSelect) {
+                        onDistrictSelect(districtName);
+                    }
                 }
             }
         });
@@ -187,8 +199,8 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
           <h3 style="margin: 0 0 8px 0; color: var(--color-navy); font-size: 16px;">
             ${districtName}
           </h3>
-          <p style="margin: 4px 0; font-size: 14px; color: #666;">
-            No specific data available.
+          <p style="margin: 8px 0; font-size: 14px; color: #DC2626; font-weight: 600;">
+            This district has not implemented PM-AJAY components yet.
           </p>
         </div>
       `);
@@ -248,14 +260,14 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
 
                 {stateDistrictsGeoJSON && (
                     <GeoJSON
-                        key={state} // Force re-mount of GeoJSON when state changes
+                        key={state} // Force re-mount when state changes
                         data={stateDistrictsGeoJSON}
                         onEachFeature={onEachDistrict}
                     />
                 )}
 
                 {/* Project Markers */}
-                {showProjects && stateProjects.map(project => (
+                {stateProjects.map(project => (
                     <Marker
                         key={project.id}
                         position={project.coordinates}
@@ -301,29 +313,30 @@ const DistrictMap = ({ state = 'Maharashtra', onDistrictSelect }) => {
                 ))}
             </MapContainer>
 
-            {/* Controls */}
-            <div style={{
-                position: 'absolute',
-                top: 'var(--space-4)',
-                right: 'var(--space-4)',
-                backgroundColor: 'var(--bg-primary)',
-                padding: 'var(--space-4)',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: 'var(--shadow-xl)',
-                zIndex: 1000
-            }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
-                    <input
-                        type="checkbox"
-                        checked={showProjects}
-                        onChange={(e) => setShowProjects(e.target.checked)}
-                    />
-                    <span style={{ fontSize: 'var(--text-sm)' }}>Show Projects</span>
-                </label>
-            </div>
+
 
             {/* Legend */}
-            {/* Legend Removed as per new uniform styling */}
+            <div className="map-legend" style={{
+                position: 'absolute',
+                top: '20px',
+                left: '20px',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                padding: '15px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                zIndex: 1000,
+                border: '1px solid #e5e7eb'
+            }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#1f2937' }}>District Status</h4>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ width: '20px', height: '20px', backgroundColor: '#C7D2FE', border: '1px solid #4338CA', marginRight: '10px', borderRadius: '4px' }}></span>
+                    <span style={{ fontSize: '13px', color: '#4b5563' }}>Implemented</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: '20px', height: '20px', backgroundColor: '#FFFFFF', border: '1px solid #4338CA', marginRight: '10px', borderRadius: '4px' }}></span>
+                    <span style={{ fontSize: '13px', color: '#4b5563' }}>Non-Implemented</span>
+                </div>
+            </div>
 
         </div>
     );

@@ -9,10 +9,45 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Get all district admins
 exports.getAllDistrictAdmins = async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const { stateName } = req.query;
+        let query = supabase
             .from('district_assignment')
             .select('*')
             .order('created_at', { ascending: false });
+
+        if (stateName) {
+            // First get state ID
+            const { data: stateData, error: stateError } = await supabase
+                .from('states')
+                .select('id')
+                .eq('name', stateName)
+                .single();
+
+            if (stateError || !stateData) {
+                // If state not found, return empty or error. Let's return empty for safety.
+                return res.json({ success: true, data: [] });
+            }
+
+            // Get districts for this state
+            const { data: districtsData, error: districtsError } = await supabase
+                .from('districts')
+                .select('name')
+                .eq('state_id', stateData.id);
+
+            if (districtsError) {
+                return res.status(500).json({ success: false, error: districtsError.message });
+            }
+
+            const districtNames = districtsData.map(d => d.name);
+
+            if (districtNames.length > 0) {
+                query = query.in('district_name', districtNames);
+            } else {
+                return res.json({ success: true, data: [] });
+            }
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error('Supabase error:', error);
@@ -189,24 +224,31 @@ exports.activateDistrictAdmin = async (req, res) => {
 
             if (watiApiBaseUrl && watiApiKey && tenantId) {
                 const messageContent =
+                    `⚠️ *Important Notification* - ` +
                     `DISTRICT ADMIN ACTIVATION - ` +
                     `Dear ${adminData.admin_name}, ` +
                     `Your account has been successfully ACTIVATED as District Admin for ${adminData.district_name}. ` +
                     `Email: ${adminData.email}. ` +
                     `Status: Activated. ` +
-                    `You can now access the PM-AJAY Dashboard. ` +
+                    `You can now access the PM-AJAY Dashboard and manage your district's fund allocations. ` +
+                    `Please login to the portal to view your dashboard. ` +
                     `Thank you, Ministry of Social Justice & Empowerment`;
+
+                // Sanitize message content to remove any newlines or tabs that might have slipped in
+                const sanitizedMessage = messageContent.replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
 
                 const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
                 const payload = {
                     template_name: templateName,
                     broadcast_name: 'District Admin Activation',
-                    parameters: [{ name: "message_body", value: messageContent }]
+                    parameters: [{ name: "message_body", value: sanitizedMessage }]
                 };
 
-                await axios.post(endpoint, payload, {
+                const response = await axios.post(endpoint, payload, {
                     headers: { 'Authorization': `Bearer ${watiApiKey}`, 'Content-Type': 'application/json' }
                 });
+                console.log('✅ WATI API Response Status:', response.status);
+                console.log('✅ WATI API Response Data:', JSON.stringify(response.data, null, 2));
                 console.log('✅ WhatsApp notification sent successfully!');
             }
         } catch (whatsappError) {

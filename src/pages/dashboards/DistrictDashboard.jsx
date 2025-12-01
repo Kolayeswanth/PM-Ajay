@@ -11,11 +11,13 @@ import DistrictReports from './district/DistrictReports';
 import DistrictNotifications from './district/DistrictNotifications';
 import DistrictHelp from './district/DistrictHelp';
 import CreateProposal from './district/CreateProposal';
+import AssignProjectsDistrict from './district/AssignProjectsDistrict';
 
 const DistrictDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [districtName, setDistrictName] = useState('Loading...');
     const [districtId, setDistrictId] = useState(null);
+    const [stateId, setStateId] = useState(null);
     const navigate = useNavigate();
     const { logout, user } = useAuth();
 
@@ -24,9 +26,10 @@ const DistrictDashboard = () => {
         const fetchDistrictName = async () => {
             if (user?.id) {
                 try {
-                    const response = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
+                    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
                         headers: {
-                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
                         }
                     });
                     const data = await response.json();
@@ -35,15 +38,17 @@ const DistrictDashboard = () => {
                         const name = data[0].full_name.replace(' District Admin', '').replace(' Admin', '').trim();
                         setDistrictName(name);
 
-                        // Fetch District ID
-                        const districtRes = await fetch(`https://gwfeaubvzjepmmhxgdvc.supabase.co/rest/v1/districts?name=eq.${name}&select=id`, {
+                        // Fetch District ID and State ID
+                        const districtRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/districts?name=eq.${name}&select=id,state_id`, {
                             headers: {
-                                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE'
+                                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
                             }
                         });
                         const districtData = await districtRes.json();
                         if (districtData && districtData.length > 0) {
                             setDistrictId(districtData[0].id);
+                            setStateId(districtData[0].state_id);
                         }
                     }
                 } catch (error) {
@@ -62,6 +67,7 @@ const DistrictDashboard = () => {
     const sidebarMenu = [
         { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
         { icon: '📝', label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
+        { icon: '✍️', label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
         { icon: '👥', label: 'Manage GP Admins', action: () => setActiveTab('gp-admins'), active: activeTab === 'gp-admins' },
         { icon: '💰', label: 'Funds Received from State', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
         { icon: '📄', label: 'Upload UCs', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
@@ -81,6 +87,8 @@ const DistrictDashboard = () => {
                 return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} />;
             case 'create-proposal':
                 return <CreateProposal districtId={districtId} />;
+            case 'assign-projects':
+                return <AssignProjectsDistrict districtId={districtId} stateId={stateId} />;
             case 'gp-admins':
                 return <ManageGPAdmins />;
             case 'funds-received':
@@ -102,6 +110,7 @@ const DistrictDashboard = () => {
         const labels = {
             'dashboard': 'Dashboard',
             'create-proposal': 'Create Proposal',
+            'assign-projects': 'Assign Projects',
             'gp-admins': 'Manage GP Admins',
             'funds-received': 'Funds Received from State',
             'ucs': 'Upload UCs',
