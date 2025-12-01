@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabaseClient';
 const ManageExecutingAgencies = () => {
     const { user } = useAuth();
     const [agencies, setAgencies] = useState([]);
+    const [executingAgenciesList, setExecutingAgenciesList] = useState([]); // New state for dropdown options
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
@@ -22,7 +23,44 @@ const ManageExecutingAgencies = () => {
 
     useEffect(() => {
         fetchAgencies();
+        fetchExecutingAgenciesList(); // Fetch the list for dropdown
     }, [user?.id]);
+
+    const fetchExecutingAgenciesList = async () => {
+        if (!user?.id) return;
+        try {
+            // 1. Get User's State
+            const { data: userData, error: userError } = await supabase
+                .from('implementing_agencies')
+                .select('state_name')
+                .eq('user_id', user.id)
+                .single();
+
+            if (userError) {
+                console.error('Error fetching user state:', userError);
+                return;
+            }
+
+            const userState = userData?.state_name;
+
+            if (!userState) {
+                console.warn('User has no state assigned.');
+                return;
+            }
+
+            // 2. Fetch Executing Agencies for that State
+            const { data, error } = await supabase
+                .from('executing_agencies')
+                .select('agency_name')
+                .eq('state_name', userState)
+                .order('agency_name', { ascending: true });
+
+            if (error) throw error;
+            if (data) setExecutingAgenciesList(data);
+        } catch (error) {
+            console.error('Error fetching executing agencies list:', error);
+        }
+    };
 
     const fetchAgencies = async () => {
         if (!user?.id) return;
@@ -298,13 +336,18 @@ const ManageExecutingAgencies = () => {
             >
                 <div className="form-group" style={{ marginBottom: 15 }}>
                     <label className="form-label">Agency Name</label>
-                    <input
-                        type="text"
+                    <select
                         className="form-control"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Enter agency name"
-                    />
+                    >
+                        <option value="">Select Agency</option>
+                        {executingAgenciesList.map((agency, index) => (
+                            <option key={index} value={agency.agency_name}>
+                                {agency.agency_name}
+                            </option>
+                        ))}
+                    </select>
                     {errors.name && <div className="form-error">{errors.name}</div>}
                 </div>
 

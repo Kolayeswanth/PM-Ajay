@@ -309,6 +309,19 @@ const WorkOrders = ({ orders, onUpdateOrder, onViewProgress }) => {
                                                 Released: ₹{item.funds_released} | Used: ₹{item.funds_used}
                                             </div>
                                             {item.remarks && <div style={{ fontStyle: 'italic', color: '#888' }}>"{item.remarks}"</div>}
+                                            {item.photos && item.photos.length > 0 && (
+                                                <div style={{ marginTop: '8px', display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                                                    {item.photos.map((photoUrl, pIndex) => (
+                                                        <a key={pIndex} href={photoUrl} target="_blank" rel="noopener noreferrer">
+                                                            <img
+                                                                src={photoUrl}
+                                                                alt={`Site ${pIndex + 1}`}
+                                                                style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }}
+                                                            />
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

@@ -22,8 +22,9 @@ const FundReleased = ({ formatCurrency }) => {
     const [errors, setErrors] = useState({});
 
     // Supabase Configuration
-    const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3ZmVhdWJ2emplcG1taHhnZHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjY1MDEsImV4cCI6MjA3OTc0MjUwMX0.uelA90LXrAcLazZi_LkdisGqft-dtvj0wgOQweMEUGE';
+    // Supabase Configuration
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     // Fetch Data on Mount
     useEffect(() => {
