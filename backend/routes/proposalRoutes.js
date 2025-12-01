@@ -9,5 +9,7 @@ const upload = multer({ storage: storage });
 
 router.post('/create', upload.array('documents', 5), proposalController.createProposal);
 router.get('/district/:districtId', proposalController.getProposalsByDistrict);
+router.get('/state', proposalController.getProposalsByState);
+router.patch('/:id/status', proposalController.updateProposalStatus);
 
 module.exports = router;

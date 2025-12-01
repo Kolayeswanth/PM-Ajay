@@ -9,10 +9,45 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Get all district admins
 exports.getAllDistrictAdmins = async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const { stateName } = req.query;
+        let query = supabase
             .from('district_assignment')
             .select('*')
             .order('created_at', { ascending: false });
+
+        if (stateName) {
+            // First get state ID
+            const { data: stateData, error: stateError } = await supabase
+                .from('states')
+                .select('id')
+                .eq('name', stateName)
+                .single();
+
+            if (stateError || !stateData) {
+                // If state not found, return empty or error. Let's return empty for safety.
+                return res.json({ success: true, data: [] });
+            }
+
+            // Get districts for this state
+            const { data: districtsData, error: districtsError } = await supabase
+                .from('districts')
+                .select('name')
+                .eq('state_id', stateData.id);
+
+            if (districtsError) {
+                return res.status(500).json({ success: false, error: districtsError.message });
+            }
+
+            const districtNames = districtsData.map(d => d.name);
+
+            if (districtNames.length > 0) {
+                query = query.in('district_name', districtNames);
+            } else {
+                return res.json({ success: true, data: [] });
+            }
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error('Supabase error:', error);
