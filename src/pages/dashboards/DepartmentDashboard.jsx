@@ -190,8 +190,19 @@ const DepartmentDashboard = () => {
             <DashboardSidebar menuItems={sidebarMenu} />
 
             <main className="dashboard-main">
-                <div className="dashboard-header">
+                <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>{getBreadcrumb()}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <NotificationBell />
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: '500', color: '#374151' }}>{user?.name || 'Department Admin'}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>{user?.role?.replace('_', ' ').toUpperCase()}</div>
+                        </div>
+                    </div>
+                </div>
+                <div className="dashboard-content" style={{ padding: '2rem' }}>
                     {renderContent()}
+                </div>
             </main>
         </div>
     );
