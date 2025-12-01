@@ -10,6 +10,7 @@ const AgencyProjects = ({ projects }) => {
                     <thead>
                         <tr>
                             <th>Project Title</th>
+                            <th>Component</th>
                             <th>Location</th>
                             <th>Project Fund</th>
                             <th>Deadline</th>
@@ -25,6 +26,11 @@ const AgencyProjects = ({ projects }) => {
                                         <div style={{ fontWeight: 'bold' }}>{project.title}</div>
                                         <div style={{ fontSize: '12px', color: '#666' }}>ID: {project.id}</div>
                                     </td>
+                                    <td>
+                                        <span className="badge badge-secondary">
+                                            {project.component || project.district_proposals?.component || 'N/A'}
+                                        </span>
+                                    </td>
                                     <td>{project.location || 'N/A'}</td>
                                     <td>₹{project.amount}</td>
                                     <td>{project.deadline || 'N/A'}</td>
@@ -38,7 +44,7 @@ const AgencyProjects = ({ projects }) => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: 20 }}>
+                                <td colSpan="7" style={{ textAlign: 'center', padding: 20 }}>
                                     No projects assigned yet.
                                 </td>
                             </tr>

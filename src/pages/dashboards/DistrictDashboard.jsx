@@ -26,6 +26,7 @@ const DistrictDashboard = () => {
         const fetchDistrictName = async () => {
             if (user?.id) {
                 try {
+                    console.log('Fetching profile for user:', user.id);
                     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=full_name`, {
                         headers: {
                             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -33,9 +34,12 @@ const DistrictDashboard = () => {
                         }
                     });
                     const data = await response.json();
+                    console.log('Profile Data:', data);
+
                     if (data[0]?.full_name) {
                         // Extract district name (e.g., "Pune District Admin" -> "Pune")
                         const name = data[0].full_name.replace(' District Admin', '').replace(' Admin', '').trim();
+                        console.log('Extracted District Name:', name);
                         setDistrictName(name);
 
                         // Fetch District ID and State ID
@@ -46,9 +50,14 @@ const DistrictDashboard = () => {
                             }
                         });
                         const districtData = await districtRes.json();
+                        console.log('District Data:', districtData);
+
                         if (districtData && districtData.length > 0) {
                             setDistrictId(districtData[0].id);
                             setStateId(districtData[0].state_id);
+                            console.log('Set District ID:', districtData[0].id, 'State ID:', districtData[0].state_id);
+                        } else {
+                            console.error('District not found for name:', name);
                         }
                     }
                 } catch (error) {
