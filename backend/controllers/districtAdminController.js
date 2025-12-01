@@ -224,7 +224,7 @@ exports.activateDistrictAdmin = async (req, res) => {
 
             if (watiApiBaseUrl && watiApiKey && tenantId) {
                 const messageContent =
-                    `⚠️ *Important Notification*\n\n` +
+                    `⚠️ *Important Notification* - ` +
                     `DISTRICT ADMIN ACTIVATION - ` +
                     `Dear ${adminData.admin_name}, ` +
                     `Your account has been successfully ACTIVATED as District Admin for ${adminData.district_name}. ` +
@@ -234,16 +234,21 @@ exports.activateDistrictAdmin = async (req, res) => {
                     `Please login to the portal to view your dashboard. ` +
                     `Thank you, Ministry of Social Justice & Empowerment`;
 
+                // Sanitize message content to remove any newlines or tabs that might have slipped in
+                const sanitizedMessage = messageContent.replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
                 const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
                 const payload = {
                     template_name: templateName,
                     broadcast_name: 'District Admin Activation',
-                    parameters: [{ name: "message_body", value: messageContent }]
+                    parameters: [{ name: "message_body", value: sanitizedMessage }]
                 };
 
-                await axios.post(endpoint, payload, {
+                const response = await axios.post(endpoint, payload, {
                     headers: { 'Authorization': `Bearer ${watiApiKey}`, 'Content-Type': 'application/json' }
                 });
+                console.log('✅ WATI API Response Status:', response.status);
+                console.log('✅ WATI API Response Data:', JSON.stringify(response.data, null, 2));
                 console.log('✅ WhatsApp notification sent successfully!');
             }
         } catch (whatsappError) {

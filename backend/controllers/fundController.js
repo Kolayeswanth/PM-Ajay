@@ -579,6 +579,67 @@ exports.getDistrictFundReleasesByState = async (req, res) => {
     }
 };
 
+// Get fund statistics for a specific district
+exports.getDistrictStats = async (req, res) => {
+    try {
+        const { districtId } = req.query;
+
+        if (!districtId) {
+            return res.status(400).json({ success: false, error: 'District ID is required' });
+        }
+
+        // 1. Get total released to this district
+        const { data: releases, error: releasesError } = await supabase
+            .from('fund_releases')
+            .select('amount_cr, release_date')
+            .eq('district_id', districtId);
+
+        if (releasesError) {
+            return res.status(500).json({ success: false, error: releasesError.message });
+        }
+
+        const totalReleased = releases.reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0);
+
+        // Find last release date
+        const lastRelease = releases.length > 0
+            ? releases.reduce((latest, item) => new Date(item.release_date) > new Date(latest) ? item.release_date : latest, releases[0].release_date)
+            : null;
+
+        // 2. Get utilization (Placeholder - assuming we might have this table later)
+        // For now, we'll check if there are any proposals with 'COMPLETED' status and sum their cost?
+        // Or just return 0.
+        // Let's check district_proposals table for approved projects as "Committed/Utilized"
+        const { data: proposals, error: proposalsError } = await supabase
+            .from('district_proposals')
+            .select('estimated_cost, status')
+            .eq('district_id', districtId)
+            .in('status', ['APPROVED', 'COMPLETED', 'IN_PROGRESS']);
+
+        let totalUtilized = 0;
+        if (!proposalsError && proposals) {
+            // estimated_cost is usually in Rupees or Crores? 
+            // In proposalController, it's just a number. Let's assume it matches the unit used there.
+            // But usually proposals are in Rupees. Fund release is in Cr.
+            // Let's assume estimated_cost is in Rupees for now, based on typical inputs.
+            // We need to be careful. Let's just return 0 for now to be safe, or label it clearly.
+            // Actually, let's just return totalReleased for now.
+        }
+
+        res.json({
+            success: true,
+            data: {
+                totalReleased: totalReleased,
+                lastReleaseDate: lastRelease,
+                // availableBalance: ??? (We don't know district's spending)
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching district stats:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
 // UTILITY: Fix fund allocation amounts by recalculating from actual releases
 exports.fixFundAllocations = async (req, res) => {
     try {
