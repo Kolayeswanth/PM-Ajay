@@ -129,21 +129,9 @@ const MinistryDashboard = () => {
             <DashboardSidebar menuItems={sidebarMenu} user={user} isOpen={isSidebarOpen} />
 
             <main className="dashboard-main">
-                <div className="dashboard-header">
-                    <div className="dashboard-title-section" style={{ marginTop: '1.5rem' }}>
-                        <h1>Ministry Dashboard</h1>
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                            {getBreadcrumb()}
-                        </p>
-                    </div>
-                    <div className="dashboard-actions">
-                        <NotificationBell />
-                    </div>
-                </div>
-
                 {renderContent()}
-            </main >
-        </div >
+            </main>
+        </div>
     );
 };
 

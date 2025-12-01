@@ -132,6 +132,18 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
 
     return (
         <div className="dashboard-panel">
+            {/* Dashboard Title */}
+            <h1 style={{
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: 'var(--text-primary)',
+                marginBottom: '2rem',
+                textAlign: 'left',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+            }}>
+                MINISTRY DASHBOARD
+            </h1>
             {/* National Statistics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
                 <InfoCard
