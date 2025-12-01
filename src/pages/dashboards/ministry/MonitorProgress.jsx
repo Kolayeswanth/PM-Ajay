@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import IndiaMap from '../../../components/maps/IndiaMap';
+import DistrictMap from '../../../components/maps/DistrictMap';
 import StatCard from '../../../components/StatCard';
 
 const THEME = {
@@ -344,6 +345,7 @@ const ComponentProgressChart = ({ component, progress }) => {
 
 const MonitorProgress = () => {
     const [selectedState, setSelectedState] = useState(null);
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [selectedComponent, setSelectedComponent] = useState('All Components');
     const [stateData, setStateData] = useState(null);
     const [nationalOverview, setNationalOverview] = useState(generateNationalOverview('All Components'));
@@ -353,6 +355,7 @@ const MonitorProgress = () => {
             setStateData(generateStateData(selectedState));
         } else {
             setStateData(null);
+            setSelectedDistrict(null);
         }
     }, [selectedState]);
 
@@ -362,6 +365,18 @@ const MonitorProgress = () => {
 
     const handleComponentChange = (e) => {
         setSelectedComponent(e.target.value);
+    };
+
+    const handleDistrictSelect = (districtName) => {
+        setSelectedDistrict(districtName);
+    };
+
+    const handleBack = () => {
+        if (selectedDistrict) {
+            setSelectedDistrict(null);
+        } else {
+            setSelectedState(null);
+        }
     };
 
     return (
@@ -413,14 +428,48 @@ const MonitorProgress = () => {
                 <div className="card" style={{ padding: '0', minHeight: '700px', overflow: 'hidden', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                     <div style={{ padding: '20px', borderBottom: '1px solid #F3F4F6', backgroundColor: 'white' }}>
                         <h3 className="section-title" style={{ marginBottom: '4px', color: THEME.text, fontSize: '20px' }}>
-                            {selectedComponent} - Geographic Overview
+                            {selectedDistrict
+                                ? `${selectedDistrict} District`
+                                : selectedState
+                                    ? `${selectedState} Overview`
+                                    : 'National Overview'}
                         </h3>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: '0' }}>
-                            {selectedState ? `Selected: ${selectedState}` : 'Click on a state to view detailed progress'}
-                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <p style={{ fontSize: '14px', color: '#6B7280', margin: '0' }}>
+                                {selectedDistrict
+                                    ? `Viewing details for ${selectedDistrict}`
+                                    : selectedState
+                                        ? `Selected: ${selectedState}`
+                                        : 'Click on a state to view detailed progress'}
+                            </p>
+                            {(selectedState || selectedDistrict) && (
+                                <button
+                                    className="btn btn-outline btn-sm"
+                                    onClick={handleBack}
+                                    style={{ fontSize: '12px', padding: '4px 8px' }}
+                                >
+                                    ← Back to {selectedDistrict ? 'State' : 'National'}
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    <div style={{ height: '650px', width: '100%' }}>
-                        <IndiaMap onStateSelect={setSelectedState} />
+                    <div style={{ height: '800px', width: '100%' }}>
+                        {selectedDistrict ? (
+                            <DistrictMap
+                                key={selectedDistrict}
+                                state={selectedState}
+                                district={selectedDistrict}
+                            />
+                        ) : selectedState ? (
+                            <DistrictMap
+                                key={selectedState}
+                                state={selectedState}
+                                district={null}
+                                onDistrictSelect={handleDistrictSelect}
+                            />
+                        ) : (
+                            <IndiaMap onStateSelect={setSelectedState} />
+                        )}
                     </div>
                 </div>
 

@@ -19,8 +19,11 @@ const IndiaMap = ({ onStateSelect }) => {
   const [districtModalState, setDistrictModalState] = useState(null);
 
   const getStateColor = (stateName) => {
-    // Uniform color to match the requested style (Light Blue/Purple)
-    return '#E0E7FF';
+    // Check if state exists in our data
+    const isImplemented = states.some(s => s.name === stateName);
+
+    // Blue for implemented, White for non-implemented
+    return isImplemented ? '#C7D2FE' : '#FFFFFF';
   };
 
   const normalizeStateName = (geoJsonName) => {
@@ -43,6 +46,7 @@ const IndiaMap = ({ onStateSelect }) => {
   const mapStyle = (feature) => {
     const geoJsonName = feature.properties.NAME_1;
     const stateName = normalizeStateName(geoJsonName);
+    const isImplemented = states.some(s => s.name === stateName);
 
     return {
       fillColor: getStateColor(stateName),
@@ -57,6 +61,7 @@ const IndiaMap = ({ onStateSelect }) => {
     const geoJsonName = feature.properties.NAME_1;
     const stateName = normalizeStateName(geoJsonName);
     const stateData = states.find(s => s.name === stateName);
+    const isImplemented = !!stateData;
 
     layer.on({
       mouseover: (e) => {
@@ -65,7 +70,8 @@ const IndiaMap = ({ onStateSelect }) => {
           weight: 2.5,
           color: '#312E81', // Darker Navy on hover
           fillOpacity: 0.9,
-          fillColor: '#C7D2FE' // Slightly darker fill on hover
+          // Darker blue for implemented, light gray for non-implemented on hover
+          fillColor: isImplemented ? '#C7D2FE' : '#F3F4F6'
         });
       },
       mouseout: (e) => {
@@ -74,14 +80,17 @@ const IndiaMap = ({ onStateSelect }) => {
           weight: 1.5,
           color: '#4338CA',
           fillOpacity: 1,
-          fillColor: '#E0E7FF'
+          fillColor: getStateColor(stateName)
         });
       },
       click: (e) => {
-        // Allow clicking the state polygon directly to drill down
-        setSelectedState(stateName);
-        if (onStateSelect) {
-          onStateSelect(stateName);
+        // Only allow drill down if state is implemented
+        if (isImplemented) {
+          setSelectedState(stateName);
+          handleViewDistricts(stateName); // Open district modal
+          if (onStateSelect) {
+            onStateSelect(stateName);
+          }
         }
       }
     });
@@ -116,14 +125,14 @@ const IndiaMap = ({ onStateSelect }) => {
       container.appendChild(detailsDiv);
     } else {
       const noData = document.createElement('p');
-      noData.style.margin = '4px 0';
+      noData.style.margin = '8px 0';
       noData.style.fontSize = '14px';
-      noData.style.color = '#666';
-      noData.textContent = 'No specific project data available.';
+      noData.style.color = '#DC2626';
+      noData.style.fontWeight = '600';
+      noData.textContent = 'This state has not implemented PM-AJAY components yet.';
       container.appendChild(noData);
     }
 
-    // Removed "View Districts" button
     layer.bindPopup(container);
 
     // Add Label using Tooltip
@@ -139,9 +148,30 @@ const IndiaMap = ({ onStateSelect }) => {
 
   return (
     <>
-      <div className="map-container" style={{ height: '100%', width: '100%' }}>
+      <div className="map-container" style={{ height: '800px', width: '100%', minHeight: '600px', position: 'relative' }}>
+        <div className="map-legend" style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          padding: '15px',
+          borderRadius: '8px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          zIndex: 1000,
+          border: '1px solid #e5e7eb'
+        }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#1f2937' }}>Scheme Status</h4>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ width: '20px', height: '20px', backgroundColor: '#C7D2FE', border: '1px solid #4338CA', marginRight: '10px', borderRadius: '4px' }}></span>
+            <span style={{ fontSize: '13px', color: '#4b5563' }}>Implemented</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ width: '20px', height: '20px', backgroundColor: '#FFFFFF', border: '1px solid #4338CA', marginRight: '10px', borderRadius: '4px' }}></span>
+            <span style={{ fontSize: '13px', color: '#4b5563' }}>Non-Implemented</span>
+          </div>
+        </div>
         <MapContainer
-          center={[22.5, 78.9]}
+          center={[22.5, 82.5]}
           zoom={5}
           style={{ height: '100%', width: '100%', backgroundColor: '#F3F4F6' }}
           scrollWheelZoom={false}
