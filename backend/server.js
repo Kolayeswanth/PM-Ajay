@@ -50,3 +50,7 @@ app.listen(PORT, () => {
   console.log(`- State Admin Routes loaded at /api/state-admins`);
   console.log(`- Health check at /api/health`);
 });
+
+// Start Background Services
+const cronService = require('./services/cronService');
+cronService.startScheduler();
