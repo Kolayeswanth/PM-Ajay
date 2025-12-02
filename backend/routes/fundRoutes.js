@@ -3,6 +3,7 @@ const router = express.Router();
 const fundController = require('../controllers/fundController');
 
 router.get('/', fundController.getAllFunds);
+router.get('/annual-plan-approvals', fundController.getAnnualPlanApprovals);
 router.post('/allocate', fundController.allocateFund);
 router.post('/release', fundController.releaseFund);
 router.get('/releases', fundController.getAllStateFundReleases);

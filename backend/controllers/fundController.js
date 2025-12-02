@@ -59,6 +59,113 @@ exports.getAllFunds = async (req, res) => {
     }
 };
 
+// Get Annual Plan Approvals (Approved Projects)
+exports.getAnnualPlanApprovals = async (req, res) => {
+    try {
+        // 1. Get all approved projects (APPROVED_BY_MINISTRY)
+        const { data: approvedProjects, error: projectError } = await supabase
+            .from('district_proposals')
+            .select('id, project_name, estimated_cost, approved_at, district_id')
+            .eq('status', 'APPROVED_BY_MINISTRY');
+
+        if (projectError) {
+            console.error('Error fetching approved projects:', projectError);
+            return res.status(500).json({ success: false, error: projectError.message });
+        }
+
+        if (!approvedProjects || approvedProjects.length === 0) {
+            return res.json([]);
+        }
+
+        // 2. Get District IDs
+        const districtIds = [...new Set(approvedProjects.map(p => p.district_id))];
+
+        // 3. Fetch Districts with State IDs
+        const { data: districts, error: districtError } = await supabase
+            .from('districts')
+            .select('id, name, state_id')
+            .in('id', districtIds);
+
+        if (districtError) {
+            console.error('Error fetching districts:', districtError);
+            return res.status(500).json({ success: false, error: districtError.message });
+        }
+
+        // 4. Get State IDs
+        const stateIds = [...new Set(districts.map(d => d.state_id))];
+
+        // 5. Fetch States
+        const { data: states, error: stateError } = await supabase
+            .from('states')
+            .select('id, name')
+            .in('id', stateIds);
+
+        if (stateError) {
+            console.error('Error fetching states:', stateError);
+            return res.status(500).json({ success: false, error: stateError.message });
+        }
+
+        // 6. Create Lookup Maps
+        const stateLookup = states.reduce((acc, s) => {
+            acc[s.id] = s.name;
+            return acc;
+        }, {});
+
+        const districtLookup = districts.reduce((acc, d) => {
+            acc[d.id] = {
+                name: d.name,
+                stateName: stateLookup[d.state_id]
+            };
+            return acc;
+        }, {});
+
+        // 7. Group by State
+        const stateMap = {};
+
+        approvedProjects.forEach(project => {
+            const districtInfo = districtLookup[project.district_id];
+            const stateName = districtInfo?.stateName;
+
+            if (!stateName) return;
+
+            if (!stateMap[stateName]) {
+                stateMap[stateName] = {
+                    id: Object.keys(stateMap).length + 1,
+                    state: stateName,
+                    name: stateName,
+                    totalProjects: 0,
+                    totalFundsValue: 0,
+                    orders: []
+                };
+            }
+
+            stateMap[stateName].totalProjects += 1;
+            const cost = parseFloat(project.estimated_cost) || 0;
+            stateMap[stateName].totalFundsValue += cost;
+
+            stateMap[stateName].orders.push({
+                id: project.id,
+                year: '2024-2025',
+                date: project.approved_at ? new Date(project.approved_at).toISOString().split('T')[0] : 'N/A',
+                amount: cost.toFixed(2),
+                orderNo: project.project_name
+            });
+        });
+
+        // Format for UI
+        const result = Object.values(stateMap).map(state => ({
+            ...state,
+            totalFunds: state.totalFundsValue.toFixed(2)
+        }));
+
+        res.json(result);
+
+    } catch (error) {
+        console.error('Error fetching annual plan approvals:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
 // Allocate Fund
 exports.allocateFund = async (req, res) => {
     try {

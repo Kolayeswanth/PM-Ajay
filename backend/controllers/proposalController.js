@@ -1,7 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 exports.createProposal = async (req, res) => {
@@ -206,6 +206,78 @@ exports.getProposalsByState = async (req, res) => {
     }
 };
 
+exports.getMinistryProposals = async (req, res) => {
+    try {
+        // 1. Fetch proposals
+        const { data: proposals, error } = await supabase
+            .from('district_proposals')
+            .select('*')
+            .in('status', ['APPROVED_BY_STATE', 'APPROVED_BY_MINISTRY', 'REJECTED_BY_MINISTRY'])
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Supabase select error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+
+        if (!proposals || proposals.length === 0) {
+            return res.json({ success: true, data: [] });
+        }
+
+        // 2. Get unique District IDs
+        const districtIds = [...new Set(proposals.map(p => p.district_id))];
+
+        // 3. Fetch Districts
+        const { data: districts, error: distError } = await supabase
+            .from('districts')
+            .select('id, name, state_id')
+            .in('id', districtIds);
+
+        if (distError) {
+            throw distError;
+        }
+
+        // 4. Get unique State IDs
+        const stateIds = [...new Set(districts.map(d => d.state_id))];
+
+        // 5. Fetch States
+        const { data: states, error: stateError } = await supabase
+            .from('states')
+            .select('id, name')
+            .in('id', stateIds);
+
+        if (stateError) {
+            throw stateError;
+        }
+
+        // 6. Create Maps for easy lookup
+        const stateMap = states.reduce((acc, s) => {
+            acc[s.id] = s.name;
+            return acc;
+        }, {});
+
+        const districtMap = districts.reduce((acc, d) => {
+            acc[d.id] = {
+                name: d.name,
+                stateName: stateMap[d.state_id]
+            };
+            return acc;
+        }, {});
+
+        // 7. Merge data
+        const flattenedProposals = proposals.map(p => ({
+            ...p,
+            district_name: districtMap[p.district_id]?.name || 'Unknown District',
+            state_name: districtMap[p.district_id]?.stateName || 'Unknown State'
+        }));
+
+        res.json({ success: true, data: flattenedProposals });
+    } catch (error) {
+        console.error('Error fetching ministry proposals:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
 exports.updateProposalStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -283,7 +355,11 @@ exports.updateProposalStatus = async (req, res) => {
                         .single();
 
                     if (!districtError && districtData) {
+                        console.log('District data found:', districtData);
                         const isApproved = status === 'APPROVED_BY_STATE';
+                        console.log('Is Approved?', isApproved);
+
+                        // 1. Notification for District Admin
                         const notificationData = {
                             user_role: 'district',
                             district_name: districtData.name,
@@ -311,6 +387,46 @@ exports.updateProposalStatus = async (req, res) => {
                             console.error('Failed to create notification:', notifError);
                         } else {
                             console.log(`✅ Notification created for district: ${districtData.name} (${isApproved ? 'Approved' : 'Rejected'})`);
+                        }
+
+                        // 2. Notification for Ministry (Only on Approval)
+                        if (isApproved) {
+                            // Fetch State Name
+                            const { data: stateData, error: stateError } = await supabase
+                                .from('states')
+                                .select('name')
+                                .eq('id', districtData.state_id)
+                                .single();
+
+                            const stateName = stateData ? stateData.name : 'State Government';
+
+                            const ministryNotification = {
+                                user_role: 'ministry', // Target the Ministry Dashboard (Database constraint requires 'ministry')
+                                state_name: stateName,
+                                title: 'Project Approved in State Gov',
+                                message: `Project "${proposalData.project_name}" in ${districtData.name} (${stateName}) has been approved by the State Government.`,
+                                type: 'success',
+                                read: false,
+                                metadata: {
+                                    proposal_id: id,
+                                    project_name: proposalData.project_name,
+                                    district_name: districtData.name,
+                                    state_name: stateName,
+                                    component: proposalData.component,
+                                    estimated_cost: proposalData.estimated_cost,
+                                    approved_at: new Date().toISOString()
+                                }
+                            };
+
+                            const { error: ministryNotifError } = await supabase
+                                .from('notifications')
+                                .insert([ministryNotification]);
+
+                            if (ministryNotifError) {
+                                console.error('Failed to create ministry notification:', ministryNotifError);
+                            } else {
+                                console.log(`✅ Notification created for Ministry: ${proposalData.project_name}`);
+                            }
                         }
                     }
                 }
