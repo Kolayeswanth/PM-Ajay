@@ -29,7 +29,7 @@ exports.getDistrictStats = async (req, res) => {
         // 2. Get total funds allocated to this district
         const { data: fundReleases, error: fundsError } = await supabase
             .from('fund_releases')
-            .select('amount_cr')
+            .select('amount_cr, amount_rupees')
             .eq('district_id', districtId);
 
         if (fundsError) {
@@ -40,8 +40,51 @@ exports.getDistrictStats = async (req, res) => {
             ? fundReleases.reduce((sum, item) => sum + (item.amount_cr || 0), 0)
             : 0;
 
-        // 3. Get GP count - for now, we'll use a placeholder
-        // You can add a gp_assignments table later if needed
+        // 3. Get work orders for this district
+        const { data: workOrders, error: workOrdersError } = await supabase
+            .from('work_orders')
+            .select('id')
+            .eq('district_id', districtId);
+
+        if (workOrdersError) {
+            console.error('Error fetching work orders:', workOrdersError);
+        }
+
+        const workOrderIds = workOrders ? workOrders.map(wo => wo.id) : [];
+
+        // 4. Get latest fund utilization from work_progress
+        let totalFundsUtilized = 0;
+        if (workOrderIds.length > 0) {
+            const { data: progressData, error: progressError } = await supabase
+                .from('work_progress')
+                .select('work_order_id, funds_used')
+                .in('work_order_id', workOrderIds)
+                .order('created_at', { ascending: false });
+
+            if (progressError) {
+                console.error('Error fetching progress:', progressError);
+            } else if (progressData) {
+                // Get the latest progress for each work order
+                const latestProgressMap = {};
+                progressData.forEach(progress => {
+                    if (!latestProgressMap[progress.work_order_id]) {
+                        latestProgressMap[progress.work_order_id] = progress.funds_used || 0;
+                    }
+                });
+
+                totalFundsUtilized = Object.values(latestProgressMap).reduce((sum, val) => sum + val, 0);
+            }
+        }
+
+        // Convert totalFundsUtilized from rupees to crores for consistency
+        const totalFundsUtilizedCr = totalFundsUtilized / 10000000;
+
+        // 5. Calculate utilization percentage
+        const utilizationPercentage = totalFundsAllocated > 0
+            ? Math.round((totalFundsUtilizedCr / totalFundsAllocated) * 100)
+            : 0;
+
+        // 6. Get GP count - for now, we'll use a placeholder
         const gramPanchayats = 42; // Placeholder
 
         res.json({
@@ -50,6 +93,9 @@ exports.getDistrictStats = async (req, res) => {
                 gramPanchayats,
                 totalProjects,
                 fundAllocated: totalFundsAllocated,
+                fundUtilized: totalFundsUtilizedCr,
+                fundRemaining: totalFundsAllocated - totalFundsUtilizedCr,
+                utilizationPercentage,
                 completedProjects
             }
         });

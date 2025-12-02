@@ -159,38 +159,106 @@ const generateNationalData = () => {
 
 
 
-const generateDistrictData = (stateName, districtName) => {
-    // Sample district data for Maharashtra districts
-    const maharashtraDistricts = {
-        'Pune': { villages: 25, vdps: 18, adarshGram: 12, fundUtilization: { utilized: 62, total: 100 } },
-        'Mumbai': { villages: 0, vdps: 0, adarshGram: 0, fundUtilization: { utilized: 0, total: 100 } },
-        'Nagpur': { villages: 32, vdps: 24, adarshGram: 15, fundUtilization: { utilized: 68, total: 100 } },
-        'Nashik': { villages: 28, vdps: 20, adarshGram: 14, fundUtilization: { utilized: 58, total: 100 } },
-        'Thane': { villages: 18, vdps: 12, adarshGram: 8, fundUtilization: { utilized: 55, total: 100 } }
-    };
+const fetchDistrictData = async (stateName, districtName) => {
+    try {
+        // Import the service dynamically
+        const { DistrictService } = await import('../services/DistrictService');
 
-    const districtInfo = (stateName === 'Maharashtra' && maharashtraDistricts[districtName])
-        ? maharashtraDistricts[districtName]
-        : { villages: Math.floor(Math.random() * 30) + 10, vdps: Math.floor(Math.random() * 20) + 5, fundUtilization: { utilized: Math.floor(Math.random() * 40) + 40, total: 100 } };
+        // Get district ID
+        const districtInfo = await DistrictService.getDistrictByName(districtName, stateName);
 
-    return {
-        name: districtName,
-        state: stateName,
-        fundUtilization: districtInfo.fundUtilization,
-        projectTrends: {
-            months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [
-                { label: 'Completed', values: [20, 28, 36, 44, 52, 60], color: THEME.completed },
-                { label: 'Pending', values: [50, 45, 40, 35, 30, 25], color: THEME.pending },
-                { label: 'Not Started', values: [30, 27, 24, 21, 18, 15], color: THEME.notStarted }
-            ]
-        },
-        components: {
-            'Adarsh Gram': { progress: Math.floor((districtInfo.vdps / districtInfo.villages) * 100) || 50, color: '#7C3AED' },
-            'GIA': { progress: Math.floor(Math.random() * 30) + 40, color: '#EC4899' },
-            'Hostel': { progress: Math.floor(Math.random() * 30) + 20, color: '#F59E0B' }
+        if (!districtInfo) {
+            console.error('District not found:', districtName, stateName);
+            // Return fallback data
+            return {
+                name: districtName,
+                state: stateName,
+                fundUtilization: { utilized: 0, total: 0 },
+                projectTrends: {
+                    months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [
+                        { label: 'Completed', values: [0, 0, 0, 0, 0, 0], color: THEME.completed },
+                        { label: 'Pending', values: [0, 0, 0, 0, 0, 0], color: THEME.pending },
+                        { label: 'Not Started', values: [0, 0, 0, 0, 0, 0], color: THEME.notStarted }
+                    ]
+                },
+                components: {
+                    'Adarsh Gram': { progress: 0, color: '#7C3AED' },
+                    'GIA': { progress: 0, color: '#EC4899' },
+                    'Hostel': { progress: 0, color: '#F59E0B' }
+                }
+            };
         }
-    };
+
+        // Fetch real stats
+        const stats = await DistrictService.getDistrictStats(districtInfo.id);
+
+        if (!stats) {
+            console.error('Failed to fetch district stats');
+            // Return fallback data
+            return {
+                name: districtName,
+                state: stateName,
+                fundUtilization: { utilized: 0, total: 0 },
+                projectTrends: {
+                    months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [
+                        { label: 'Completed', values: [0, 0, 0, 0, 0, 0], color: THEME.completed },
+                        { label: 'Pending', values: [0, 0, 0, 0, 0, 0], color: THEME.pending },
+                        { label: 'Not Started', values: [0, 0, 0, 0, 0, 0], color: THEME.notStarted }
+                    ]
+                },
+                components: {
+                    'Adarsh Gram': { progress: 0, color: '#7C3AED' },
+                    'GIA': { progress: 0, color: '#EC4899' },
+                    'Hostel': { progress: 0, color: '#F59E0B' }
+                }
+            };
+        }
+
+        return {
+            name: districtName,
+            state: stateName,
+            fundUtilization: {
+                utilized: stats.fundUtilized || 0,
+                total: stats.fundAllocated || 0
+            },
+            projectTrends: {
+                months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [
+                    { label: 'Completed', values: [20, 28, 36, 44, 52, 60], color: THEME.completed },
+                    { label: 'Pending', values: [50, 45, 40, 35, 30, 25], color: THEME.pending },
+                    { label: 'Not Started', values: [30, 27, 24, 21, 18, 15], color: THEME.notStarted }
+                ]
+            },
+            components: {
+                'Adarsh Gram': { progress: stats.utilizationPercentage || 0, color: '#7C3AED' },
+                'GIA': { progress: Math.floor(Math.random() * 30) + 40, color: '#EC4899' },
+                'Hostel': { progress: Math.floor(Math.random() * 30) + 20, color: '#F59E0B' }
+            }
+        };
+    } catch (error) {
+        console.error('Error fetching district data:', error);
+        // Return fallback data on error
+        return {
+            name: districtName,
+            state: stateName,
+            fundUtilization: { utilized: 0, total: 0 },
+            projectTrends: {
+                months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [
+                    { label: 'Completed', values: [0, 0, 0, 0, 0, 0], color: THEME.completed },
+                    { label: 'Pending', values: [0, 0, 0, 0, 0, 0], color: THEME.pending },
+                    { label: 'Not Started', values: [0, 0, 0, 0, 0, 0], color: THEME.notStarted }
+                ]
+            },
+            components: {
+                'Adarsh Gram': { progress: 0, color: '#7C3AED' },
+                'GIA': { progress: 0, color: '#EC4899' },
+                'Hostel': { progress: 0, color: '#F59E0B' }
+            }
+        };
+    }
 };
 
 const AnimatedLineChart = ({ data, height = 180 }) => {
@@ -311,21 +379,27 @@ const Home = () => {
         const fetchDistrictAdminInfo = async () => {
             if (user?.id) {
                 try {
-                    // Get user role
+                    // Get user profile including role, district_id, and state_id
                     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
                     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-                    const roleResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${user.id}&select=role`, {
+                    const profileResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${user.id}&select=role,district_id,state_id`, {
                         headers: {
                             'apikey': supabaseKey,
                             'Authorization': `Bearer ${supabaseKey}`
                         }
                     });
-                    const roleData = await roleResponse.json();
+                    const profileData = await profileResponse.json();
+
+                    console.log('Profile data:', profileData);
 
                     // If user is a district admin, fetch their district info
-                    if (roleData[0]?.role === 'district_admin') {
-                        const districtResponse = await fetch(`${supabaseUrl}/rest/v1/districts?id=eq.${user.id}&select=name,state_id`, {
+                    if (profileData[0]?.role === 'district_admin' && profileData[0]?.district_id) {
+                        const districtId = profileData[0].district_id;
+                        const stateId = profileData[0].state_id;
+
+                        // Fetch district name
+                        const districtResponse = await fetch(`${supabaseUrl}/rest/v1/districts?id=eq.${districtId}&select=name`, {
                             headers: {
                                 'apikey': supabaseKey,
                                 'Authorization': `Bearer ${supabaseKey}`
@@ -333,22 +407,29 @@ const Home = () => {
                         });
                         const districtData = await districtResponse.json();
 
+                        console.log('District data:', districtData);
+
                         if (districtData && districtData.length > 0) {
                             const districtName = districtData[0].name;
 
-                            // Fetch state name
-                            const stateResponse = await fetch(`${supabaseUrl}/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
-                                headers: {
-                                    'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${supabaseKey}`
-                                }
-                            });
-                            const stateData = await stateResponse.json();
+                            // Fetch state name if state_id is available
+                            if (stateId) {
+                                const stateResponse = await fetch(`${supabaseUrl}/rest/v1/states?id=eq.${stateId}&select=name`, {
+                                    headers: {
+                                        'apikey': supabaseKey,
+                                        'Authorization': `Bearer ${supabaseKey}`
+                                    }
+                                });
+                                const stateData = await stateResponse.json();
 
-                            if (stateData && stateData.length > 0) {
-                                const stateName = stateData[0].name;
-                                setSelectedState(stateName);
-                                setSelectedDistrict(districtName);
+                                console.log('State data:', stateData);
+
+                                if (stateData && stateData.length > 0) {
+                                    const stateName = stateData[0].name;
+                                    console.log('Setting state and district:', stateName, districtName);
+                                    setSelectedState(stateName);
+                                    setSelectedDistrict(districtName);
+                                }
                             }
                         }
                     }
@@ -362,14 +443,19 @@ const Home = () => {
     }, [user?.id]);
 
     useEffect(() => {
-        if (selectedDistrict && selectedState) {
-            setStateData(generateDistrictData(selectedState, selectedDistrict));
-        } else if (selectedState) {
-            setStateData(generateStateData(selectedState));
-        } else {
-            setStateData(generateNationalData());
-            setSelectedDistrict(null);
-        }
+        const loadData = async () => {
+            if (selectedDistrict && selectedState) {
+                const data = await fetchDistrictData(selectedState, selectedDistrict);
+                setStateData(data);
+            } else if (selectedState) {
+                setStateData(generateStateData(selectedState));
+            } else {
+                setStateData(generateNationalData());
+                setSelectedDistrict(null);
+            }
+        };
+
+        loadData();
     }, [selectedState, selectedDistrict]);
 
     const handleStateSelect = (stateName) => {
