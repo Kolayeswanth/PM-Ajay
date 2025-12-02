@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
-const DashboardHeader = ({ toggleSidebar, breadcrumb }) => {
+const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, userRole, stateName, districtName, showNotificationBell = true }) => {
     const { logout } = useAuth();
     const navigate = useNavigate();
 
@@ -16,7 +16,7 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb }) => {
     return (
         <header
             className="dashboard-header-component"
-
+            style={{ position: 'fixed', top: 0, width: '100%', zIndex: 1030 }}
         >
             {/* Top Bar */}
             <div
@@ -124,13 +124,18 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb }) => {
                                     fontWeight: 'bold',
                                     fontSize: 'var(--text-base)'
                                 }}>
-                                    Ministry Dashboard {breadcrumb && <span style={{ fontWeight: 'normal', opacity: 0.9 }}>({breadcrumb})</span>}
+                                    {dashboardTitle && <span>{dashboardTitle} </span>}
+                                    {breadcrumb && <span style={{ fontWeight: 'normal', opacity: 0.9 }}>
+                                        {dashboardTitle ? `(${breadcrumb})` : breadcrumb}
+                                    </span>}
                                 </span>
                             </li>
                         </ul>
                         {/* Right Nav Items */}
                         <ul className="nav-menu" style={{ display: 'flex', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
-                            <li className="nav-item"><NotificationBell /></li>
+                            {showNotificationBell && (
+                                <li className="nav-item"><NotificationBell userRole={userRole} stateName={stateName} districtName={districtName} /></li>
+                            )}
                             <li className="nav-item">
                                 <button
                                     onClick={handleLogout}
