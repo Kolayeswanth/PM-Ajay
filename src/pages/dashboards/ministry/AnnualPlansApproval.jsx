@@ -1,24 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
-import { states } from '../../../data/mockData';
 import InteractiveButton from '../../../components/InteractiveButton';
+import { useAuth } from '../../../contexts/AuthContext';
+import { Eye, Check, X } from 'lucide-react';
 
 const AnnualPlansApproval = () => {
-    const [plans, setPlans] = useState(states.slice(0, 5).map((state, index) => ({
-        id: index,
-        state: state.name,
-        submissionDate: `2025-11-${20 + index}`,
-        title: `Annual Action Plan 2025-26 - ${state.name}`,
-        status: index === 0 ? 'Approved' : index === 1 ? 'Rejected' : 'Pending',
-        projects: Math.floor(Math.random() * 50) + 30
-    })));
-
+    const [plans, setPlans] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
     const [toast, setToast] = useState(null);
     const [statusFilter, setStatusFilter] = useState('');
+    const { user } = useAuth();
+
+    const fetchPlans = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('http://localhost:5001/api/proposals/ministry');
+            const result = await response.json();
+            if (result.success) {
+                setPlans(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching plans:', error);
+            showToast('Failed to load proposals');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPlans();
+    }, []);
 
     const showToast = (message) => {
         setToast(message);
@@ -36,26 +51,62 @@ const AnnualPlansApproval = () => {
         setIsRejectModalOpen(true);
     };
 
-    const confirmApprove = () => {
-        setPlans(plans.map(p => p.id === selectedPlan.id ? { ...p, status: 'Approved' } : p));
-        showToast(`Plan "${selectedPlan.title}" approved successfully`);
+    const updateStatus = async (status, reason = '') => {
+        try {
+            const response = await fetch(`http://localhost:5001/api/proposals/${selectedPlan.id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: status,
+                    rejectReason: reason,
+                    userId: user?.id
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showToast(`Proposal ${status === 'APPROVED_BY_MINISTRY' ? 'approved' : 'rejected'} successfully`);
+                fetchPlans(); // Refresh list
+            } else {
+                showToast('Failed to update status');
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            showToast('Error updating status');
+        }
+    };
+
+    const confirmApprove = async () => {
+        await updateStatus('APPROVED_BY_MINISTRY');
         setIsApproveModalOpen(false);
     };
 
-    const confirmReject = () => {
-        setPlans(plans.map(p => p.id === selectedPlan.id ? { ...p, status: 'Rejected' } : p));
-        showToast(`Plan "${selectedPlan.title}" rejected`);
+    const confirmReject = async () => {
+        if (!rejectReason.trim()) {
+            showToast('Please provide a reason for rejection');
+            return;
+        }
+        await updateStatus('REJECTED_BY_MINISTRY', rejectReason);
         setIsRejectModalOpen(false);
     };
 
     const handleViewPDF = (plan) => {
+        // If there's a document URL, open it
+        if (plan.documents && plan.documents.length > 0) {
+            window.open(plan.documents[0].url, '_blank');
+            return;
+        }
+
+        // Fallback to generated view if no document
         try {
             const printWindow = window.open('', '_blank');
             const htmlContent = `
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Annual Action Plan - ${plan.state}</title>
+                    <title>Project Proposal - ${plan.project_name}</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
                         .header { text-align: center; border-bottom: 3px solid #3498db; padding-bottom: 20px; margin-bottom: 30px; }
@@ -65,50 +116,49 @@ const AnnualPlansApproval = () => {
                         .info-row { display: flex; margin-bottom: 10px; }
                         .info-label { font-weight: bold; width: 200px; color: #555; }
                         .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
-                        .status-pending { background-color: #fff3cd; color: #856404; }
-                        .status-approved { background-color: #d4edda; color: #155724; }
-                        .status-rejected { background-color: #f8d7da; color: #721c24; }
                     </style>
                 </head>
                 <body>
                     <div class="header">
-                        <h1>Annual Action Plan 2025-26</h1>
-                        <div style="color: #666; margin-top: 5px;">State: ${plan.state}</div>
+                        <h1>Project Proposal</h1>
+                        <div style="color: #666; margin-top: 5px;">${plan.state_name} - ${plan.district_name}</div>
                     </div>
                     <div class="section">
-                        <div class="section-title">Plan Overview</div>
-                        <div class="info-row"><div class="info-label">Plan Title:</div><div>${plan.title}</div></div>
-                        <div class="info-row"><div class="info-label">Submission Date:</div><div>${plan.submissionDate}</div></div>
-                        <div class="info-row"><div class="info-label">Total Projects:</div><div>${plan.projects}</div></div>
-                        <div class="info-row"><div class="info-label">Status:</div><div><span class="status status-${plan.status.toLowerCase()}">${plan.status}</span></div></div>
+                        <div class="section-title">Overview</div>
+                        <div class="info-row"><div class="info-label">Project Name:</div><div>${plan.project_name}</div></div>
+                        <div class="info-row"><div class="info-label">Component:</div><div>${plan.component}</div></div>
+                        <div class="info-row"><div class="info-label">Estimated Cost:</div><div>₹${plan.estimated_cost} Lakhs</div></div>
+                        <div class="info-row"><div class="info-label">Submission Date:</div><div>${new Date(plan.created_at).toLocaleDateString()}</div></div>
+                        <div class="info-row"><div class="info-label">Status:</div><div>${plan.status}</div></div>
                     </div>
                     <div class="section">
-                        <div class="section-title">Executive Summary</div>
-                        <p>This Annual Action Plan outlines the proposed development projects for the fiscal year 2025-26 for the state of ${plan.state}. The plan focuses on infrastructure development, skill training, and social welfare schemes under the PM-AJAY initiative.</p>
-                        <p>The total estimated budget requirement is ₹${(plan.projects * 0.5).toFixed(2)} Crores, covering ${plan.projects} distinct projects across various districts.</p>
+                        <div class="section-title">Description</div>
+                        <p>${plan.description || 'No description provided.'}</p>
                     </div>
-                    <div style="margin-top: 50px; text-align: center; color: #666; font-size: 12px;">Generated on: ${new Date().toLocaleString()}</div>
                 </body>
                 </html>
             `;
             printWindow.document.write(htmlContent);
             printWindow.document.close();
-            // printWindow.onload = function () { printWindow.print(); }; // Optional: Auto-print
-            showToast('PDF preview opened');
         } catch (error) {
-            console.error('Error generating PDF:', error);
-            showToast('Error generating PDF');
+            console.error('Error generating view:', error);
+            showToast('Error opening view');
         }
     };
 
     const filteredPlans = statusFilter
-        ? plans.filter(plan => plan.status === statusFilter)
+        ? plans.filter(plan => {
+            if (statusFilter === 'Pending') return plan.status === 'APPROVED_BY_STATE';
+            if (statusFilter === 'Approved') return plan.status === 'APPROVED_BY_MINISTRY';
+            if (statusFilter === 'Rejected') return plan.status === 'REJECTED_BY_MINISTRY';
+            return true;
+        })
         : plans;
 
     return (
         <div className="dashboard-panel">
             <div className="section-header">
-                <h2 className="section-title">Annual Plans Approval</h2>
+                <h2 className="section-title">Project Approval</h2>
                 <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                     <select
                         className="form-select"
@@ -116,8 +166,8 @@ const AnnualPlansApproval = () => {
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
-                        <option value="">All Status</option>
-                        <option value="Pending">Pending</option>
+                        <option value="">All Proposals</option>
+                        <option value="Pending">Pending Review</option>
                         <option value="Approved">Approved</option>
                         <option value="Rejected">Rejected</option>
                     </select>
@@ -131,43 +181,129 @@ const AnnualPlansApproval = () => {
             )}
 
             <div className="table-wrapper">
-                <table className="table">
+                <table className="table" style={{ borderCollapse: 'separate', borderSpacing: '0' }}>
                     <thead>
-                        <tr>
-                            <th>State</th>
-                            <th>Submission Date</th>
-                            <th>Plan Title</th>
-                            <th>Status</th>
-                            <th>Action</th>
+                        <tr style={{ background: '#000080', color: 'white', textTransform: 'uppercase', fontSize: '13px', letterSpacing: '0.5px' }}>
+                            <th style={{ padding: '15px', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px' }}>State / District</th>
+                            <th style={{ padding: '15px' }}>Project Name</th>
+                            <th style={{ padding: '15px' }}>Component</th>
+                            <th style={{ padding: '15px' }}>Cost (Lakhs)</th>
+                            <th style={{ padding: '15px' }}>Date</th>
+                            <th style={{ padding: '15px' }}>Status</th>
+                            <th style={{ padding: '15px', borderTopRightRadius: '8px', borderBottomRightRadius: '8px' }}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredPlans.length > 0 ? (
+                        {loading ? (
+                            <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>Loading proposals...</td></tr>
+                        ) : filteredPlans.length > 0 ? (
                             filteredPlans.map(plan => (
-                                <tr key={plan.id}>
-                                    <td>{plan.state}</td>
-                                    <td>{plan.submissionDate}</td>
-                                    <td>{plan.title}</td>
-                                    <td>
-                                        <span className={`badge badge-${plan.status === 'Approved' ? 'success' : plan.status === 'Rejected' ? 'error' : 'warning'}`}>
-                                            {plan.status}
+                                <tr key={plan.id} style={{ background: 'white', borderBottom: '1px solid #eee' }}>
+                                    <td style={{ padding: '15px' }}>
+                                        <div style={{ fontWeight: 'bold', color: '#000', fontSize: '14px' }}>{plan.state_name}</div>
+                                        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>{plan.district_name}</div>
+                                    </td>
+                                    <td style={{ padding: '15px', fontSize: '14px', color: '#333' }}>{plan.project_name}</td>
+                                    <td style={{ padding: '15px' }}>
+                                        <span style={{
+                                            background: '#e3f2fd',
+                                            color: '#1976d2',
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase',
+                                            display: 'inline-block'
+                                        }}>
+                                            {plan.component}
                                         </span>
                                     </td>
-                                    <td>
-                                        <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(plan)} style={{ marginRight: '5px' }}>View</InteractiveButton>
-                                        {plan.status === 'Pending' && (
-                                            <>
-                                                <InteractiveButton variant="success" size="sm" onClick={() => handleApproveClick(plan)} style={{ marginRight: '5px' }}>Approve</InteractiveButton>
-                                                <InteractiveButton variant="danger" size="sm" onClick={() => handleRejectClick(plan)}>Reject</InteractiveButton>
-                                            </>
-                                        )}
+                                    <td style={{ padding: '15px', fontWeight: 'bold', color: '#333' }}>₹{plan.estimated_cost}</td>
+                                    <td style={{ padding: '15px', color: '#555' }}>{new Date(plan.created_at).toLocaleDateString()}</td>
+                                    <td style={{ padding: '15px' }}>
+                                        <span style={{
+                                            background: plan.status === 'APPROVED_BY_MINISTRY' ? '#e8f5e9' :
+                                                plan.status === 'REJECTED_BY_MINISTRY' ? '#ffebee' : '#fff3e0',
+                                            color: plan.status === 'APPROVED_BY_MINISTRY' ? '#2e7d32' :
+                                                plan.status === 'REJECTED_BY_MINISTRY' ? '#c62828' : '#ef6c00',
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase',
+                                            display: 'inline-block'
+                                        }}>
+                                            {plan.status === 'APPROVED_BY_STATE' ? 'PENDING REVIEW' : plan.status}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '15px' }}>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                className="btn-icon"
+                                                onClick={() => handleViewPDF(plan)}
+                                                title="View Details"
+                                                style={{
+                                                    padding: '8px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e0e0e0',
+                                                    background: 'white',
+                                                    cursor: 'pointer',
+                                                    color: '#2196f3',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                            >
+                                                <Eye size={18} />
+                                            </button>
+                                            {plan.status === 'APPROVED_BY_STATE' && (
+                                                <>
+                                                    <button
+                                                        className="btn-icon"
+                                                        onClick={() => handleApproveClick(plan)}
+                                                        title="Approve"
+                                                        style={{
+                                                            padding: '8px',
+                                                            borderRadius: '8px',
+                                                            border: '1px solid #e0e0e0',
+                                                            background: 'white',
+                                                            cursor: 'pointer',
+                                                            color: '#4caf50',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                    >
+                                                        <Check size={18} />
+                                                    </button>
+                                                    <button
+                                                        className="btn-icon"
+                                                        onClick={() => handleRejectClick(plan)}
+                                                        title="Reject"
+                                                        style={{
+                                                            padding: '8px',
+                                                            borderRadius: '8px',
+                                                            border: '1px solid #e0e0e0',
+                                                            background: 'white',
+                                                            cursor: 'pointer',
+                                                            color: '#f44336',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                    >
+                                                        <X size={18} />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                                    No plans found for the selected status.
+                                <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                                    No proposals found.
                                 </td>
                             </tr>
                         )}
@@ -186,17 +322,20 @@ const AnnualPlansApproval = () => {
                     </>
                 }
             >
-                <p>Are you sure you want to approve the <strong>{selectedPlan?.title}</strong>?</p>
+                <p>Are you sure you want to approve the project <strong>{selectedPlan?.project_name}</strong>?</p>
+                <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+                    This will authorize the release of funds for this project.
+                </p>
             </Modal>
 
             <Modal
                 isOpen={isRejectModalOpen}
                 onClose={() => setIsRejectModalOpen(false)}
-                title="Reject Plan"
+                title="Reject Proposal"
                 footer={
                     <>
                         <InteractiveButton variant="secondary" onClick={() => setIsRejectModalOpen(false)}>Cancel</InteractiveButton>
-                        <InteractiveButton variant="danger" onClick={confirmReject}>Reject Plan</InteractiveButton>
+                        <InteractiveButton variant="danger" onClick={confirmReject}>Reject Proposal</InteractiveButton>
                     </>
                 }
             >
@@ -211,7 +350,7 @@ const AnnualPlansApproval = () => {
                     ></textarea>
                 </div>
             </Modal>
-        </div>
+        </div >
     );
 };
 

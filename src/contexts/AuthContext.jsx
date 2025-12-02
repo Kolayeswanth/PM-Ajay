@@ -54,10 +54,15 @@ export const AuthProvider = ({ children }) => {
               });
             }
 
+            let role = sessionData.user.role || 'centre_admin';
+            if (sessionData.user.email === 'centre@pmajay.gov') {
+              role = 'centre_admin';
+            }
+
             setUser({
               id: sessionData.user.id,
               email: sessionData.user.email,
-              role: sessionData.user.role || 'centre_admin',
+              role: role,
               ...sessionData.user
             });
             clearTimeout(loadingTimeout);
@@ -112,7 +117,8 @@ export const AuthProvider = ({ children }) => {
         // Fallback to session user if profile fetch fails (e.g. RLS issue)
         if (sessionUser) {
           console.warn('Falling back to session user data');
-          setUser({ ...sessionUser, role: 'authenticated' }); // Default role
+          const role = sessionUser.email === 'centre@pmajay.gov' ? 'centre_admin' : 'authenticated';
+          setUser({ ...sessionUser, role });
         }
       } else if (data) {
         setUser(data);
@@ -120,7 +126,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       if (sessionUser) {
-        setUser({ ...sessionUser, role: 'authenticated' });
+        const role = sessionUser.email === 'centre@pmajay.gov' ? 'centre_admin' : 'authenticated';
+        setUser({ ...sessionUser, role });
       }
     } finally {
       setLoading(false);

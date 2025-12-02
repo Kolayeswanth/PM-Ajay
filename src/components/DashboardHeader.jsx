@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
-const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, userRole, stateName, districtName, showNotificationBell = true }) => {
-    const { logout } = useAuth();
+const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, showNotificationBell = true }) => {
+    const { logout, user } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -134,7 +134,13 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, userRole, 
                         {/* Right Nav Items */}
                         <ul className="nav-menu" style={{ display: 'flex', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
                             {showNotificationBell && (
-                                <li className="nav-item"><NotificationBell userRole={userRole} stateName={stateName} districtName={districtName} /></li>
+                                <li className="nav-item">
+                                    <NotificationBell
+                                        userRole={user?.role === 'centre_admin' ? 'ministry' : user?.role}
+                                        stateName={user?.state_name}
+                                        districtName={user?.district_name}
+                                    />
+                                </li>
                             )}
                             <li className="nav-item">
                                 <button

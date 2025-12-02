@@ -26,39 +26,36 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
         return Object.keys(errs).length === 0;
     };
 
-    // Auto-calculation effect
+    // Auto-fill funds released when work order is selected
     React.useEffect(() => {
-        if (!selectedWorkId) return;
+        if (!selectedWorkId) {
+            // Reset form when no work order is selected
+            setProgressData({
+                remarks: '',
+                photos: [],
+                fundsReleased: '',
+                fundsUsed: '',
+                fundsRemaining: '',
+                progress: ''
+            });
+            return;
+        }
 
         const work = works.find(w => w.id === parseInt(selectedWorkId));
         if (!work) return;
 
-        const released = parseFloat(progressData.fundsReleased) || 0;
-        const used = parseFloat(progressData.fundsUsed) || 0;
-        const totalAmount = parseFloat(work.amount) || 1; // Avoid division by zero
-
-        // Calculate Remaining
-        const remaining = released - used;
-
-        // Calculate Physical Progress % (Based on Funds Used / Total Amount)
-        // Cap at 100%
-        let calculatedProgress = (used / totalAmount) * 100;
-        if (calculatedProgress > 100) calculatedProgress = 100;
-        if (calculatedProgress < 0) calculatedProgress = 0;
-
-        // Only update if values differ to avoid infinite loops
-        // But here we are updating state based on state, so we need to be careful.
-        // Actually, we can just calculate these for display and submission, 
-        // OR update them when fundsReleased/fundsUsed change.
-
-        // Let's update the state only if the calculated values are different from current state
-        // AND we are not currently editing them (though they should be read-only ideally?)
-        // The user said "automatically calculate", implying they might be read-only or auto-filled.
-        // Let's make them auto-filled but editable? Or just display them?
-        // "update the progress and physical progress ... automatically calculate"
-
-        // Better approach: Update state when inputs change.
-    }, [progressData.fundsReleased, progressData.fundsUsed, selectedWorkId, works]);
+        // Auto-fill funds released with the work order's allocated amount
+        // Only set if not already set (to avoid overwriting user's manual entry)
+        if (!progressData.fundsReleased) {
+            setProgressData(prev => ({
+                ...prev,
+                fundsReleased: work.amount || '',
+                fundsUsed: '',
+                fundsRemaining: work.amount || '',
+                progress: '0'
+            }));
+        }
+    }, [selectedWorkId, works]);
 
     const handleFundsChange = (field, value) => {
         const newData = { ...progressData, [field]: value };
@@ -180,7 +177,7 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
 
                     <style>
                         {`
-                            /* Hide spinners for number inputs */
+                            /* Hide spinners/arrows for ALL number inputs */
                             input[type=number]::-webkit-inner-spin-button, 
                             input[type=number]::-webkit-outer-spin-button { 
                                 -webkit-appearance: none; 
@@ -188,6 +185,13 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                             }
                             input[type=number] {
                                 -moz-appearance: textfield;
+                                appearance: textfield;
+                            }
+                            /* Ensure no spinners appear on focus */
+                            input[type=number]:focus::-webkit-inner-spin-button,
+                            input[type=number]:focus::-webkit-outer-spin-button {
+                                -webkit-appearance: none;
+                                margin: 0;
                             }
                         `}
                     </style>
@@ -285,15 +289,29 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                 {/* Submission History / Status */}
                 <div style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
                     <h3 style={{ fontSize: '16px', marginBottom: '15px' }}>Latest Submission Status</h3>
-                    {[...works]
-                        .sort((a, b) => {
-                            if (!a.lastUpdated) return 1;
-                            if (!b.lastUpdated) return -1;
-                            return new Date(b.lastUpdated) - new Date(a.lastUpdated);
-                        })
-                        .map(work => {
-                            if (!work.lastUpdated) return null;
+                    {(() => {
+                        const worksWithUpdates = works.filter(w => w.lastUpdated);
+
+                        if (worksWithUpdates.length === 0) {
                             return (
+                                <div style={{
+                                    padding: '20px',
+                                    background: '#f8f9fa',
+                                    borderRadius: '6px',
+                                    textAlign: 'center',
+                                    color: '#666'
+                                }}>
+                                    <p style={{ margin: 0 }}>No progress submissions yet.</p>
+                                    <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>
+                                        Submit your first progress report above to see it here.
+                                    </p>
+                                </div>
+                            );
+                        }
+
+                        return worksWithUpdates
+                            .sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated))
+                            .map(work => (
                                 <div key={work.id} style={{
                                     padding: '10px',
                                     background: '#f8f9fa',
@@ -308,9 +326,9 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                                         <div style={{ fontSize: '12px', color: '#666' }}>Updated: {work.lastUpdated}</div>
                                         <div style={{ marginTop: '8px', fontSize: '13px', color: '#444', background: '#fff', padding: '8px', borderRadius: '4px', border: '1px solid #eee' }}>
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-                                                <div><strong>Released:</strong> ₹{work.fundsReleased}</div>
-                                                <div><strong>Used:</strong> ₹{work.fundsUsed}</div>
-                                                <div style={{ gridColumn: 'span 2' }}><strong>Remaining:</strong> ₹{work.fundsRemaining}</div>
+                                                <div><strong>Released:</strong> ₹{work.fundsReleased?.toLocaleString('en-IN') || 0}</div>
+                                                <div><strong>Used:</strong> ₹{work.fundsUsed?.toLocaleString('en-IN') || 0}</div>
+                                                <div style={{ gridColumn: 'span 2' }}><strong>Remaining:</strong> ₹{work.fundsRemaining?.toLocaleString('en-IN') || 0}</div>
                                             </div>
                                             {work.remarks && (
                                                 <div style={{ marginTop: '6px', borderTop: '1px dashed #ddd', paddingTop: '4px', fontStyle: 'italic', color: '#666' }}>
@@ -345,11 +363,13 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                                         )}
                                     </div>
                                 </div>
-                            );
-                        })}
+                            ));
+                    })()}
                 </div>
+
             </div>
         </div>
+
     );
 };
 

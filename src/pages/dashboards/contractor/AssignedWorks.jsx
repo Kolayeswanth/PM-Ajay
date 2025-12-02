@@ -1,8 +1,173 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../lib/supabaseClient';
 
-const AssignedWorks = ({ works }) => {
+const AssignedWorks = () => {
+    const { user } = useAuth();
+    const [works, setWorks] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('');
     const [toast, setToast] = useState(null);
+    const [error, setError] = useState(null);
+    const [executingAgencyId, setExecutingAgencyId] = useState(null);
+
+    // 1. Identify Executing Agency ID
+    useEffect(() => {
+        const identifyAgency = async () => {
+            if (!user?.email || user?.role !== 'executing_agency') return;
+
+            try {
+                // Fetch all executing agencies and match by email
+                const { data: allAgencies, error: agenciesError } = await supabase
+                    .from('executing_agencies')
+                    .select('id, agency_name, email, name');
+
+                if (agenciesError) throw agenciesError;
+
+                let matchedId = null;
+
+                // Try to match by email
+                const matchedAgency = allAgencies.find(agency =>
+                    agency.email && agency.email.toLowerCase() === user.email.toLowerCase()
+                );
+
+                if (matchedAgency) {
+                    matchedId = matchedAgency.id;
+                } else {
+                    // Try matching by name from user metadata
+                    const userName = user?.full_name || user?.user_metadata?.full_name || '';
+                    if (userName) {
+                        const nameMatch = allAgencies.find(agency => {
+                            const agencyName = agency.agency_name || agency.name || '';
+                            return agencyName.toLowerCase().includes(userName.toLowerCase()) ||
+                                userName.toLowerCase().includes(agencyName.toLowerCase());
+                        });
+                        if (nameMatch) matchedId = nameMatch.id;
+                    }
+                }
+
+                if (matchedId) {
+                    setExecutingAgencyId(matchedId);
+                } else {
+                    setError('Could not identify your agency. Please contact support.');
+                    setLoading(false);
+                }
+            } catch (err) {
+                console.error('Error identifying agency:', err);
+                setError('Failed to identify agency');
+                setLoading(false);
+            }
+        };
+
+        identifyAgency();
+    }, [user]);
+
+    // 2. Fetch Data & Subscribe to Real-time Updates
+    useEffect(() => {
+        if (!executingAgencyId) return;
+
+        let subscription;
+
+        const fetchAndSubscribe = async () => {
+            setLoading(true);
+            try {
+                // Initial Fetch
+                await fetchWorks(executingAgencyId);
+
+                // Real-time Subscription
+                subscription = supabase
+                    .channel('public:work_orders')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'work_orders',
+                            filter: `executing_agency_id=eq.${executingAgencyId}`
+                        },
+                        (payload) => {
+                            console.log('Real-time update received:', payload);
+                            handleRealtimeUpdate(payload);
+                        }
+                    )
+                    .subscribe();
+
+            } catch (err) {
+                console.error('Error in fetchAndSubscribe:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAndSubscribe();
+
+        return () => {
+            if (subscription) supabase.removeChannel(subscription);
+        };
+    }, [executingAgencyId]);
+
+    const fetchWorks = async (agencyId) => {
+        try {
+            const { data: workOrdersData, error: workOrdersError } = await supabase
+                .from('work_orders')
+                .select('id, title, amount, location, deadline, status, created_at, implementing_agency_id, proposal_id')
+                .eq('executing_agency_id', agencyId)
+                .order('created_at', { ascending: false });
+
+            if (workOrdersError) throw workOrdersError;
+
+            if (workOrdersData && workOrdersData.length > 0) {
+                const iaIds = [...new Set(workOrdersData.map(w => w.implementing_agency_id).filter(Boolean))];
+
+                // Fetch IA names
+                const { data: iaData } = await supabase
+                    .from('implementing_agencies')
+                    .select('id, agency_name')
+                    .in('id', iaIds);
+
+                const iaMap = (iaData || []).reduce((acc, ia) => {
+                    acc[ia.id] = ia;
+                    return acc;
+                }, {});
+
+                const mergedWorks = workOrdersData.map(work => ({
+                    ...work,
+                    implementing_agencies: iaMap[work.implementing_agency_id] || null
+                }));
+
+                setWorks(mergedWorks);
+            } else {
+                setWorks([]);
+            }
+        } catch (err) {
+            console.error('Error fetching works:', err);
+            setError(err.message);
+        }
+    };
+
+    const handleRealtimeUpdate = async (payload) => {
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+
+        if (eventType === 'INSERT') {
+            // Fetch the full details including IA name for the new record
+            // For simplicity, we can just re-fetch all works or fetch this single one and append
+            // Re-fetching is safer to ensure all joins (like IA name) are correct
+            await fetchWorks(executingAgencyId);
+            showToast('New project assigned!');
+        } else if (eventType === 'UPDATE') {
+            setWorks(prevWorks => prevWorks.map(work =>
+                work.id === newRecord.id ? { ...work, ...newRecord } : work
+            ));
+            // If status changed or critical info, maybe show toast
+            if (oldRecord.status !== newRecord.status) {
+                showToast(`Project status updated: ${newRecord.status}`);
+            }
+        } else if (eventType === 'DELETE') {
+            setWorks(prevWorks => prevWorks.filter(work => work.id !== oldRecord.id));
+            showToast('Project removed');
+        }
+    };
 
     const showToast = (message) => {
         setToast(message);
@@ -35,13 +200,14 @@ const AssignedWorks = ({ works }) => {
                     <div class="section">
                         <div class="section-title">Project Information</div>
                         <div class="info-row"><div class="info-label">Project Title:</div><div>${work.title}</div></div>
-                        <div class="info-row"><div class="info-label">Location:</div><div>${work.location}</div></div>
-                        <div class="info-row"><div class="info-label">Contract Amount:</div><div>${work.amount}</div></div>
+                        <div class="info-row"><div class="info-label">Location:</div><div>${work.location || 'N/A'}</div></div>
+                        <div class="info-row"><div class="info-label">Contract Amount:</div><div>₹${work.amount?.toLocaleString('en-IN') || '0'}</div></div>
+                        <div class="info-row"><div class="info-label">Assigned By:</div><div>${work.implementing_agencies?.agency_name || 'N/A'}</div></div>
                     </div>
                     <div class="section">
                         <div class="section-title">Timeline & Status</div>
-                        <div class="info-row"><div class="info-label">Start Date:</div><div>${work.date}</div></div>
-                        <div class="info-row"><div class="info-label">Deadline:</div><div>${work.deadline}</div></div>
+                        <div class="info-row"><div class="info-label">Assigned Date:</div><div>${new Date(work.created_at).toLocaleDateString('en-IN')}</div></div>
+                        <div class="info-row"><div class="info-label">Deadline:</div><div>${work.deadline ? new Date(work.deadline).toLocaleDateString('en-IN') : 'N/A'}</div></div>
                         <div class="info-row"><div class="info-label">Current Status:</div><div>${work.status}</div></div>
                     </div>
                     <div style="margin-top: 50px; text-align: center; color: #666; font-size: 12px;">Generated on: ${new Date().toLocaleString()}</div>
@@ -62,10 +228,44 @@ const AssignedWorks = ({ works }) => {
         ? works.filter(w => w.status === filterStatus)
         : works;
 
+    if (loading && !works.length) {
+        return (
+            <div className="dashboard-panel" style={{ padding: 20 }}>
+                <h2 style={{ marginBottom: 20 }}>Assigned Works</h2>
+                <div style={{ textAlign: 'center', padding: 40 }}>
+                    <p>Loading assigned works...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="dashboard-panel" style={{ padding: 20 }}>
+                <h2 style={{ marginBottom: 20 }}>Assigned Works</h2>
+                <div style={{ textAlign: 'center', padding: 40, color: '#dc2626' }}>
+                    <p>Error: {error}</p>
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => window.location.reload()}
+                        style={{ marginTop: 10 }}
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ margin: 0 }}>Assigned Works</h2>
+                <div>
+                    <h2 style={{ margin: 0 }}>Assigned Works</h2>
+                    <p style={{ marginTop: 5, color: '#666', fontSize: '14px' }}>
+                        Projects assigned to your executing agency by implementing agencies
+                    </p>
+                </div>
                 <div style={{ display: 'flex', gap: 12 }}>
                     <select
                         className="form-control"
@@ -74,8 +274,9 @@ const AssignedWorks = ({ works }) => {
                         onChange={(e) => setFilterStatus(e.target.value)}
                     >
                         <option value="">All Status</option>
+                        <option value="Assigned to EA">Assigned to EA</option>
                         <option value="In Progress">In Progress</option>
-                        <option value="Not Started">Not Started</option>
+                        <option value="Work in Progress">Work in Progress</option>
                         <option value="Completed">Completed</option>
                     </select>
                 </div>
@@ -93,6 +294,7 @@ const AssignedWorks = ({ works }) => {
                         <tr>
                             <th>Order ID</th>
                             <th>Project Title</th>
+                            <th>Assigned By</th>
                             <th>Location</th>
                             <th>Amount</th>
                             <th>Deadline</th>
@@ -106,11 +308,15 @@ const AssignedWorks = ({ works }) => {
                                 <tr key={work.id}>
                                     <td><strong>WO-{work.id}</strong></td>
                                     <td>{work.title}</td>
-                                    <td>{work.location}</td>
-                                    <td>{work.amount}</td>
-                                    <td>{work.deadline}</td>
+                                    <td>{work.implementing_agencies?.agency_name || 'N/A'}</td>
+                                    <td>{work.location || 'N/A'}</td>
+                                    <td style={{ fontWeight: '500' }}>₹{work.amount?.toLocaleString('en-IN') || '0'}</td>
+                                    <td>{work.deadline ? new Date(work.deadline).toLocaleDateString('en-IN') : 'N/A'}</td>
                                     <td>
-                                        <span className={`badge badge-${work.status === 'Completed' ? 'success' : work.status === 'In Progress' ? 'warning' : 'info'}`}>
+                                        <span className={`badge badge-${work.status === 'Completed' ? 'success' :
+                                            work.status === 'In Progress' || work.status === 'Work in Progress' ? 'warning' :
+                                                'info'
+                                            }`}>
                                             {work.status}
                                         </span>
                                     </td>
@@ -121,16 +327,30 @@ const AssignedWorks = ({ works }) => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
-                                    No assigned works found.
+                                <td colSpan={8} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                    <div>
+                                        <p style={{ marginBottom: 10 }}>No assigned works found.</p>
+                                        <p style={{ fontSize: '14px' }}>
+                                            Works will appear here once implementing agencies assign projects to your agency.
+                                        </p>
+                                    </div>
                                 </td>
                             </tr>
                         )}
                     </tbody>
                 </table>
             </div>
+
+            {works.length > 0 && (
+                <div style={{ marginTop: 20, padding: 15, background: '#f3f4f6', borderRadius: 8 }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                        <strong>Total Assigned Works:</strong> {works.length}
+                    </p>
+                </div>
+            )}
         </div>
     );
 };
 
 export default AssignedWorks;
+
