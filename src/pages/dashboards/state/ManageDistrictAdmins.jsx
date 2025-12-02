@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 // List of major districts in Maharashtra (you can expand this)
 import { useAuth } from '../../../contexts/AuthContext';
@@ -252,7 +253,7 @@ const ManageDistrictAdmins = () => {
                             <option key={district} value={district}>{district}</option>
                         ))}
                     </select>
-                    <button className="btn btn-primary btn-sm" onClick={handleAdd}>+ Add New Admin</button>
+                    <InteractiveButton variant="primary" size="sm" onClick={handleAdd}>+ Add New Admin</InteractiveButton>
                 </div>
             </div>
 
@@ -312,7 +313,7 @@ const ManageDistrictAdmins = () => {
                                         >
                                             {admin.status}
                                         </button>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(admin)}>Edit</button>
+                                        <InteractiveButton variant="success" size="sm" onClick={() => handleEdit(admin)}>Edit</InteractiveButton>
                                     </td>
                                 </tr>
                             ))
@@ -334,12 +335,12 @@ const ManageDistrictAdmins = () => {
                 title={currentAdmin ? "Edit District Admin" : "Add New District Admin"}
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }} disabled={loading}>
+                        <InteractiveButton variant="outline" onClick={() => setIsModalOpen(false)} disabled={loading}>
                             Cancel
-                        </button>
-                        <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 14px' }} disabled={loading}>
+                        </InteractiveButton>
+                        <InteractiveButton variant="primary" onClick={handleSave} disabled={loading}>
                             {loading ? 'Saving...' : 'Save'}
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >

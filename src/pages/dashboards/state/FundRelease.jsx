@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 import { useAuth } from '../../../contexts/AuthContext';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     const { user } = useAuth();
@@ -260,9 +261,9 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
         <div className="fund-released-page" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h2 style={{ margin: 0 }}>Fund Release to Districts</h2>
-                <button className="btn btn-primary" onClick={openModal}>
+                <InteractiveButton variant="primary" onClick={openModal}>
                     + Release New Funds
-                </button>
+                </InteractiveButton>
             </div>
 
             {/* Fund Summary Card */}
@@ -351,12 +352,12 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                 title="Release Funds to District"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={closeModal} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <InteractiveButton variant="outline" onClick={closeModal}>
                             Cancel
-                        </button>
-                        <button onClick={handleReleaseSubmit} className="btn btn-primary" style={{ padding: '8px 14px' }}>
+                        </InteractiveButton>
+                        <InteractiveButton variant="primary" onClick={handleReleaseSubmit}>
                             Confirm Release
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >

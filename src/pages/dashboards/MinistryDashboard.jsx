@@ -125,10 +125,22 @@ const MinistryDashboard = () => {
 
     return (
         <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-            <DashboardHeader toggleSidebar={toggleSidebar} breadcrumb={getBreadcrumb()} />
+            <DashboardHeader
+                toggleSidebar={toggleSidebar}
+                breadcrumb={getBreadcrumb()}
+                showNotificationBell={false}
+            />
             <DashboardSidebar menuItems={sidebarMenu} user={user} isOpen={isSidebarOpen} />
 
             <main className="dashboard-main">
+                <div className="dashboard-header">
+                    <div className="dashboard-title-section">
+                        <h3 style={{ margin: 0 }}>Ministry Dashboard</h3>
+                    </div>
+                    <div className="dashboard-actions">
+                        <NotificationBell userRole="ministry" />
+                    </div>
+                </div>
                 {renderContent()}
             </main>
         </div>
