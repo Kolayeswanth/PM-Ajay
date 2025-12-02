@@ -5,7 +5,7 @@ import { Menu } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
 const DashboardHeader = ({ toggleSidebar, breadcrumb }) => {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -130,7 +130,13 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb }) => {
                         </ul>
                         {/* Right Nav Items */}
                         <ul className="nav-menu" style={{ display: 'flex', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
-                            <li className="nav-item"><NotificationBell /></li>
+                            <li className="nav-item">
+                                <NotificationBell
+                                    userRole={user?.role === 'centre_admin' ? 'ministry' : user?.role}
+                                    stateName={user?.state_name}
+                                    districtName={user?.district_name}
+                                />
+                            </li>
                             <li className="nav-item">
                                 <button
                                     onClick={handleLogout}

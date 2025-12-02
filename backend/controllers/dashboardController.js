@@ -63,15 +63,56 @@ exports.getDistrictStats = async (req, res) => {
 // Placeholder for Ministry Dashboard Stats
 exports.getMinistryDashboardStats = async (req, res) => {
     try {
+        // 1. Get Total States
+        const { count: totalStates, error: statesError } = await supabase
+            .from('states')
+            .select('*', { count: 'exact', head: true });
+
+        if (statesError) throw statesError;
+
+        // 2. Get Total Districts
+        const { count: totalDistricts, error: districtsError } = await supabase
+            .from('districts')
+            .select('*', { count: 'exact', head: true });
+
+        if (districtsError) throw districtsError;
+
+        // 3. Get Total Funds Allocated (Ministry -> States)
+        const { data: allocations, error: fundsError } = await supabase
+            .from('fund_allocations')
+            .select('amount_allocated');
+
+        if (fundsError) throw fundsError;
+
+        const totalFundsAllocated = allocations.reduce((sum, item) => sum + (parseFloat(item.amount_allocated) || 0), 0);
+
+        // 4. Get Project Statistics
+        const { data: projects, error: projectsError } = await supabase
+            .from('district_proposals')
+            .select('status');
+
+        if (projectsError) throw projectsError;
+
+        const totalProjects = projects.length;
+        const projectsCompleted = projects.filter(p => p.status === 'COMPLETED').length;
+        const projectsOngoing = projects.filter(p => ['ONGOING', 'IN_PROGRESS'].includes(p.status)).length;
+        const projectsApproved = projects.filter(p => ['APPROVED', 'APPROVED_BY_MINISTRY'].includes(p.status)).length;
+        const projectsProposed = projects.filter(p => ['SUBMITTED', 'PENDING'].includes(p.status)).length;
+
         res.json({
             success: true,
             data: {
-                totalStates: 0,
-                totalDistricts: 0,
-                totalFundsAllocated: 0,
-                totalProjects: 0
+                totalStates: totalStates || 0,
+                totalDistricts: totalDistricts || 0,
+                totalFundAllocated: totalFundsAllocated,
+                totalProjects: totalProjects || 0,
+                projectsCompleted,
+                projectsOngoing,
+                projectsApproved,
+                projectsProposed
             }
         });
+
     } catch (error) {
         console.error('Error fetching ministry stats:', error);
         res.status(500).json({ success: false, error: error.message });
