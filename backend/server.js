@@ -24,6 +24,7 @@ app.use('/api/funds', fundRoutes);
 app.use('/api/state-admins', stateAdminRoutes);
 app.use('/api/proposals', proposalRoutes);
 app.use('/api/district-admins', require('./routes/districtAdminRoutes'));
+app.use('/api/implementing-agencies', require('./routes/implementingAgencyRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 
 // Health check endpoint

@@ -1,156 +1,297 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const ManageGPAdmins = () => {
-    const [admins, setAdmins] = useState([
-        { id: 1, name: 'Ramesh Patil', gp: 'Shirur', email: 'ramesh.patil@gp.gov.in', phone: '9876543210', status: 'Active', lastLogin: '2025-11-20' },
-        { id: 2, name: 'Suresh Deshmukh', gp: 'Khed', email: 'suresh.deshmukh@gp.gov.in', phone: '9876543211', status: 'Active', lastLogin: '2025-11-18' },
-        { id: 3, name: 'Mahesh Joshi', gp: 'Baramati', email: 'mahesh.joshi@gp.gov.in', phone: '9876543212', status: 'Inactive', lastLogin: '2025-10-15' },
-    ]);
+    const { user } = useAuth();
+    const [admins, setAdmins] = useState([]);
+    const [districtName, setDistrictName] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const [implementingAgencies, setImplementingAgencies] = useState(() => {
+        const states = [
+            "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
+            "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+            "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+            "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
+            "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+            "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+        ];
+        const prefixes = ["GOV", "NGO", "PSU", "TEC", "STA", "NOD", "COO"];
+
+        const stateAgencies = states.flatMap(state =>
+            prefixes.map(prefix => `${prefix} - ${state}`)
+        );
+
+        const genericAgencies = [
+            'Ministry of Tribal Affairs',
+            'Ministry of Social Justice and Empowerment',
+            'State Scheduled Caste Corporation',
+            'National Backward Classes Finance Corporation',
+            'Tribal Cooperative Marketing Development Federation',
+            'State Social Welfare Department',
+            'District Collector Office',
+            'National Minorities Development Corporation'
+        ];
+
+        return [...stateAgencies, ...genericAgencies];
+    });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [formData, setFormData] = useState({ name: '', gp: '', email: '', phone: '', username: '', password: '' });
+    const [formData, setFormData] = useState({ name: '', agency: '', email: '', phone: '', accountNo: '' });
     const [toast, setToast] = useState(null);
     const [errors, setErrors] = useState({});
+    const [currentAdmin, setCurrentAdmin] = useState(null);
 
-    const showToast = (message) => {
-        setToast(message);
+    const [stateName, setStateName] = useState('');
+
+    // API Base URL
+    const API_BASE_URL = 'http://localhost:5001/api/implementing-agencies';
+
+    // Fetch district name from user profile
+    useEffect(() => {
+        const fetchDistrictName = async () => {
+            if (!user?.id) return;
+            try {
+                const response = await fetch(`http://localhost:5001/api/profile?userId=${user.id}`);
+                const result = await response.json();
+                if (result.success && result.data?.full_name) {
+                    let name = result.data.full_name;
+                    name = name.replace(' District Admin', '').replace(' Admin', '').replace(' District', '').trim();
+                    setDistrictName(name);
+                }
+            } catch (error) {
+                console.error('Error fetching district name:', error);
+            }
+        };
+        fetchDistrictName();
+    }, [user]);
+
+    // Fetch State Name based on District Name
+    useEffect(() => {
+        const fetchStateName = async () => {
+            if (!districtName) return;
+            try {
+                // 1. Get State ID from District Name
+                const districtRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/districts?name=eq.${encodeURIComponent(districtName)}&select=state_id`, {
+                    headers: {
+                        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                    }
+                });
+                const districtData = await districtRes.json();
+
+                if (districtData?.[0]?.state_id) {
+                    // 2. Get State Name from State ID
+                    const stateRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
+                        headers: {
+                            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                        }
+                    });
+                    const stateData = await stateRes.json();
+                    if (stateData?.[0]?.name) {
+                        setStateName(stateData[0].name);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching state:", err);
+            }
+        };
+        fetchStateName();
+    }, [districtName]);
+
+    // Filter agencies based on state
+    const filteredAgencies = implementingAgencies.filter(agency => {
+        if (!stateName) return true; // If state not found, show all (or could show none)
+
+        // Check if agency is state-specific (contains " - ")
+        if (agency.includes(' - ')) {
+            // Only show if it matches the current state
+            return agency.includes(` - ${stateName}`);
+        }
+
+        // Always show generic agencies (no " - " in name)
+        return true;
+    });
+
+    // Fetch implementing agencies when districtName is available
+    useEffect(() => {
+        if (districtName) {
+            fetchImplementingAgencies();
+        }
+    }, [districtName]);
+
+    const fetchImplementingAgencies = async () => {
+        try {
+            setLoading(true);
+            const url = districtName
+                ? `${API_BASE_URL}?districtName=${encodeURIComponent(districtName)}`
+                : API_BASE_URL;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                // Map backend fields to frontend state
+                const mappedAgencies = result.data.map(agency => ({
+                    id: agency.id,
+                    name: agency.admin_name,
+                    agency: agency.agency_name,
+                    phone: agency.phone_no,
+                    email: agency.email,
+                    accountNo: agency.bank_account_number,
+                    status: agency.status
+                }));
+                setAdmins(mappedAgencies);
+            } else {
+                showToast('Failed to fetch implementing agencies', 'error');
+            }
+        } catch (error) {
+            console.error('Error fetching implementing agencies:', error);
+            showToast('Error connecting to server', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleActivate = async (agency) => {
+        if (agency.status === 'Activated') return;
+
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_BASE_URL}/${agency.id}/activate`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Agency activated successfully and WhatsApp sent!', 'success');
+                fetchImplementingAgencies();
+            } else {
+                showToast(result.error || 'Failed to activate agency', 'error');
+            }
+        } catch (error) {
+            console.error('Error activating agency:', error);
+            showToast('Error activating agency', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const validate = () => {
         const errs = {};
         if (!formData.name.trim()) errs.name = 'Name is required';
-        if (!formData.gp.trim()) errs.gp = 'Agency name is required';
+        if (!formData.agency) errs.agency = 'Please select an implementing agency';
         if (!formData.email.trim()) errs.email = 'Email is required';
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errs.email = 'Invalid email format';
         if (!formData.phone.trim()) errs.phone = 'Phone is required';
         else if (!/^[0-9]{10}$/.test(formData.phone)) errs.phone = 'Invalid phone number';
-        if (!formData.username.trim()) errs.username = 'Username is required';
-        if (!formData.password.trim()) errs.password = 'Password is required';
+        if (!formData.accountNo.trim()) errs.accountNo = 'Account number is required';
         setErrors(errs);
         return Object.keys(errs).length === 0;
     };
 
-    const handleAddAdmin = () => {
+    const handleAdd = () => {
+        setCurrentAdmin(null);
+        setFormData({ name: '', agency: '', email: '', phone: '', accountNo: '' });
+        setErrors({});
+        setIsModalOpen(true);
+    };
+
+    const handleEdit = (admin) => {
+        setCurrentAdmin(admin);
+        setFormData({
+            name: admin.name,
+            agency: admin.agency,
+            email: admin.email,
+            phone: admin.phone,
+            accountNo: admin.accountNo || ''
+        });
+        setErrors({});
+        setIsModalOpen(true);
+    };
+
+    const handleSave = async () => {
         if (!validate()) return;
 
-        const newAdmin = {
-            id: Date.now(),
-            name: formData.name,
-            gp: formData.gp,
-            email: formData.email,
-            phone: formData.phone,
-            status: 'Active',
-            lastLogin: 'Never'
-        };
-
-        setAdmins([...admins, newAdmin]);
-        showToast(`Implementing Agency '${formData.gp}' added successfully`);
-        setIsModalOpen(false);
-        setFormData({ name: '', gp: '', email: '', phone: '', username: '', password: '' });
-        setErrors({});
-    };
-
-    const handleToggleStatus = (id) => {
-        setAdmins(admins.map(admin => {
-            if (admin.id === id) {
-                const newStatus = admin.status === 'Active' ? 'Inactive' : 'Active';
-                showToast(`Admin status changed to ${newStatus}`);
-                return { ...admin, status: newStatus };
-            }
-            return admin;
-        }));
-    };
-
-    const handleExportPDF = () => {
         try {
-            const printWindow = window.open('', '_blank');
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Implementing Agencies List</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        h1 { text-align: center; color: #2c3e50; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                        th { background-color: #3498db; color: white; }
-                        tr:nth-child(even) { background-color: #f9f9f9; }
-                        .status-active { color: green; font-weight: bold; }
-                        .status-inactive { color: red; font-weight: bold; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Implementing Agencies List - District</h1>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Agency Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Status</th>
-                                <th>Last Login</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${admins.map(admin => `
-                                <tr>
-                                    <td>${admin.name}</td>
-                                    <td>${admin.gp}</td>
-                                    <td>${admin.email}</td>
-                                    <td>${admin.phone}</td>
-                                    <td class="status-${admin.status.toLowerCase()}">${admin.status}</td>
-                                    <td>${admin.lastLogin}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <div style="margin-top: 20px; text-align: center; color: #666;">
-                        Generated on: ${new Date().toLocaleString()}
-                    </div>
-                </body>
-                </html>
-            `;
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-            printWindow.onload = function () { printWindow.print(); };
-            showToast('PDF preview opened');
+            setLoading(true);
+            const payload = {
+                name: formData.name,
+                agency: formData.agency,
+                phone: formData.phone,
+                email: formData.email,
+                accountNo: formData.accountNo,
+                districtName: districtName
+            };
+
+            let response;
+            if (currentAdmin) {
+                response = await fetch(`${API_BASE_URL}/${currentAdmin.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(result.message, 'success');
+                fetchImplementingAgencies(); // Refresh list
+                setIsModalOpen(false);
+                setFormData({ name: '', agency: '', email: '', phone: '', accountNo: '' });
+                setErrors({});
+            } else {
+                showToast(result.error || 'Failed to save implementing agency', 'error');
+            }
         } catch (error) {
-            console.error('Error generating PDF:', error);
-            showToast('Error generating PDF');
+            console.error('Error saving implementing agency:', error);
+            showToast('Error saving implementing agency', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const filteredAdmins = admins.filter(admin =>
-        admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        admin.gp.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
+
 
     return (
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h2 style={{ margin: 0 }}>Manage Implementing Agencies</h2>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <input
-                        type="text"
-                        placeholder="Search by Name or Agency..."
-                        className="form-control"
-                        style={{ width: '250px' }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <button className="btn btn-primary btn-sm" onClick={() => setIsModalOpen(true)}>+ Add New Agency</button>
-                    <button className="btn btn-secondary btn-sm" onClick={handleExportPDF}>📥 Export List</button>
-                </div>
+                <button className="btn btn-primary btn-sm" onClick={handleAdd}>+ Add New Agency</button>
             </div>
 
             {toast && (
                 <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'inline-block', background: '#00B894', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{toast}</div>
+                    <div style={{
+                        display: 'inline-block',
+                        background: toast.type === 'error' ? '#E74C3C' : '#00B894',
+                        color: '#fff',
+                        padding: '8px 12px',
+                        borderRadius: 6
+                    }}>
+                        {toast.message || toast}
+                    </div>
+                </div>
+            )}
+
+            {loading && (
+                <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>
+                    Loading...
                 </div>
             )}
 
@@ -159,41 +300,45 @@ const ManageGPAdmins = () => {
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Agency Name</th>
-                            <th>Email</th>
+                            <th>Implementing Agency Name</th>
                             <th>Phone</th>
-                            <th>Status</th>
-                            <th>Last Login</th>
+                            <th>Email</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredAdmins.length > 0 ? (
-                            filteredAdmins.map(admin => (
+                        {admins.length > 0 ? (
+                            admins.map(admin => (
                                 <tr key={admin.id}>
-                                    <td>{admin.name}</td>
-                                    <td>{admin.gp}</td>
-                                    <td>{admin.email}</td>
+                                    <td style={{ padding: '12px 16px', fontWeight: 700 }}>{admin.name}</td>
+                                    <td>{admin.agency}</td>
                                     <td>{admin.phone}</td>
-                                    <td>
-                                        <span className={`badge badge-${admin.status === 'Active' ? 'success' : 'error'}`}>
-                                            {admin.status}
-                                        </span>
-                                    </td>
-                                    <td>{admin.lastLogin}</td>
+                                    <td>{admin.email}</td>
                                     <td>
                                         <button
-                                            className={`btn btn-sm ${admin.status === 'Active' ? 'btn-outline' : 'btn-primary'}`}
-                                            onClick={() => handleToggleStatus(admin.id)}
+                                            className={`btn btn-sm ${admin.status === 'Activated' ? 'btn-success' : 'btn-primary'}`}
+                                            onClick={() => handleActivate(admin)}
+                                            disabled={admin.status === 'Activated' || loading}
+                                            style={{
+                                                marginRight: '8px',
+                                                opacity: admin.status === 'Activated' ? 0.7 : 1,
+                                                cursor: admin.status === 'Activated' ? 'default' : 'pointer'
+                                            }}
                                         >
-                                            {admin.status === 'Active' ? 'Deactivate' : 'Activate'}
+                                            {admin.status === 'Activated' ? 'Activated' : 'Activate'}
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => handleEdit(admin)}
+                                        >
+                                            Edit
                                         </button>
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
                                     No admins found matching your search.
                                 </td>
                             </tr>
@@ -205,78 +350,88 @@ const ManageGPAdmins = () => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); setErrors({}); }}
-                title="Add New Implementing Agency"
+                title={currentAdmin ? "Edit Implementing Agency" : "Add New Implementing Agency"}
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button onClick={() => { setIsModalOpen(false); setErrors({}); }} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
                             Cancel
                         </button>
-                        <button onClick={handleAddAdmin} className="btn btn-primary" style={{ padding: '8px 14px' }}>
-                            Save Admin
+                        <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 14px' }}>
+                            Save
                         </button>
                     </div>
                 }
             >
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                     <div className="form-group">
-                        <label className="form-label">Full Name</label>
+                        <label className="form-label">Name</label>
                         <input
                             type="text"
                             className="form-control"
+                            placeholder="e.g. Ramesh Patil"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            style={{ padding: '10px' }}
                         />
                         {errors.name && <div className="form-error">{errors.name}</div>}
                     </div>
+
                     <div className="form-group">
-                        <label className="form-label">Agency Name</label>
+                        <label className="form-label">Implementing Agency Name</label>
+                        <select
+                            className="form-control"
+                            value={formData.agency}
+                            onChange={(e) => setFormData({ ...formData, agency: e.target.value })}
+                            style={{ padding: '10px' }}
+                        >
+                            <option value="">-- Select Implementing Agency --</option>
+                            {filteredAgencies.map((agencyName) => (
+                                <option key={agencyName} value={agencyName}>{agencyName}</option>
+                            ))}
+                        </select>
+                        {errors.agency && <div className="form-error">{errors.agency}</div>}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div className="form-group">
+                            <label className="form-label">Phone Number</label>
+                            <input
+                                type="tel"
+                                className="form-control"
+                                placeholder="e.g. 9876543210"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                style={{ padding: '10px' }}
+                            />
+                            {errors.phone && <div className="form-error">{errors.phone}</div>}
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Email Address</label>
+                            <input
+                                type="email"
+                                className="form-control"
+                                placeholder="e.g. admin@agency.gov.in"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                style={{ padding: '10px' }}
+                            />
+                            {errors.email && <div className="form-error">{errors.email}</div>}
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Account Number</label>
                         <input
                             type="text"
                             className="form-control"
-                            value={formData.gp}
-                            onChange={(e) => setFormData({ ...formData, gp: e.target.value })}
+                            placeholder="e.g. 123456789012"
+                            value={formData.accountNo}
+                            onChange={(e) => setFormData({ ...formData, accountNo: e.target.value })}
+                            style={{ padding: '10px' }}
                         />
-                        {errors.gp && <div className="form-error">{errors.gp}</div>}
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Email</label>
-                        <input
-                            type="email"
-                            className="form-control"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        />
-                        {errors.email && <div className="form-error">{errors.email}</div>}
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Phone</label>
-                        <input
-                            type="tel"
-                            className="form-control"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        />
-                        {errors.phone && <div className="form-error">{errors.phone}</div>}
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Username</label>
-                        <input
-                            type="text"
-                            className="form-control"
-                            value={formData.username}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        />
-                        {errors.username && <div className="form-error">{errors.username}</div>}
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Password</label>
-                        <input
-                            type="password"
-                            className="form-control"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        />
-                        {errors.password && <div className="form-error">{errors.password}</div>}
+                        {errors.accountNo && <div className="form-error">{errors.accountNo}</div>}
+                        <div className="form-helper">This will be stored securely and not displayed in the public list.</div>
                     </div>
                 </div>
             </Modal>
