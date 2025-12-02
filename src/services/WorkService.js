@@ -6,8 +6,9 @@ export const WorkService = {
             // 1. Fetch Work Orders from Supabase
             const { data: workOrders, error: workError } = await supabase
                 .from('work_orders')
-                .select('*, district_proposals(component)')
+                .select('*')
                 .order('id', { ascending: true });
+
 
             if (workError) {
                 console.error('Error fetching work orders:', workError);
@@ -71,9 +72,10 @@ export const WorkService = {
             // 1. Fetch Work Orders for specific agency
             const { data: workOrders, error: workError } = await supabase
                 .from('work_orders')
-                .select('*, district_proposals(component)')
+                .select('*')
                 .eq('implementing_agency_id', agencyId)
                 .order('id', { ascending: true });
+
 
             if (workError) {
                 console.error('Error fetching work orders:', workError);

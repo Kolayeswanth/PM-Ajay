@@ -151,7 +151,7 @@ const DepartmentDashboard = () => {
                     onNavigate={handleTabChange}
                 />;
             case 'projects':
-                return <AgencyProjects projects={workOrders} />;
+                return <AgencyProjects />;
             case 'executing-agencies':
                 return <ManageExecutingAgencies />;
             case 'assign-projects':
