@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const ApproveProposals = () => {
     const { user } = useAuth();
@@ -363,16 +364,17 @@ const ApproveProposals = () => {
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                                            <button
-                                                className="btn btn-secondary btn-sm"
+                                            <InteractiveButton
+                                                variant="info"
+                                                size="sm"
                                                 onClick={() => handleViewPDF(proposal)}
                                             >
                                                 View
-                                            </button>
+                                            </InteractiveButton>
                                             {proposal.status === 'Pending' && (
                                                 <>
-                                                    <button className="btn btn-primary btn-sm" onClick={() => handleApproveClick(proposal)}>Approve</button>
-                                                    <button className="btn btn-outline btn-sm" onClick={() => handleRejectClick(proposal)}>Reject</button>
+                                                    <InteractiveButton variant="success" size="sm" onClick={() => handleApproveClick(proposal)}>Approve</InteractiveButton>
+                                                    <InteractiveButton variant="danger" size="sm" onClick={() => handleRejectClick(proposal)}>Reject</InteractiveButton>
                                                 </>
                                             )}
                                         </div>
@@ -396,12 +398,12 @@ const ApproveProposals = () => {
                 title="Confirm Approval"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsApproveModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <InteractiveButton variant="outline" onClick={() => setIsApproveModalOpen(false)}>
                             Cancel
-                        </button>
-                        <button onClick={confirmApprove} className="btn btn-primary" style={{ padding: '8px 14px' }}>
+                        </InteractiveButton>
+                        <InteractiveButton variant="success" onClick={confirmApprove}>
                             Confirm Approve
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >
@@ -415,12 +417,12 @@ const ApproveProposals = () => {
                 title="Reject Proposal"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsRejectModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <InteractiveButton variant="outline" onClick={() => setIsRejectModalOpen(false)}>
                             Cancel
-                        </button>
-                        <button onClick={confirmReject} className="btn btn-error" style={{ padding: '8px 14px' }}>
+                        </InteractiveButton>
+                        <InteractiveButton variant="danger" onClick={confirmReject}>
                             Reject Proposal
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >

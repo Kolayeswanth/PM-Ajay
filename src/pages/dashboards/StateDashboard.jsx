@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
+import DashboardHeader from '../../components/DashboardHeader';
+import NotificationBell from '../../components/NotificationBell';
 import { useAuth } from '../../contexts/AuthContext';
 import StateDashboardPanel from './state/StateDashboardPanel';
 import ManageDistrictAdmins from './state/ManageDistrictAdmins';
@@ -12,14 +13,31 @@ import StateReports from './state/StateReports';
 import StateNotifications from './state/StateNotifications';
 import StateHelp from './state/StateHelp';
 import FundsReceivedFromMinistry from './state/FundsReceivedFromMinistry';
+import {
+    LayoutDashboard,
+    Wallet,
+    Users,
+    Send,
+    FileCheck,
+    Upload,
+    FileBarChart,
+    Bell,
+    HelpCircle,
+    LogOut
+} from 'lucide-react';
 
 const StateDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [stateName, setStateName] = useState('Loading...');
     const [stateId, setStateId] = useState(null);
     const [stateCode, setStateCode] = useState(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const navigate = useNavigate();
     const { logout, user } = useAuth();
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
 
     // Fetch state name from user profile
     React.useEffect(() => {
@@ -73,16 +91,16 @@ const StateDashboard = () => {
     }, []);
 
     const sidebarMenu = [
-        { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
-        { icon: '💵', label: 'Funds Received from Ministry', action: () => setActiveTab('received'), active: activeTab === 'received' },
-        { icon: '👥', label: 'Manage District Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
-        { icon: '💰', label: 'Fund Release to Districts', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
-        { icon: '✅', label: 'Approve District Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
-        { icon: '📄', label: 'Upload Utilisation Certificates', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
-        { icon: '📊', label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
-        { icon: '🔔', label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
-        { icon: '❓', label: 'Help', action: () => setActiveTab('help'), active: activeTab === 'help' },
-        { icon: '🚪', label: 'Logout', action: () => { logout(); navigate('/login'); } }
+        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <Wallet size={20} />, label: 'Funds Received from Ministry', action: () => setActiveTab('received'), active: activeTab === 'received' },
+        { icon: <Users size={20} />, label: 'Manage District Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
+        { icon: <Send size={20} />, label: 'Fund Release to Districts', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
+        { icon: <FileCheck size={20} />, label: 'Approve District Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
+        { icon: <Upload size={20} />, label: 'Upload Utilisation Certificates', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
+        { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
+        { icon: <Bell size={20} />, label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
+        { icon: <HelpCircle size={20} />, label: 'Help', action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
 
     const formatCurrency = (amount) => {
@@ -131,22 +149,25 @@ const StateDashboard = () => {
     };
 
     return (
-        <div className="dashboard-layout">
-            <DashboardSidebar menuItems={sidebarMenu} />
+        <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+            <DashboardHeader
+                toggleSidebar={toggleSidebar}
+                breadcrumb={getBreadcrumb()}
+                userRole="state"
+                stateName={stateName}
+                showNotificationBell={false}
+            />
+            <DashboardSidebar menuItems={sidebarMenu} user={user} isOpen={isSidebarOpen} />
 
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
-                        <h1>State Dashboard - {stateName}</h1>
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
-                            {getBreadcrumb()}
-                        </p>
+                        <h3 style={{ margin: 0 }}>Dashboard - {stateName}</h3>
                     </div>
                     <div className="dashboard-actions">
                         <NotificationBell userRole="state" stateName={stateName} />
                     </div>
                 </div>
-
                 {renderContent()}
             </main>
         </div>
