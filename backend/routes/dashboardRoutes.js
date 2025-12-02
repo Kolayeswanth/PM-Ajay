@@ -2,9 +2,7 @@ const express = require('express');
 const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
 
-router.get('/ministry-stats', dashboardController.getMinistryDashboardStats);
-router.get('/state-stats', dashboardController.getStateDashboardStats);
-router.get('/district-stats/:districtId', dashboardController.getDistrictStats);
-
+// Get Ministry Dashboard statistics
+router.get('/ministry-stats', dashboardController.getMinistryStats);
 
 module.exports = router;

@@ -9,6 +9,7 @@ import ManageStateAdmins from './ministry/ManageStateAdmins';
 import FundAllocation from './ministry/FundAllocation';
 import FundReleased from './ministry/FundReleased';
 import AnnualPlansApproval from './ministry/AnnualPlansApproval';
+import AnnualActionPlan from './ministry/AnnualActionPlan';
 import MonitorProgress from './ministry/MonitorProgress';
 import IssueNotifications from './ministry/IssueNotifications';
 import ReportsAnalytics from './ministry/ReportsAnalytics';
@@ -24,7 +25,8 @@ import {
     Bell,
     FileBarChart,
     HelpCircle,
-    LogOut
+    LogOut,
+    FileText
 } from 'lucide-react';
 
 const MinistryDashboard = () => {
@@ -52,7 +54,8 @@ const MinistryDashboard = () => {
         { icon: <Users size={20} />, label: 'Manage State Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
         { icon: <Wallet size={20} />, label: 'Fund Allocation', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
         { icon: <Send size={20} />, label: 'Fund Released', action: () => setActiveTab('released'), active: activeTab === 'released' },
-        { icon: <FileCheck size={20} />, label: 'Annual Plans Approval', action: () => setActiveTab('plans'), active: activeTab === 'plans' },
+        { icon: <FileCheck size={20} />, label: 'Project Approval', action: () => setActiveTab('plans'), active: activeTab === 'plans' },
+        { icon: <FileText size={20} />, label: 'Annual Plan Approvals', action: () => setActiveTab('aap'), active: activeTab === 'aap' },
         { icon: <LineChart size={20} />, label: 'Monitor Progress', action: () => setActiveTab('monitor'), active: activeTab === 'monitor' },
         { icon: <Bell size={20} />, label: 'Notifications/Circulars', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
         { icon: <FileBarChart size={20} />, label: 'Reports & Analytics', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
@@ -85,6 +88,8 @@ const MinistryDashboard = () => {
                 return <FundReleased formatCurrency={formatCurrency} />;
             case 'plans':
                 return <AnnualPlansApproval />;
+            case 'aap':
+                return <AnnualActionPlan />;
             case 'monitor':
                 return <MonitorProgress />;
             case 'notifications':
@@ -112,7 +117,8 @@ const MinistryDashboard = () => {
             'admins': 'Manage State Admins',
             'funds': 'Fund Allocation',
             'released': 'Fund Released',
-            'plans': 'Annual Plans Approval',
+            'plans': 'Project Approval',
+            'aap': 'Annual Plan Approvals',
             'monitor': 'Monitor Progress',
             'notifications': 'Notifications & Circulars',
             'reports': 'Reports & Analytics',
@@ -125,10 +131,22 @@ const MinistryDashboard = () => {
 
     return (
         <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-            <DashboardHeader toggleSidebar={toggleSidebar} breadcrumb={getBreadcrumb()} />
+            <DashboardHeader
+                toggleSidebar={toggleSidebar}
+                breadcrumb={getBreadcrumb()}
+                showNotificationBell={false}
+            />
             <DashboardSidebar menuItems={sidebarMenu} user={user} isOpen={isSidebarOpen} />
 
             <main className="dashboard-main">
+                <div className="dashboard-header">
+                    <div className="dashboard-title-section">
+                        <h3 style={{ margin: 0 }}>Ministry Dashboard</h3>
+                    </div>
+                    <div className="dashboard-actions">
+                        <NotificationBell userRole="ministry" />
+                    </div>
+                </div>
                 {renderContent()}
             </main>
         </div>

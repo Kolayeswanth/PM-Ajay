@@ -18,6 +18,7 @@ const DistrictDashboard = () => {
     const [districtName, setDistrictName] = useState('Loading...');
     const [districtId, setDistrictId] = useState(null);
     const [stateId, setStateId] = useState(null);
+    const [stateName, setStateName] = useState(null);
     const navigate = useNavigate();
     const { logout, user } = useAuth();
 
@@ -56,6 +57,25 @@ const DistrictDashboard = () => {
                             setDistrictId(districtData[0].id);
                             setStateId(districtData[0].state_id);
                             console.log('Set District ID:', districtData[0].id, 'State ID:', districtData[0].state_id);
+
+                            // Fetch State Name
+                            if (districtData[0].state_id) {
+                                try {
+                                    const stateRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
+                                        headers: {
+                                            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                                            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                                        }
+                                    });
+                                    const stateData = await stateRes.json();
+                                    if (stateData && stateData.length > 0) {
+                                        console.log('Fetched State Name:', stateData[0].name);
+                                        setStateName(stateData[0].name);
+                                    }
+                                } catch (err) {
+                                    console.error('Error fetching state name:', err);
+                                }
+                            }
                         } else {
                             console.error('District not found for name:', name);
                         }
@@ -97,7 +117,7 @@ const DistrictDashboard = () => {
             case 'create-proposal':
                 return <CreateProposal districtId={districtId} />;
             case 'assign-projects':
-                return <AssignProjectsDistrict districtId={districtId} stateId={stateId} />;
+                return <AssignProjectsDistrict districtId={districtId} stateId={stateId} stateName={stateName} />;
             case 'gp-admins':
                 return <ManageGPAdmins />;
             case 'funds-received':

@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js --ignore services/reminder_state.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.86.0",

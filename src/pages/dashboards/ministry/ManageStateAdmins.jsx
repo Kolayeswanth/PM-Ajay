@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const ManageStateAdmins = () => {
     const [admins, setAdmins] = useState([]);
@@ -211,9 +212,9 @@ const ManageStateAdmins = () => {
                             <option key={state} value={state}>{state}</option>
                         ))}
                     </select>
-                    <button className="btn btn-primary btn-sm" onClick={handleAdd}>
+                    <InteractiveButton variant="primary" size="sm" onClick={handleAdd}>
                         + Add State Admin
-                    </button>
+                    </InteractiveButton>
                 </div>
             </div>
 
@@ -271,13 +272,14 @@ const ManageStateAdmins = () => {
                                         >
                                             {admin.status}
                                         </button>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
+                                        <InteractiveButton
+                                            variant="success"
+                                            size="sm"
                                             onClick={() => handleEdit(admin)}
                                             disabled={loading}
                                         >
                                             Edit
-                                        </button>
+                                        </InteractiveButton>
                                     </td>
                                 </tr>
                             ))
@@ -299,27 +301,20 @@ const ManageStateAdmins = () => {
                 title={currentAdmin ? "Edit State Admin" : "Add New State Admin"}
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button
+                        <InteractiveButton
+                            variant="outline"
                             onClick={() => setIsModalOpen(false)}
-                            style={{
-                                background: 'transparent',
-                                border: '2px solid #ddd',
-                                color: '#333',
-                                padding: '8px 14px',
-                                borderRadius: 8
-                            }}
                             disabled={loading}
                         >
                             Cancel
-                        </button>
-                        <button
+                        </InteractiveButton>
+                        <InteractiveButton
+                            variant="primary"
                             onClick={handleSave}
-                            className="btn btn-primary"
-                            style={{ padding: '8px 14px' }}
                             disabled={loading}
                         >
                             {loading ? 'Saving...' : 'Save'}
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >

@@ -22,13 +22,113 @@ const ContractorDashboard = () => {
     const [works, setWorks] = useState([]);
 
     useEffect(() => {
-        // Load initial data
-        import('../../services/WorkService').then(({ WorkService }) => {
-            WorkService.getAllWorks().then(data => {
-                setWorks(data);
-            });
-        });
-    }, []);
+        // Load work orders assigned to this executing agency only
+        const fetchAssignedWorks = async () => {
+            if (!user?.email || user?.role !== 'executing_agency') {
+                setWorks([]);
+                return;
+            }
+
+            try {
+                const { supabase } = await import('../../lib/supabaseClient');
+
+
+                // 1. Get executing agency ID using email-based matching
+                const { data: allAgencies, error: agenciesError } = await supabase
+                    .from('executing_agencies')
+                    .select('id, agency_name, email, name');
+
+                if (agenciesError) {
+                    console.error('Error fetching agencies:', agenciesError);
+                    return;
+                }
+
+                // Match by email
+                const matchedAgency = allAgencies?.find(agency =>
+                    agency.email && agency.email.toLowerCase() === user.email.toLowerCase()
+                );
+
+                if (!matchedAgency) {
+                    console.warn('No agency matched for user:', user.email);
+                    setWorks([]);
+                    return;
+                }
+
+                console.log('✅ Fetching work orders for agency:', matchedAgency.agency_name, matchedAgency.id);
+
+                // 2. Fetch work orders assigned to this executing agency
+                const { data: workOrdersData, error: workOrdersError } = await supabase
+                    .from('work_orders')
+                    .select('*')
+                    .eq('executing_agency_id', matchedAgency.id)
+                    .order('created_at', { ascending: false });
+
+                if (workOrdersError) {
+                    console.error('Error fetching work orders:', workOrdersError);
+                    return;
+                }
+
+                console.log('✅ Fetched work orders:', workOrdersData?.length || 0);
+
+                // 3. Get the latest progress for each work order
+                if (workOrdersData && workOrdersData.length > 0) {
+                    const workOrderIds = workOrdersData.map(w => w.id);
+
+                    const { data: progressData, error: progressError } = await supabase
+                        .from('work_progress')
+                        .select('*')
+                        .in('work_order_id', workOrderIds)
+                        .order('created_at', { ascending: false });
+
+                    if (progressError) {
+                        console.error('Error fetching progress:', progressError);
+                        setWorks(workOrdersData);
+                        return;
+                    }
+
+                    // Merge with latest progress
+                    const mergedWorks = workOrdersData.map(work => {
+                        const latestUpdate = progressData?.find(p => p.work_order_id === work.id);
+
+                        if (latestUpdate) {
+                            return {
+                                ...work,
+                                progress: latestUpdate.progress_percentage,
+                                fundsReleased: latestUpdate.funds_released,
+                                fundsUsed: latestUpdate.funds_used,
+                                fundsRemaining: latestUpdate.funds_remaining,
+                                remarks: latestUpdate.remarks,
+                                lastUpdated: new Date(latestUpdate.created_at).toISOString().split('T')[0],
+                                officerName: latestUpdate.officer_name,
+                                officerPhone: latestUpdate.officer_phone,
+                                viewedByAgency: latestUpdate.viewed_by_agency,
+                                viewedAt: latestUpdate.viewed_at
+                            };
+                        }
+                        return {
+                            ...work,
+                            progress: work.progress || 0,
+                            fundsReleased: work.funds_released || 0,
+                            fundsUsed: work.funds_used || 0,
+                            fundsRemaining: work.funds_remaining || 0,
+                            remarks: work.remarks || '',
+                            lastUpdated: null
+                        };
+                    });
+
+                    setWorks(mergedWorks);
+                } else {
+                    setWorks([]);
+                }
+            } catch (error) {
+                console.error('Error in fetchAssignedWorks:', error);
+                setWorks([]);
+            }
+        };
+
+        fetchAssignedWorks();
+    }, [user?.email, user?.role]);
+
 
     // --- Handlers ---
     const handleUpdateProgress = (updatedWork, officerDetails) => {
@@ -74,7 +174,7 @@ const ContractorDashboard = () => {
                     onNavigate={handleTabChange}
                 />;
             case 'assigned-works':
-                return <AssignedWorks works={works} />;
+                return <AssignedWorks />;
             case 'work-progress':
                 return <WorkProgress works={works} onUpdateProgress={handleUpdateProgress} />;
             case 'payment-status':

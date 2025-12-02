@@ -35,8 +35,8 @@ const InteractiveButton = ({
             ring: 'rgba(255, 153, 0, 0.3)'
         },
         success: {
-            normal: '#10B981',
-            hover: '#059669',
+            normal: '#14cf78ff',
+            hover: 'rgba(8, 136, 57, 1)',
             ring: 'rgba(16, 185, 129, 0.3)'
         },
         danger: {
@@ -58,6 +58,13 @@ const InteractiveButton = ({
             normal: '#6B7280',
             hover: '#4B5563',
             ring: 'rgba(107, 114, 128, 0.3)'
+        },
+        outline: {
+            normal: '#FFFFFF',
+            hover: '#FFF5E6',
+            ring: 'rgba(255, 153, 0, 0.3)',
+            border: '#FF9900',
+            textColor: '#FF9900'
         }
     };
 
@@ -82,8 +89,8 @@ const InteractiveButton = ({
 
     const baseStyle = {
         backgroundColor: colorConfig.normal,
-        color: 'white',
-        border: `2px solid ${colorConfig.normal}`,
+        color: colorConfig.textColor || 'white',
+        border: `2px solid ${colorConfig.border || colorConfig.normal}`,
         borderRadius: '0.375rem',
         fontWeight: '500',
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -100,20 +107,23 @@ const InteractiveButton = ({
     const handleMouseEnter = (e) => {
         if (!disabled) {
             e.currentTarget.style.backgroundColor = colorConfig.hover;
-            e.currentTarget.style.borderColor = colorConfig.hover;
+            e.currentTarget.style.borderColor = colorConfig.border || colorConfig.hover;
+            e.currentTarget.style.color = colorConfig.textColor || 'white';
         }
     };
 
     const handleMouseLeave = (e) => {
         if (!disabled) {
             e.currentTarget.style.backgroundColor = colorConfig.normal;
-            e.currentTarget.style.borderColor = colorConfig.normal;
+            e.currentTarget.style.borderColor = colorConfig.border || colorConfig.normal;
+            e.currentTarget.style.color = colorConfig.textColor || 'white';
         }
     };
 
     const handleFocus = (e) => {
         if (!disabled) {
-            e.currentTarget.style.boxShadow = `0 0 0 4px ${colorConfig.ring}`;
+            e.currentTarget.style.boxShadow = `0 0 0 6px ${colorConfig.ring}`;
+            e.currentTarget.style.outline = 'none';
         }
     };
 
@@ -125,13 +135,15 @@ const InteractiveButton = ({
 
     const handleMouseDown = (e) => {
         if (!disabled) {
-            e.currentTarget.style.boxShadow = `0 0 0 4px ${colorConfig.ring}`;
+            e.currentTarget.style.boxShadow = `0 0 0 6px ${colorConfig.ring}`;
+            e.currentTarget.style.transform = 'scale(0.98)';
         }
     };
 
     const handleMouseUp = (e) => {
         if (!disabled && !e.currentTarget.matches(':focus')) {
             e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.transform = 'scale(1)';
         }
     };
 
