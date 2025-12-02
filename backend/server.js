@@ -24,6 +24,7 @@ app.use('/api/funds', fundRoutes);
 app.use('/api/state-admins', stateAdminRoutes);
 app.use('/api/proposals', proposalRoutes);
 app.use('/api/district-admins', require('./routes/districtAdminRoutes'));
+app.use('/api/implementing-agencies', require('./routes/implementingAgencyRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 
 // Health check endpoint
@@ -49,3 +50,7 @@ app.listen(PORT, () => {
   console.log(`- State Admin Routes loaded at /api/state-admins`);
   console.log(`- Health check at /api/health`);
 });
+
+// Start Background Services
+const cronService = require('./services/cronService');
+cronService.startScheduler();

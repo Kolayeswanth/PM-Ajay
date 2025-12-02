@@ -34,7 +34,7 @@ const AssignProjectsDistrict = ({ districtId, stateId, stateName }) => {
             let query = supabase
                 .from('district_proposals')
                 .select('id, project_name, estimated_cost, status, component')
-                .eq('status', 'APPROVED_BY_STATE');
+                .eq('status', 'APPROVED_BY_MINISTRY');
 
             // If districtId is provided, filter by it. 
             if (districtId) {
