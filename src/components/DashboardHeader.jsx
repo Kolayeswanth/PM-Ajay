@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
-const DashboardHeader = ({ toggleSidebar, breadcrumb }) => {
+const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, showNotificationBell = true }) => {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
 
@@ -16,7 +16,7 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb }) => {
     return (
         <header
             className="dashboard-header-component"
-
+            style={{ position: 'fixed', top: 0, width: '100%', zIndex: 1030 }}
         >
             {/* Top Bar */}
             <div
@@ -124,19 +124,24 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb }) => {
                                     fontWeight: 'bold',
                                     fontSize: 'var(--text-base)'
                                 }}>
-                                    Ministry Dashboard {breadcrumb && <span style={{ fontWeight: 'normal', opacity: 0.9 }}>({breadcrumb})</span>}
+                                    {dashboardTitle && <span>{dashboardTitle} </span>}
+                                    {breadcrumb && <span style={{ fontWeight: 'normal', opacity: 0.9 }}>
+                                        {dashboardTitle ? `(${breadcrumb})` : breadcrumb}
+                                    </span>}
                                 </span>
                             </li>
                         </ul>
                         {/* Right Nav Items */}
                         <ul className="nav-menu" style={{ display: 'flex', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
-                            <li className="nav-item">
-                                <NotificationBell
-                                    userRole={user?.role === 'centre_admin' ? 'ministry' : user?.role}
-                                    stateName={user?.state_name}
-                                    districtName={user?.district_name}
-                                />
-                            </li>
+                            {showNotificationBell && (
+                                <li className="nav-item">
+                                    <NotificationBell
+                                        userRole={user?.role === 'centre_admin' ? 'ministry' : user?.role}
+                                        stateName={user?.state_name}
+                                        districtName={user?.district_name}
+                                    />
+                                </li>
+                            )}
                             <li className="nav-item">
                                 <button
                                     onClick={handleLogout}

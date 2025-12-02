@@ -2,21 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabaseClient';
 
-const AssignProjectsDistrict = ({ districtId, stateId }) => {
+const AssignProjectsDistrict = ({ districtId, stateId, stateName }) => {
     const { user } = useAuth();
     const [projects, setProjects] = useState([]);
     const [agencies, setAgencies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [assigning, setAssigning] = useState(false);
+    const [assignedProjects, setAssignedProjects] = useState([]);
 
     // Form State
     const [selectedProject, setSelectedProject] = useState('');
     const [projectFund, setProjectFund] = useState('');
     const [selectedAgency, setSelectedAgency] = useState('');
+    const [location, setLocation] = useState('');
     const [deadline, setDeadline] = useState('');
 
     useEffect(() => {
-        fetchData();
+        console.log('AssignProjectsDistrict mounted/updated. DistrictID:', districtId, 'StateID:', stateId);
+        if (districtId) {
+            fetchData();
+        } else {
+            console.log('Waiting for districtId...');
+        }
     }, [user?.id, districtId, stateId]);
 
     const fetchData = async () => {
@@ -26,7 +33,7 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
             // We fetch from district_proposals where status is APPROVED_BY_STATE
             let query = supabase
                 .from('district_proposals')
-                .select('id, project_name, estimated_cost, status')
+                .select('id, project_name, estimated_cost, status, component')
                 .eq('status', 'APPROVED_BY_STATE');
 
             // If districtId is provided, filter by it. 
@@ -43,14 +50,17 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
             if (districtId) {
                 let agencyQuery = supabase
                     .from('implementing_agencies')
-                    .select('id, agency_name, district_id, state_id');
+                    .select('id, agency_name, district_id, state_id, agency_type');
 
                 console.log('Fetching agencies for districtId:', districtId, 'stateId:', stateId);
 
                 // Filter by district OR state
-                if (stateId) {
-                    // Show agencies assigned to this district OR assigned to the state
-                    // Syntax: district_id.eq.X,state_id.eq.Y
+                // Since state_id is often null in implementing_agencies, we filter by name if stateName is available
+                if (stateName) {
+                    // Filter by name (e.g., "Karnataka")
+                    agencyQuery = agencyQuery.ilike('agency_name', `%${stateName}%`);
+                } else if (stateId) {
+                    // Fallback to ID if name not available (though less reliable with current data)
                     agencyQuery = agencyQuery.or(`district_id.eq.${districtId},state_id.eq.${stateId}`);
                 } else {
                     agencyQuery = agencyQuery.eq('district_id', districtId);
@@ -69,6 +79,76 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
                 setAgencies([]);
             }
 
+            // 3. Fetch Assigned Projects (Work Orders)
+            // Robust approach: 
+            // a. Fetch ALL proposal IDs for this district (to filter work_orders)
+            // b. Fetch work_orders where proposal_id is in that list
+
+            if (districtId) {
+                // a. Get all proposal IDs for this district (assigned or not)
+                // We need to fetch ALL proposals for this district to map them correctly
+                const { data: districtProposals, error: dpError } = await supabase
+                    .from('district_proposals')
+                    .select('id, project_name, component')
+                    .eq('district_id', districtId);
+
+                if (dpError) {
+                    console.error('Error fetching district proposals for filtering:', dpError);
+                } else {
+                    const proposalIds = districtProposals.map(p => p.id);
+                    const proposalMap = districtProposals.reduce((acc, p) => {
+                        acc[p.id] = p;
+                        return acc;
+                    }, {});
+
+                    if (proposalIds.length > 0) {
+                        // b. Fetch work orders for these proposals
+                        // TEMPORARY: Removed join with implementing_agencies to debug relationship issue
+                        const { data: ordersData, error: ordersError } = await supabase
+                            .from('work_orders')
+                            .select('*')
+                            .in('proposal_id', proposalIds)
+                            .order('created_at', { ascending: false });
+
+                        if (ordersError) {
+                            console.error('Error fetching assigned projects:', ordersError);
+                        } else {
+                            // Merge proposal details manually
+                            // Also fetch and merge implementing agency details
+                            const agencyIds = [...new Set(ordersData.map(o => o.implementing_agency_id).filter(Boolean))];
+                            let agencyMap = {};
+
+                            if (agencyIds.length > 0) {
+                                const { data: agencies, error: agError } = await supabase
+                                    .from('implementing_agencies')
+                                    .select('id, agency_name')
+                                    .in('id', agencyIds);
+
+                                if (!agError && agencies) {
+                                    agencyMap = agencies.reduce((acc, ag) => {
+                                        acc[ag.id] = ag;
+                                        return acc;
+                                    }, {});
+                                }
+                            }
+
+                            const mergedOrders = ordersData.map(order => ({
+                                ...order,
+                                district_proposals: proposalMap[order.proposal_id] || {},
+                                implementing_agencies: agencyMap[order.implementing_agency_id] || { agency_name: 'Unknown' }
+                            }));
+
+                            console.log('Merged Assigned Projects:', mergedOrders);
+                            setAssignedProjects(mergedOrders);
+                        }
+                    } else {
+                        setAssignedProjects([]);
+                    }
+                }
+            } else {
+                setAssignedProjects([]);
+            }
+
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -77,7 +157,7 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
     };
 
     const handleAssign = async () => {
-        if (!selectedProject || !selectedAgency || !projectFund || !deadline) {
+        if (!selectedProject || !selectedAgency || !projectFund || !deadline || !location) {
             alert('Please fill all fields.');
             return;
         }
@@ -98,7 +178,9 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
                         title: projectDetails.project_name,
                         amount: projectFund, // Assigned fund amount (standard column)
                         project_fund: projectFund, // Specific column for project fund
+                        // component: projectDetails.component, // Removed as column doesn't exist
                         implementing_agency_id: selectedAgency,
+                        location: location,
                         deadline: deadline,
                         status: 'Assigned to IA'
                     }
@@ -122,6 +204,7 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
             setSelectedProject('');
             setProjectFund('');
             setSelectedAgency('');
+            setLocation('');
             setDeadline('');
 
             // Refresh list
@@ -137,14 +220,9 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
 
     // Auto-fill fund if project selected
     useEffect(() => {
-        console.log('Selected Project ID:', selectedProject);
-        console.log('Projects available:', projects);
-
         if (selectedProject) {
             // Use loose equality (==) to handle string/number mismatch
             const proj = projects.find(p => p.id == selectedProject);
-            console.log('Found Project:', proj);
-
             if (proj && proj.estimated_cost) {
                 setProjectFund(proj.estimated_cost); // Pre-fill with estimated cost
             }
@@ -198,9 +276,22 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
                             >
                                 <option value="">-- Select Agency --</option>
                                 {agencies.map(a => (
-                                    <option key={a.id} value={a.id}>{a.agency_name}</option>
+                                    <option key={a.id} value={a.id}>
+                                        {a.agency_name} {a.agency_type ? `- ${a.agency_type}` : ''}
+                                    </option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: 15 }}>
+                            <label className="form-label">Location / GP</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="Enter Location or GP Name"
+                            />
                         </div>
 
                         <div className="form-group" style={{ marginBottom: 15 }}>
@@ -222,6 +313,55 @@ const AssignProjectsDistrict = ({ districtId, stateId }) => {
                         </button>
                     </>
                 )}
+            </div>
+
+            {/* Assigned Projects Table */}
+            <div className="dashboard-section" style={{ marginTop: 40 }}>
+                <h3 style={{ marginBottom: 20 }}>Assigned Projects History</h3>
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Implementing Agency</th>
+                                <th>Component</th>
+                                <th>Location</th>
+                                <th>Amount</th>
+                                <th>Deadline</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {assignedProjects.length > 0 ? (
+                                assignedProjects.map((project) => (
+                                    <tr key={project.id}>
+                                        <td>{project.title || project.district_proposals?.project_name}</td>
+                                        <td>{project.implementing_agencies?.agency_name || 'Unknown'}</td>
+                                        <td>
+                                            <span className="badge badge-secondary">
+                                                {project.district_proposals?.component || 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td>{project.location || 'N/A'}</td>
+                                        <td>₹{project.amount}</td>
+                                        <td>{project.deadline || 'N/A'}</td>
+                                        <td>
+                                            <span className="badge badge-primary">
+                                                {project.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="7" style={{ textAlign: 'center', padding: 20 }}>
+                                        No projects assigned yet.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

@@ -9,6 +9,7 @@ export const WorkService = {
                 .select('*')
                 .order('id', { ascending: true });
 
+
             if (workError) {
                 console.error('Error fetching work orders:', workError);
                 return [];
@@ -74,6 +75,7 @@ export const WorkService = {
                 .select('*')
                 .eq('implementing_agency_id', agencyId)
                 .order('id', { ascending: true });
+
 
             if (workError) {
                 console.error('Error fetching work orders:', workError);

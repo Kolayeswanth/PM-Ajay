@@ -26,9 +26,8 @@ const DepartmentDashboard = () => {
     // --- Lifted State ---
 
     // Projects (Initialize with mock data filtered for department)
-    const [projects, setProjects] = useState(
-        mockProjects.filter(p => p.component === 'Infrastructure' || p.component === 'Adarsh Gram')
-    );
+    // Projects (Initialize with empty array, will be populated by workOrders)
+    // const [projects, setProjects] = useState([]); // We can just use workOrders directly
 
     // Work Orders (Initialize with data from WorkService)
     // Work Orders (Initialize with data from WorkService)
@@ -36,6 +35,8 @@ const DepartmentDashboard = () => {
 
     const loadWorkOrders = async () => {
         if (!user) return;
+
+        console.log('Loading Work Orders for User:', user.id, 'Role:', user.role);
 
         const { WorkService } = await import('../../services/WorkService');
         const { supabase } = await import('../../lib/supabaseClient');
@@ -45,7 +46,7 @@ const DepartmentDashboard = () => {
             try {
                 const { data: agencies, error: agencyError } = await supabase
                     .from('implementing_agencies')
-                    .select('id')
+                    .select('id, agency_name')
                     .eq('user_id', user.id)
                     .limit(1);
 
@@ -54,10 +55,16 @@ const DepartmentDashboard = () => {
                     return;
                 }
 
+                console.log('Fetched Agencies:', agencies);
+
                 if (agencies && agencies.length > 0) {
                     const agencyData = agencies[0];
+                    console.log('Fetching works for Agency ID:', agencyData.id);
                     const data = await WorkService.getWorksByAgency(agencyData.id);
+                    console.log('Fetched Work Orders:', data);
                     setWorkOrders(data);
+                } else {
+                    console.warn('No agency found for this user.');
                 }
             } catch (err) {
                 console.error('Error loading agency works:', err);
@@ -140,11 +147,11 @@ const DepartmentDashboard = () => {
                     formatCurrency={formatCurrency}
                     stats={stats}
                     recentOrders={workOrders.slice(0, 3)}
-                    projects={projects}
+                    projects={workOrders}
                     onNavigate={handleTabChange}
                 />;
             case 'projects':
-                return <AgencyProjects projects={workOrders} />;
+                return <AgencyProjects />;
             case 'executing-agencies':
                 return <ManageExecutingAgencies />;
             case 'assign-projects':
@@ -167,7 +174,7 @@ const DepartmentDashboard = () => {
             case 'help':
                 return <DepartmentHelp />;
             default:
-                return <DepartmentDashboardPanel formatCurrency={formatCurrency} stats={stats} recentOrders={workOrders.slice(0, 3)} projects={projects} onNavigate={handleTabChange} />;
+                return <DepartmentDashboardPanel formatCurrency={formatCurrency} stats={stats} recentOrders={workOrders.slice(0, 3)} projects={workOrders} onNavigate={handleTabChange} />;
         }
     };
 
