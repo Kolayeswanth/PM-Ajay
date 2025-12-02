@@ -350,7 +350,7 @@ exports.updateProposalStatus = async (req, res) => {
                     // Get district name
                     const { data: districtData, error: districtError } = await supabase
                         .from('districts')
-                        .select('name')
+                        .select('name, state_id')
                         .eq('id', proposalData.district_id)
                         .single();
 
