@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const THEME = {
     primary: '#7C3AED',
@@ -343,32 +344,140 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
 
     return (
         <div className="dashboard-panel">
-            {/* State KPIs */}
-            <div className="kpi-row">
-                <StatCard
-                    icon="💰"
-                    value={loading ? "Loading..." : (formatCurrency ? formatCurrency(dashboardStats.totalFundReceived) : `₹${dashboardStats.totalFundReceived}`)}
-                    label="Total Fund Received"
-                    color="var(--color-primary)"
-                />
-                <StatCard
-                    icon="📈"
-                    value={loading ? "Loading..." : `${dashboardStats.fundUtilizedPercentage}%`}
-                    label="Fund Utilized"
-                    color="var(--color-secondary)"
-                />
-                <StatCard
-                    icon="🏘️"
-                    value={loading ? "Loading..." : dashboardStats.districtsReporting}
-                    label="Districts Reporting"
-                    color="var(--color-accent)"
-                />
-                <StatCard
-                    icon="⏳"
-                    value={loading ? "Loading..." : dashboardStats.pendingApprovals}
-                    label="Pending Approvals"
-                    color="var(--color-warning)"
-                />
+            {/* State KPIs - Image 2 Style */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '1.5rem',
+                marginBottom: '2rem'
+            }}>
+                {/* Total Fund Received Card */}
+                <div style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '16px',
+                    padding: '2rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    cursor: 'default'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEF3C7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '1.25rem'
+                    }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
+                        {loading ? "..." : (formatCurrency ? formatCurrency(dashboardStats.totalFundReceived) : `₹${dashboardStats.totalFundReceived}`)}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
+                        Total Fund Received
+                    </div>
+                </div>
+
+                {/* Fund Utilized Card */}
+                <div style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '16px',
+                    padding: '2rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    cursor: 'default'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#D1FAE5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '1.25rem'
+                    }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                            <polyline points="16 7 22 7 22 13" />
+                        </svg>
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
+                        {loading ? "..." : `${dashboardStats.fundUtilizedPercentage}%`}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
+                        Fund Utilized
+                    </div>
+                </div>
+
+                {/* Districts Reporting Card */}
+                <div style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '16px',
+                    padding: '2rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    cursor: 'default'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#DBEAFE',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '1.25rem'
+                    }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
+                        {loading ? "..." : dashboardStats.districtsReporting}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
+                        Districts Reporting
+                    </div>
+                </div>
+
+                {/* Pending Approvals Card */}
+                <div style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '16px',
+                    padding: '2rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    cursor: 'default'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEF3C7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '1.25rem'
+                    }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
+                        {loading ? "..." : dashboardStats.pendingApprovals}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
+                        Pending Approvals
+                    </div>
+                </div>
             </div>
 
             <div className="dashboard-section">
@@ -386,29 +495,19 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                         <div className="card" style={{ padding: '0', minHeight: '700px', overflow: 'hidden', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', position: 'relative' }}>
                             {/* Back button positioned top right of map */}
                             {selectedDistrict && (
-                                <button
-                                    className="btn"
+                                <InteractiveButton
+                                    variant="secondary"
                                     onClick={handleBack}
                                     style={{
                                         position: 'absolute',
                                         top: '20px',
                                         right: '20px',
                                         zIndex: 1000,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        backgroundColor: 'white',
-                                        padding: '8px 16px',
-                                        borderRadius: '8px',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                        border: '1px solid #E5E7EB',
-                                        cursor: 'pointer',
-                                        fontWeight: '500',
-                                        color: '#374151'
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                                     }}
                                 >
                                     <span>←</span> Back to State View
-                                </button>
+                                </InteractiveButton>
                             )}
 
                             {selectedDistrict ? (
