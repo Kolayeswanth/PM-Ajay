@@ -3,6 +3,7 @@ import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
 import InteractiveButton from '../../../components/InteractiveButton';
+import { IndianRupee, TrendingUp, MapPin, Clock } from 'lucide-react';
 
 const THEME = {
     primary: '#7C3AED',
@@ -370,10 +371,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                         justifyContent: 'center',
                         marginBottom: '1.25rem'
                     }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="12" y1="1" x2="12" y2="23" />
-                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
+                        <IndianRupee size={24} strokeWidth={1.5} color="#F59E0B" />
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
                         {loading ? "..." : (formatCurrency ? formatCurrency(dashboardStats.totalFundReceived) : `₹${dashboardStats.totalFundReceived}`)}
@@ -402,10 +400,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                         justifyContent: 'center',
                         marginBottom: '1.25rem'
                     }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-                            <polyline points="16 7 22 7 22 13" />
-                        </svg>
+                        <TrendingUp size={24} strokeWidth={1.5} color="#059669" />
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
                         {loading ? "..." : `${dashboardStats.fundUtilizedPercentage}%`}
@@ -434,10 +429,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                         justifyContent: 'center',
                         marginBottom: '1.25rem'
                     }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                            <polyline points="9 22 9 12 15 12 15 22" />
-                        </svg>
+                        <MapPin size={24} strokeWidth={1.5} color="#2563EB" />
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
                         {loading ? "..." : dashboardStats.districtsReporting}
@@ -466,10 +458,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                         justifyContent: 'center',
                         marginBottom: '1.25rem'
                     }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
+                        <Clock size={24} strokeWidth={1.5} color="#F59E0B" />
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
                         {loading ? "..." : dashboardStats.pendingApprovals}
@@ -488,6 +477,90 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                             : `${displayStateName} District-wise Progress Map`
                         }
                     </h2>
+
+
+
+                    {/* Component Dropdown - Parallel to title */}
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            className="btn"
+                            onClick={() => setShowComponentDropdown(!showComponentDropdown)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                backgroundColor: 'white',
+                                border: '2px solid #7C3AED',
+                                borderRadius: '24px',
+                                color: '#7C3AED',
+                                fontWeight: '600',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 2px 4px rgba(124, 58, 237, 0.1)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F3F4F6';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'white';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                        >
+                            <span>{selectedComponent}</span>
+                            <span style={{ fontSize: '12px' }}>▼</span>
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showComponentDropdown && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '8px',
+                                backgroundColor: 'white',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                                zIndex: 1000,
+                                minWidth: '200px',
+                                overflow: 'hidden'
+                            }}>
+                                {['All Components', 'Adarsh Gram', 'GIA', 'Hostel'].map((component) => (
+                                    <div
+                                        key={component}
+                                        onClick={() => {
+                                            setSelectedComponent(component);
+                                            setShowComponentDropdown(false);
+                                        }}
+                                        style={{
+                                            padding: '12px 20px',
+                                            cursor: 'pointer',
+                                            transition: 'background-color 0.2s ease',
+                                            backgroundColor: selectedComponent === component ? '#F3F4F6' : 'white',
+                                            fontWeight: selectedComponent === component ? '600' : '500',
+                                            color: selectedComponent === component ? '#7C3AED' : '#374151',
+                                            fontSize: '14px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (selectedComponent !== component) {
+                                                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (selectedComponent !== component) {
+                                                e.currentTarget.style.backgroundColor = 'white';
+                                            }
+                                        }}
+                                    >
+                                        {component}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>
@@ -519,87 +592,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {/* Component Dropdown - Top Right */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-10px', position: 'relative' }}>
-                            <button
-                                className="btn"
-                                onClick={() => setShowComponentDropdown(!showComponentDropdown)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '10px 20px',
-                                    backgroundColor: 'white',
-                                    border: '2px solid #7C3AED',
-                                    borderRadius: '24px',
-                                    color: '#7C3AED',
-                                    fontWeight: '600',
-                                    fontSize: '14px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    boxShadow: '0 2px 4px rgba(124, 58, 237, 0.1)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#F3F4F6';
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'white';
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                }}
-                            >
-                                <span>{selectedComponent}</span>
-                                <span style={{ fontSize: '12px' }}>▼</span>
-                            </button>
 
-                            {/* Dropdown Menu */}
-                            {showComponentDropdown && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    right: 0,
-                                    marginTop: '8px',
-                                    backgroundColor: 'white',
-                                    border: '1px solid #E5E7EB',
-                                    borderRadius: '12px',
-                                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                                    zIndex: 1000,
-                                    minWidth: '200px',
-                                    overflow: 'hidden'
-                                }}>
-                                    {['All Components', 'Adarsh Gram', 'GIA', 'Hostel'].map((component) => (
-                                        <div
-                                            key={component}
-                                            onClick={() => {
-                                                setSelectedComponent(component);
-                                                setShowComponentDropdown(false);
-                                            }}
-                                            style={{
-                                                padding: '12px 20px',
-                                                cursor: 'pointer',
-                                                transition: 'background-color 0.2s ease',
-                                                backgroundColor: selectedComponent === component ? '#F3F4F6' : 'white',
-                                                fontWeight: selectedComponent === component ? '600' : '500',
-                                                color: selectedComponent === component ? '#7C3AED' : '#374151',
-                                                fontSize: '14px'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (selectedComponent !== component) {
-                                                    e.currentTarget.style.backgroundColor = '#F9FAFB';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (selectedComponent !== component) {
-                                                    e.currentTarget.style.backgroundColor = 'white';
-                                                }
-                                            }}
-                                        >
-                                            {component}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
 
                         <div className="card" style={{ padding: '20px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                             {stateData ? (

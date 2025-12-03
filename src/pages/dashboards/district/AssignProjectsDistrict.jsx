@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabaseClient';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const AssignProjectsDistrict = ({ districtId, stateId, stateName }) => {
     const { user } = useAuth();
@@ -231,92 +232,104 @@ const AssignProjectsDistrict = ({ districtId, stateId, stateName }) => {
 
     return (
         <div className="dashboard-panel" style={{ padding: 20 }}>
-            <h2 style={{ marginBottom: 20 }}>Assign Projects to Implementing Agency</h2>
+            <div style={{
+                maxWidth: '800px',
+                margin: '0 auto',
+                background: 'white',
+                padding: '32px',
+                borderRadius: '16px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                border: '1px solid #F3F4F6'
+            }}>
+                <h2 style={{ marginBottom: '24px', borderBottom: '1px solid #F3F4F6', paddingBottom: '16px', fontSize: '24px', fontWeight: '700', color: '#1F2937' }}>
+                    Assign Projects to Implementing Agency
+                </h2>
 
-            <div className="card" style={{ padding: 20, maxWidth: 600 }}>
-                {loading ? <p>Loading...</p> : (
-                    <>
-                        <div className="form-group" style={{ marginBottom: 15 }}>
-                            <label className="form-label">Select Project (Approved Proposals)</label>
-                            <select
-                                className="form-control"
-                                value={selectedProject}
-                                onChange={(e) => setSelectedProject(e.target.value)}
-                            >
-                                <option value="">-- Select Project --</option>
-                                {projects.length > 0 ? (
-                                    projects.map(p => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.project_name} (Est: ₹{p.estimated_cost})
+                <div>
+                    {loading ? <p>Loading...</p> : (
+                        <div>
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Select Project (Approved Proposals)</label>
+                                <select
+                                    className="form-control"
+                                    value={selectedProject}
+                                    onChange={(e) => setSelectedProject(e.target.value)}
+                                >
+                                    <option value="">-- Select Project --</option>
+                                    {projects.length > 0 ? (
+                                        projects.map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.project_name} (Est: ₹{p.estimated_cost})
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No approved projects found</option>
+                                    )}
+                                </select>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Project Fund (₹)</label>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    value={projectFund}
+                                    onChange={(e) => setProjectFund(e.target.value)}
+                                    placeholder="Enter Amount"
+                                />
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Select Implementing Agency</label>
+                                <select
+                                    className="form-control"
+                                    value={selectedAgency}
+                                    onChange={(e) => setSelectedAgency(e.target.value)}
+                                >
+                                    <option value="">-- Select Agency --</option>
+                                    {agencies.map(a => (
+                                        <option key={a.id} value={a.id}>
+                                            {a.agency_name} {a.agency_type ? `- ${a.agency_type}` : ''}
                                         </option>
-                                    ))
-                                ) : (
-                                    <option disabled>No approved projects found</option>
-                                )}
-                            </select>
-                        </div>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <div className="form-group" style={{ marginBottom: 15 }}>
-                            <label className="form-label">Project Fund (₹)</label>
-                            <input
-                                type="number"
-                                className="form-control"
-                                value={projectFund}
-                                onChange={(e) => setProjectFund(e.target.value)}
-                                placeholder="Enter Amount"
-                            />
-                        </div>
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Location / GP</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
+                                    placeholder="Enter Location or GP Name"
+                                />
+                            </div>
 
-                        <div className="form-group" style={{ marginBottom: 15 }}>
-                            <label className="form-label">Select Implementing Agency</label>
-                            <select
-                                className="form-control"
-                                value={selectedAgency}
-                                onChange={(e) => setSelectedAgency(e.target.value)}
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Deadline</label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    value={deadline}
+                                    onChange={(e) => setDeadline(e.target.value)}
+                                />
+                            </div>
+
+                            <InteractiveButton
+                                variant="primary"
+                                onClick={handleAssign}
+                                disabled={assigning}
                             >
-                                <option value="">-- Select Agency --</option>
-                                {agencies.map(a => (
-                                    <option key={a.id} value={a.id}>
-                                        {a.agency_name} {a.agency_type ? `- ${a.agency_type}` : ''}
-                                    </option>
-                                ))}
-                            </select>
+                                {assigning ? 'Assigning...' : 'Assign Project'}
+                            </InteractiveButton>
                         </div>
-
-                        <div className="form-group" style={{ marginBottom: 15 }}>
-                            <label className="form-label">Location / GP</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
-                                placeholder="Enter Location or GP Name"
-                            />
-                        </div>
-
-                        <div className="form-group" style={{ marginBottom: 15 }}>
-                            <label className="form-label">Deadline</label>
-                            <input
-                                type="date"
-                                className="form-control"
-                                value={deadline}
-                                onChange={(e) => setDeadline(e.target.value)}
-                            />
-                        </div>
-
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleAssign}
-                            disabled={assigning}
-                        >
-                            {assigning ? 'Assigning...' : 'Assign Project'}
-                        </button>
-                    </>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* Assigned Projects Table */}
-            <div className="dashboard-section" style={{ marginTop: 40 }}>
+            <div className="dashboard-section" style={{ maxWidth: '1200px', margin: '40px auto 0' }}>
                 <h3 style={{ marginBottom: 20 }}>Assigned Projects History</h3>
                 <div className="table-wrapper">
                     <table className="table">
