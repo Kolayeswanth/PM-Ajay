@@ -46,34 +46,38 @@ const AssignProjectsDistrict = ({ districtId, stateId, stateName }) => {
             if (proposalsError) throw proposalsError;
             if (proposalsData) setProjects(proposalsData);
 
-            // 2. Fetch Implementing Agencies
-            if (districtId) {
-                let agencyQuery = supabase
+            // 2. Fetch Implementing Agencies for this district's state ONLY
+            // Use state_name for filtering since state_id is not reliably populated
+            if (stateName) {
+                console.log('🔍 Fetching agencies for state:', stateName);
+
+                // Primary: Filter by state_name (case-insensitive)
+                let { data: agencyData, error: agencyError } = await supabase
                     .from('implementing_agencies')
-                    .select('id, agency_name, district_id, state_id, agency_type');
-
-                console.log('Fetching agencies for districtId:', districtId, 'stateId:', stateId);
-
-                // Filter by district OR state
-                // Since state_id is often null in implementing_agencies, we filter by name if stateName is available
-                if (stateName) {
-                    // Filter by name (e.g., "Karnataka")
-                    agencyQuery = agencyQuery.ilike('agency_name', `%${stateName}%`);
-                } else if (stateId) {
-                    // Fallback to ID if name not available (though less reliable with current data)
-                    agencyQuery = agencyQuery.or(`district_id.eq.${districtId},state_id.eq.${stateId}`);
-                } else {
-                    agencyQuery = agencyQuery.eq('district_id', districtId);
-                }
-
-                const { data: agencyData, error: agencyError } = await agencyQuery;
+                    .select('id, agency_name, district_id, state_id, agency_type, district_name, state_name')
+                    .ilike('state_name', stateName)
+                    .order('agency_name');
 
                 if (agencyError) {
                     console.error('Error fetching agencies:', agencyError);
+                    setAgencies([]);
                 } else {
-                    console.log('Fetched Agencies:', agencyData);
-                    setAgencies(agencyData);
+                    console.log(`✅ Fetched ${agencyData?.length || 0} agencies for state "${stateName}":`, agencyData);
+                    setAgencies(agencyData || []);
                 }
+            } else if (districtId) {
+                // Fallback: if stateName not available, try district_id
+                const { data: agencyData, error: agencyError } = await supabase
+                    .from('implementing_agencies')
+                    .select('id, agency_name, district_id, state_id, agency_type, district_name, state_name')
+                    .eq('district_id', districtId)
+                    .order('agency_name');
+
+                if (agencyError) {
+                    console.error('Error fetching agencies:', agencyError);
+                }
+                console.log(`Fetched ${agencyData?.length || 0} agencies for districtId ${districtId}:`, agencyData);
+                setAgencies(agencyData || []);
             } else {
                 console.log('District ID not yet available, skipping agency fetch.');
                 setAgencies([]);
@@ -277,7 +281,10 @@ const AssignProjectsDistrict = ({ districtId, stateId, stateName }) => {
                                 <option value="">-- Select Agency --</option>
                                 {agencies.map(a => (
                                     <option key={a.id} value={a.id}>
-                                        {a.agency_name} {a.agency_type ? `- ${a.agency_type}` : ''}
+                                        {a.agency_name}
+                                        {a.district_name && ` - ${a.district_name}`}
+                                        {a.state_name && !a.district_name && ` - ${a.state_name}`}
+                                        {a.agency_type && ` (${a.agency_type})`}
                                     </option>
                                 ))}
                             </select>

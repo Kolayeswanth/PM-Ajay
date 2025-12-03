@@ -13,6 +13,7 @@ import StateReports from './state/StateReports';
 import StateNotifications from './state/StateNotifications';
 import StateHelp from './state/StateHelp';
 import FundsReceivedFromMinistry from './state/FundsReceivedFromMinistry';
+import MonitorProgressState from './state/MonitorProgressState';
 import {
     LayoutDashboard,
     Wallet,
@@ -23,7 +24,8 @@ import {
     FileBarChart,
     Bell,
     HelpCircle,
-    LogOut
+    LogOut,
+    Activity
 } from 'lucide-react';
 
 const StateDashboard = () => {
@@ -92,6 +94,7 @@ const StateDashboard = () => {
 
     const sidebarMenu = [
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <Activity size={20} />, label: 'Monitor Progress', action: () => setActiveTab('monitor'), active: activeTab === 'monitor' },
         { icon: <Wallet size={20} />, label: 'Funds Received from Ministry', action: () => setActiveTab('received'), active: activeTab === 'received' },
         { icon: <Users size={20} />, label: 'Manage District Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
         { icon: <Send size={20} />, label: 'Fund Release to Districts', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
@@ -111,6 +114,8 @@ const StateDashboard = () => {
         switch (activeTab) {
             case 'dashboard':
                 return <StateDashboardPanel formatCurrency={formatCurrency} stateName={stateName} />;
+            case 'monitor':
+                return <MonitorProgressState stateName={stateName} stateId={stateId} />;
 
             case 'received':
                 return <FundsReceivedFromMinistry formatCurrency={formatCurrency} />;
@@ -136,6 +141,7 @@ const StateDashboard = () => {
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'monitor': 'Monitor Progress',
             'received': 'Funds Received from Ministry',
             'admins': 'Manage District Admins',
             'funds': 'Fund Release',
