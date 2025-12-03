@@ -695,49 +695,57 @@ exports.getDistrictStats = async (req, res) => {
             return res.status(400).json({ success: false, error: 'District ID is required' });
         }
 
-        // 1. Get total released to this district
+        console.log('📊 Fetching comprehensive stats for district ID:', districtId);
+
+        // 1. Get Gram Panchayats count for this district
+        const { data: gpData, error: gpError } = await supabase
+            .from('gram_panchayats')
+            .select('id', { count: 'exact', head: true })
+            .eq('district_id', districtId);
+
+        const gramPanchayats = gpError ? 0 : (gpData?.length || 0);
+
+        // 2. Get total projects (district_proposals) for this district
+        const { data: proposalsData, error: proposalsError, count: proposalsCount } = await supabase
+            .from('district_proposals')
+            .select('id, status, estimated_cost', { count: 'exact' })
+            .eq('district_id', districtId);
+
+        const totalProjects = proposalsError ? 0 : (proposalsCount || 0);
+
+        // 3. Get completed projects count
+        const completedProjects = proposalsData
+            ? proposalsData.filter(p => p.status === 'COMPLETED').length
+            : 0;
+
+        // 4. Get total fund allocated (from fund_releases)
         const { data: releases, error: releasesError } = await supabase
             .from('fund_releases')
             .select('amount_cr, release_date')
             .eq('district_id', districtId);
 
-        if (releasesError) {
-            return res.status(500).json({ success: false, error: releasesError.message });
-        }
-
-        const totalReleased = releases.reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0);
+        const fundAllocated = releasesError ? 0 : releases.reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0);
 
         // Find last release date
-        const lastRelease = releases.length > 0
+        const lastRelease = releases && releases.length > 0
             ? releases.reduce((latest, item) => new Date(item.release_date) > new Date(latest) ? item.release_date : latest, releases[0].release_date)
             : null;
 
-        // 2. Get utilization (Placeholder - assuming we might have this table later)
-        // For now, we'll check if there are any proposals with 'COMPLETED' status and sum their cost?
-        // Or just return 0.
-        // Let's check district_proposals table for approved projects as "Committed/Utilized"
-        const { data: proposals, error: proposalsError } = await supabase
-            .from('district_proposals')
-            .select('estimated_cost, status')
-            .eq('district_id', districtId)
-            .in('status', ['APPROVED', 'COMPLETED', 'IN_PROGRESS']);
-
-        let totalUtilized = 0;
-        if (!proposalsError && proposals) {
-            // estimated_cost is usually in Rupees or Crores? 
-            // In proposalController, it's just a number. Let's assume it matches the unit used there.
-            // But usually proposals are in Rupees. Fund release is in Cr.
-            // Let's assume estimated_cost is in Rupees for now, based on typical inputs.
-            // We need to be careful. Let's just return 0 for now to be safe, or label it clearly.
-            // Actually, let's just return totalReleased for now.
-        }
+        console.log('✅ District stats calculated:', {
+            gramPanchayats,
+            totalProjects,
+            fundAllocated,
+            completedProjects
+        });
 
         res.json({
             success: true,
             data: {
-                totalReleased: totalReleased,
-                lastReleaseDate: lastRelease,
-                // availableBalance: ??? (We don't know district's spending)
+                gramPanchayats: gramPanchayats,
+                totalProjects: totalProjects,
+                fundAllocated: fundAllocated,
+                completedProjects: completedProjects,
+                lastReleaseDate: lastRelease
             }
         });
 

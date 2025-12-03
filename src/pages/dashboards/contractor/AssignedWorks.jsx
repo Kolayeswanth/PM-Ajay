@@ -11,9 +11,9 @@ const AssignedWorks = () => {
     const [filterStatus, setFilterStatus] = useState('');
     const [toast, setToast] = useState(null);
     const [error, setError] = useState(null);
-    const [executingAgencyId, setExecutingAgencyId] = useState(null);
+    const [executingAgencyIds, setExecutingAgencyIds] = useState([]);
 
-    // 1. Identify Executing Agency ID
+    // 1. Identify Executing Agency IDs (all agencies with same name)
     useEffect(() => {
         const identifyAgency = async () => {
             if (!user?.email || user?.role !== 'executing_agency') return;
@@ -26,30 +26,35 @@ const AssignedWorks = () => {
 
                 if (agenciesError) throw agenciesError;
 
-                let matchedId = null;
+                let matchedAgency = null;
 
                 // Try to match by email
-                const matchedAgency = allAgencies.find(agency =>
+                matchedAgency = allAgencies.find(agency =>
                     agency.email && agency.email.toLowerCase() === user.email.toLowerCase()
                 );
 
-                if (matchedAgency) {
-                    matchedId = matchedAgency.id;
-                } else {
+                if (!matchedAgency) {
                     // Try matching by name from user metadata
                     const userName = user?.full_name || user?.user_metadata?.full_name || '';
                     if (userName) {
-                        const nameMatch = allAgencies.find(agency => {
+                        matchedAgency = allAgencies.find(agency => {
                             const agencyName = agency.agency_name || agency.name || '';
                             return agencyName.toLowerCase().includes(userName.toLowerCase()) ||
                                 userName.toLowerCase().includes(agencyName.toLowerCase());
                         });
-                        if (nameMatch) matchedId = nameMatch.id;
                     }
                 }
 
-                if (matchedId) {
-                    setExecutingAgencyId(matchedId);
+                if (matchedAgency) {
+                    // Find all agencies with the same name
+                    const agencyName = matchedAgency.agency_name;
+                    const matchingAgencies = allAgencies.filter(agency =>
+                        agency.agency_name === agencyName
+                    );
+                    const matchingIds = matchingAgencies.map(a => a.id);
+
+                    console.log(`Found ${matchingAgencies.length} agencies with name "${agencyName}":`, matchingIds);
+                    setExecutingAgencyIds(matchingIds);
                 } else {
                     setError('Could not identify your agency. Please contact support.');
                     setLoading(false);
@@ -66,7 +71,7 @@ const AssignedWorks = () => {
 
     // 2. Fetch Data & Subscribe to Real-time Updates
     useEffect(() => {
-        if (!executingAgencyId) return;
+        if (!executingAgencyIds || executingAgencyIds.length === 0) return;
 
         let subscription;
 
@@ -74,9 +79,10 @@ const AssignedWorks = () => {
             setLoading(true);
             try {
                 // Initial Fetch
-                await fetchWorks(executingAgencyId);
+                await fetchWorks(executingAgencyIds);
 
-                // Real-time Subscription
+                // Real-time Subscription - listen to all work_orders changes
+                // We'll filter client-side since Supabase doesn't support OR filters in subscriptions
                 subscription = supabase
                     .channel('public:work_orders')
                     .on(
@@ -84,12 +90,19 @@ const AssignedWorks = () => {
                         {
                             event: '*',
                             schema: 'public',
-                            table: 'work_orders',
-                            filter: `executing_agency_id=eq.${executingAgencyId}`
+                            table: 'work_orders'
                         },
                         (payload) => {
                             console.log('Real-time update received:', payload);
-                            handleRealtimeUpdate(payload);
+                            // Check if the change affects our agencies
+                            const newRecord = payload.new;
+                            const oldRecord = payload.old;
+                            const affectsUs = executingAgencyIds.includes(newRecord?.executing_agency_id) ||
+                                executingAgencyIds.includes(oldRecord?.executing_agency_id);
+
+                            if (affectsUs) {
+                                handleRealtimeUpdate(payload);
+                            }
                         }
                     )
                     .subscribe();
@@ -107,14 +120,14 @@ const AssignedWorks = () => {
         return () => {
             if (subscription) supabase.removeChannel(subscription);
         };
-    }, [executingAgencyId]);
+    }, [executingAgencyIds]);
 
-    const fetchWorks = async (agencyId) => {
+    const fetchWorks = async (agencyIds) => {
         try {
             const { data: workOrdersData, error: workOrdersError } = await supabase
                 .from('work_orders')
                 .select('id, title, amount, location, deadline, status, created_at, implementing_agency_id, proposal_id')
-                .eq('executing_agency_id', agencyId)
+                .in('executing_agency_id', agencyIds)
                 .order('created_at', { ascending: false });
 
             if (workOrdersError) throw workOrdersError;
@@ -155,7 +168,7 @@ const AssignedWorks = () => {
             // Fetch the full details including IA name for the new record
             // For simplicity, we can just re-fetch all works or fetch this single one and append
             // Re-fetching is safer to ensure all joins (like IA name) are correct
-            await fetchWorks(executingAgencyId);
+            await fetchWorks(executingAgencyIds);
             showToast('New project assigned!');
         } else if (eventType === 'UPDATE') {
             setWorks(prevWorks => prevWorks.map(work =>

@@ -54,13 +54,22 @@ const ContractorDashboard = () => {
                     return;
                 }
 
-                console.log('✅ Fetching work orders for agency:', matchedAgency.agency_name, matchedAgency.id);
+                console.log('✅ Matched agency:', matchedAgency.agency_name, matchedAgency.id);
 
-                // 2. Fetch work orders assigned to this executing agency
+                // Find all agencies with the same name
+                const agencyName = matchedAgency.agency_name;
+                const matchingAgencies = allAgencies.filter(agency =>
+                    agency.agency_name === agencyName
+                );
+                const matchingIds = matchingAgencies.map(a => a.id);
+
+                console.log(`✅ Found ${matchingAgencies.length} agencies with name "${agencyName}":`, matchingIds);
+
+                // 2. Fetch work orders assigned to ANY of these executing agencies
                 const { data: workOrdersData, error: workOrdersError } = await supabase
                     .from('work_orders')
                     .select('*')
-                    .eq('executing_agency_id', matchedAgency.id)
+                    .in('executing_agency_id', matchingIds)
                     .order('created_at', { ascending: false });
 
                 if (workOrdersError) {
@@ -146,9 +155,13 @@ const ContractorDashboard = () => {
     // Calculate Stats
     const stats = {
         totalWorks: works.length,
-        ongoing: works.filter(w => w.status === 'In Progress').length,
+        ongoing: works.filter(w => w.status === 'In Progress' || w.status === 'Work in Progress').length,
         completed: works.filter(w => w.status === 'Completed').length,
-        pendingPayments: 1000000 // Mock value
+        pendingPayments: works.reduce((total, work) => {
+            // Calculate pending payment as funds remaining for each work
+            const remaining = work.fundsRemaining || 0;
+            return total + remaining;
+        }, 0)
     };
 
     const sidebarMenu = [

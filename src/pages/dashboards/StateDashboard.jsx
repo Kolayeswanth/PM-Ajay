@@ -8,7 +8,7 @@ import StateDashboardPanel from './state/StateDashboardPanel';
 import ManageDistrictAdmins from './state/ManageDistrictAdmins';
 import FundRelease from './state/FundRelease';
 import ApproveProposals from './state/ApproveProposals';
-import UploadUC from './state/UploadUC';
+import VerifyUCs from './state/VerifyUCs';
 import StateReports from './state/StateReports';
 import StateNotifications from './state/StateNotifications';
 import StateHelp from './state/StateHelp';
@@ -96,7 +96,7 @@ const StateDashboard = () => {
         { icon: <Users size={20} />, label: 'Manage District Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
         { icon: <Send size={20} />, label: 'Fund Release to Districts', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
         { icon: <FileCheck size={20} />, label: 'Approve District Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
-        { icon: <Upload size={20} />, label: 'Upload Utilisation Certificates', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
+        { icon: <FileCheck size={20} />, label: 'Verify Utilisation Certificates', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
         { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
         { icon: <Bell size={20} />, label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
         { icon: <HelpCircle size={20} />, label: 'Help', action: () => setActiveTab('help'), active: activeTab === 'help' },
@@ -121,7 +121,7 @@ const StateDashboard = () => {
             case 'proposals':
                 return <ApproveProposals />;
             case 'ucs':
-                return <UploadUC />;
+                return <VerifyUCs />;
             case 'reports':
                 return <StateReports />;
             case 'notifications':
@@ -140,7 +140,7 @@ const StateDashboard = () => {
             'admins': 'Manage District Admins',
             'funds': 'Fund Release',
             'proposals': 'Approve Proposals',
-            'ucs': 'Upload UCs',
+            'ucs': 'Verify UCs',
             'reports': 'Reports',
             'notifications': 'Notifications',
             'help': 'Help'

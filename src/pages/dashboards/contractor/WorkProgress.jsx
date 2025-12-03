@@ -13,6 +13,10 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
     });
     const [toast, setToast] = useState(null);
     const [errors, setErrors] = useState({});
+    const [showCameraModal, setShowCameraModal] = useState(false);
+    const [stream, setStream] = useState(null);
+    const videoRef = React.useRef(null);
+    const canvasRef = React.useRef(null);
 
     const showToast = (message) => {
         setToast(message);
@@ -141,6 +145,63 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
         }
     };
 
+    const handleOpenCamera = async () => {
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' } // Use rear camera on mobile
+            });
+            setStream(mediaStream);
+            setShowCameraModal(true);
+
+            // Wait for modal to render, then attach stream to video
+            setTimeout(() => {
+                if (videoRef.current) {
+                    videoRef.current.srcObject = mediaStream;
+                }
+            }, 100);
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            showToast('Unable to access camera. Please check permissions.');
+        }
+    };
+
+    const handleCapturePhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+
+            // Set canvas dimensions to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw current video frame to canvas
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas to blob and then to File
+            canvas.toBlob((blob) => {
+                const timestamp = Date.now();
+                const file = new File([blob], `camera-photo-${timestamp}.jpg`, { type: 'image/jpeg' });
+                setProgressData({ ...progressData, photos: [...progressData.photos, file] });
+                showToast('Photo captured successfully!');
+                handleCloseCamera();
+            }, 'image/jpeg', 0.9);
+        }
+    };
+
+    const handleCloseCamera = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
+        }
+        setShowCameraModal(false);
+    };
+
+    const handleRemovePhoto = (index) => {
+        const newPhotos = progressData.photos.filter((_, i) => i !== index);
+        setProgressData({ ...progressData, photos: newPhotos });
+    };
+
     return (
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div style={{ marginBottom: 20 }}>
@@ -244,23 +305,66 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
 
                     <div className="form-group">
                         <label className="form-label">Upload Site Photos</label>
-                        <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="form-control"
-                            onChange={handlePhotoUpload}
-                            style={{ padding: '8px' }}
-                        />
-                        <div className="form-helper">Upload current photos of the construction site.</div>
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                className="form-control"
+                                onChange={handlePhotoUpload}
+                                style={{ padding: '8px', flex: 1 }}
+                            />
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={handleOpenCamera}
+                                style={{ whiteSpace: 'nowrap' }}
+                            >
+                                📷 Take Photo
+                            </button>
+                        </div>
+                        <div className="form-helper">Upload photos or capture from camera.</div>
                         {progressData.photos.length > 0 && (
-                            <div style={{ marginTop: 10, fontSize: '14px', color: '#2c3e50' }}>
-                                <strong>{progressData.photos.length} photo(s) selected:</strong>
-                                <ul style={{ margin: '5px 0', paddingLeft: '20px', color: '#555' }}>
+                            <div style={{ marginTop: 15 }}>
+                                <strong style={{ fontSize: '14px', color: '#2c3e50' }}>
+                                    {progressData.photos.length} photo(s) selected:
+                                </strong>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px', marginTop: '10px' }}>
                                     {progressData.photos.map((file, index) => (
-                                        <li key={index}>{file.name}</li>
+                                        <div key={index} style={{ position: 'relative', border: '1px solid #ddd', borderRadius: '6px', overflow: 'hidden' }}>
+                                            <img
+                                                src={URL.createObjectURL(file)}
+                                                alt={`Preview ${index + 1}`}
+                                                style={{ width: '100%', height: '120px', objectFit: 'cover' }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemovePhoto(index)}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '5px',
+                                                    right: '5px',
+                                                    background: 'rgba(220, 38, 38, 0.9)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '50%',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '14px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                            <div style={{ padding: '5px', fontSize: '11px', color: '#666', textAlign: 'center', background: '#f9f9f9' }}>
+                                                {file.name.length > 15 ? file.name.substring(0, 12) + '...' : file.name}
+                                            </div>
+                                        </div>
                                     ))}
-                                </ul>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -368,6 +472,67 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                 </div>
 
             </div>
+
+            {/* Camera Modal */}
+            {showCameraModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.9)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '20px',
+                        maxWidth: '90%',
+                        maxHeight: '90%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '15px'
+                    }}>
+                        <h3 style={{ margin: 0, textAlign: 'center' }}>Take Photo</h3>
+
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            style={{
+                                width: '100%',
+                                maxWidth: '600px',
+                                borderRadius: '8px',
+                                background: '#000'
+                            }}
+                        />
+
+                        <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleCapturePhoto}
+                            >
+                                📸 Capture
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={handleCloseCamera}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
 
     );

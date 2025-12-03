@@ -1,111 +1,67 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Get district statistics
-exports.getDistrictStats = async (req, res) => {
+// Get Ministry Dashboard Statistics
+exports.getMinistryStats = async (req, res) => {
     try {
-        const { districtId } = req.params;
-
-        if (!districtId) {
-            return res.status(400).json({ success: false, error: 'District ID is required' });
-        }
-
-        // 1. Get total proposals (projects) for this district
-        const { data: proposals, error: proposalsError } = await supabase
-            .from('district_proposals')
-            .select('*')
-            .eq('district_id', districtId);
-
-        if (proposalsError) {
-            console.error('Error fetching proposals:', proposalsError);
-        }
-
-        const totalProjects = proposals ? proposals.length : 0;
-        const completedProjects = proposals ? proposals.filter(p => p.status === 'APPROVED_BY_MINISTRY').length : 0;
-
-        // 2. Get total funds allocated to this district
-        const { data: fundReleases, error: fundsError } = await supabase
-            .from('fund_releases')
-            .select('amount_cr')
-            .eq('district_id', districtId);
-
-        if (fundsError) {
-            console.error('Error fetching funds:', fundsError);
-        }
-
-        const totalFundsAllocated = fundReleases
-            ? fundReleases.reduce((sum, item) => sum + (item.amount_cr || 0), 0)
-            : 0;
-
-        // 3. Get GP count - for now, we'll use a placeholder
-        // You can add a gp_assignments table later if needed
-        const gramPanchayats = 42; // Placeholder
-
-        res.json({
-            success: true,
-            data: {
-                gramPanchayats,
-                totalProjects,
-                fundAllocated: totalFundsAllocated,
-                completedProjects
-            }
-        });
-
-    } catch (error) {
-        console.error('Error fetching district stats:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-// Placeholder for Ministry Dashboard Stats
-exports.getMinistryDashboardStats = async (req, res) => {
-    try {
-        // 1. Get Total States
-        const { count: totalStates, error: statesError } = await supabase
+        // Get total states
+        const { data: states, error: statesError } = await supabase
             .from('states')
-            .select('*', { count: 'exact', head: true });
+            .select('id');
 
         if (statesError) throw statesError;
 
-        // 2. Get Total Districts
-        const { count: totalDistricts, error: districtsError } = await supabase
+        // Get total districts
+        const { data: districts, error: districtsError } = await supabase
             .from('districts')
-            .select('*', { count: 'exact', head: true });
+            .select('id');
 
         if (districtsError) throw districtsError;
 
-        // 3. Get Total Funds Allocated (Ministry -> States)
-        const { data: allocations, error: fundsError } = await supabase
-            .from('fund_allocations')
-            .select('amount_allocated');
-
-        if (fundsError) throw fundsError;
-
-        const totalFundsAllocated = allocations.reduce((sum, item) => sum + (parseFloat(item.amount_allocated) || 0), 0);
-
-        // 4. Get Project Statistics
-        const { data: projects, error: projectsError } = await supabase
+        // Get all proposals
+        const { data: proposals, error: proposalsError } = await supabase
             .from('district_proposals')
             .select('status');
 
-        if (projectsError) throw projectsError;
+        if (proposalsError) throw proposalsError;
 
-        const totalProjects = projects.length;
-        const projectsCompleted = projects.filter(p => p.status === 'COMPLETED').length;
-        const projectsOngoing = projects.filter(p => ['ONGOING', 'IN_PROGRESS'].includes(p.status)).length;
-        const projectsApproved = projects.filter(p => ['APPROVED', 'APPROVED_BY_MINISTRY'].includes(p.status)).length;
-        const projectsProposed = projects.filter(p => ['SUBMITTED', 'PENDING'].includes(p.status)).length;
+        // Get total fund allocations
+        const { data: fundAllocations, error: fundError } = await supabase
+            .from('fund_allocations')
+            .select('amount_allocated');
+
+        if (fundError) throw fundError;
+
+        // Calculate statistics
+        const totalFundAllocated = fundAllocations.reduce((sum, item) => sum + (item.amount_allocated || 0), 0);
+
+        // Count projects by status
+        const projectsCompleted = proposals.filter(p =>
+            p.status === 'APPROVED_BY_MINISTRY' || p.status === 'COMPLETED'
+        ).length;
+
+        const projectsOngoing = proposals.filter(p =>
+            p.status === 'APPROVED_BY_STATE' || p.status === 'IN_PROGRESS'
+        ).length;
+
+        const projectsApproved = proposals.filter(p =>
+            p.status === 'APPROVED_BY_STATE' || p.status === 'APPROVED_BY_MINISTRY'
+        ).length;
+
+        const projectsProposed = proposals.filter(p =>
+            p.status === 'SUBMITTED' || p.status === 'PENDING'
+        ).length;
 
         res.json({
             success: true,
             data: {
-                totalStates: totalStates || 0,
-                totalDistricts: totalDistricts || 0,
-                totalFundAllocated: totalFundsAllocated,
-                totalProjects: totalProjects || 0,
+                totalStates: states.length,
+                totalDistricts: districts.length,
+                totalProjects: proposals.length,
+                totalFundAllocated: totalFundAllocated,
                 projectsCompleted,
                 projectsOngoing,
                 projectsApproved,
@@ -119,14 +75,16 @@ exports.getMinistryDashboardStats = async (req, res) => {
     }
 };
 
-// State Dashboard Stats
-exports.getStateDashboardStats = async (req, res) => {
+// Get State Dashboard Statistics
+exports.getStateStats = async (req, res) => {
     try {
         const { stateName } = req.query;
 
         if (!stateName) {
             return res.status(400).json({ success: false, error: 'State name is required' });
         }
+
+        console.log('📊 Fetching state stats for:', stateName);
 
         // 1. Get State ID
         const { data: stateData, error: stateError } = await supabase
@@ -136,91 +94,128 @@ exports.getStateDashboardStats = async (req, res) => {
             .single();
 
         if (stateError || !stateData) {
+            console.error('State not found:', stateName);
             return res.status(404).json({ success: false, error: 'State not found' });
         }
 
-        // 2. Get total fund received by state from ministry
-        const { data: stateFundReleases, error: stateReleaseError } = await supabase
-            .from('state_fund_releases')
-            .select('amount_rupees, states!inner(name)')
-            .eq('states.name', stateName);
+        const stateId = stateData.id;
 
-        const totalFundReceived = stateFundReleases
-            ? stateFundReleases.reduce((sum, item) => sum + (item.amount_rupees || 0), 0)
-            : 0;
-
-        // 3. Get districts in state
+        // 2. Get all districts for this state
         const { data: districts, error: districtsError } = await supabase
             .from('districts')
-            .select('id, name')
-            .eq('state_id', stateData.id);
+            .select('*')
+            .eq('state_id', stateId);
 
-        const totalDistricts = districts ? districts.length : 0;
-        const districtIds = districts ? districts.map(d => d.id) : [];
+        if (districtsError) {
+            console.error('Error fetching districts:', districtsError);
+            return res.status(500).json({ success: false, error: districtsError.message });
+        }
 
-        // 4. Get total fund released to districts
-        const { data: fundReleases, error: releaseError } = await supabase
+        const totalDistricts = districts.length;
+        const districtIds = districts.map(d => d.id);
+
+        // 3. Get total funds released to this state from Ministry
+        const { data: stateFundReleases, error: stateFundError } = await supabase
+            .from('state_fund_releases')
+            .select('amount_rupees')
+            .eq('state_id', stateId);
+
+        // Calculate total funds received (from Ministry to State)
+        const totalFundReceived = stateFundReleases
+            ? stateFundReleases.reduce((sum, item) => sum + (parseInt(item.amount_rupees) || 0), 0)
+            : 0;
+
+        // 4. Get fund releases to districts (State to Districts)
+        const { data: districtFundReleases, error: districtFundError } = await supabase
             .from('fund_releases')
-            .select('amount_cr, amount_rupees, district_id')
+            .select('*, districts(name)')
             .in('district_id', districtIds);
 
-        const totalFundReleased = fundReleases
-            ? fundReleases.reduce((sum, item) => sum + (item.amount_rupees || 0), 0)
+        // Calculate total funds released to districts by this state
+        const totalFundReleased = districtFundReleases
+            ? districtFundReleases.reduce((sum, item) => sum + (parseInt(item.amount_rupees) || 0), 0)
             : 0;
 
+        // Calculate fund utilized percentage
         const fundUtilizedPercentage = totalFundReceived > 0
-            ? ((totalFundReleased / totalFundReceived) * 100).toFixed(1)
+            ? Math.round((totalFundReleased / totalFundReceived) * 100)
             : 0;
 
-        // 5. Count districts that have received funds
-        const districtsReporting = fundReleases
-            ? new Set(fundReleases.map(r => r.district_id)).size
+        // 5. Count districts that have received funds (districts reporting)
+        const districtsReporting = districtFundReleases
+            ? new Set(districtFundReleases.map(d => d.district_id)).size
             : 0;
 
-        // 6. Get pending proposals (SUBMITTED status)
+        // 6. Get proposals from districts in this state
         const { data: proposals, error: proposalsError } = await supabase
             .from('district_proposals')
-            .select('status, district_id')
-            .in('district_id', districtIds)
-            .eq('status', 'SUBMITTED');
+            .select('*')
+            .in('district_id', districtIds);
 
-        const pendingApprovals = proposals ? proposals.length : 0;
+        // Count pending approvals (submitted by district, pending state approval)
+        const pendingApprovals = proposals
+            ? proposals.filter(p => p.status === 'SUBMITTED' || p.status === 'PENDING_REVIEW').length
+            : 0;
 
-        // 7. Build district-wise fund status
+        // 7. Build district fund status table
         const districtFundStatus = [];
-        if (districts && fundReleases) {
-            const districtMap = {};
-            fundReleases.forEach(release => {
-                if (!districtMap[release.district_id]) {
-                    districtMap[release.district_id] = 0;
-                }
-                districtMap[release.district_id] += (release.amount_rupees || 0);
-            });
 
-            districts.forEach(district => {
-                const fundReleased = districtMap[district.id] || 0;
-                districtFundStatus.push({
-                    districtName: district.name,
-                    fundReleased,
-                    fundUtilized: 0, // Placeholder
-                    utilizationPercent: 0,
-                    projectStatus: 'On Track',
-                    ucUploaded: false
-                });
+        for (const district of districts) {
+            // Get fund releases for this district
+            const districtReleases = districtFundReleases
+                ? districtFundReleases.filter(r => r.district_id === district.id)
+                : [];
+
+            const fundReleased = districtReleases.reduce((sum, r) => sum + (parseInt(r.amount_rupees) || 0), 0);
+
+            // Get proposals for this district
+            const districtProposals = proposals ? proposals.filter(p => p.district_id === district.id) : [];
+            const approvedProposals = districtProposals.filter(p =>
+                p.status === 'APPROVED_BY_MINISTRY' || p.status === 'APPROVED_BY_STATE'
+            );
+
+            // Calculate fund utilized (sum of approved proposal costs)
+            const fundUtilized = approvedProposals.reduce((sum, p) => {
+                const cost = parseFloat(p.estimated_cost) || 0;
+                return sum + (cost * 100000); // Convert Lakhs to Rupees
+            }, 0);
+
+            const utilizationPercent = fundReleased > 0
+                ? Math.round((fundUtilized / fundReleased) * 100)
+                : 0;
+
+            // Check if UC uploaded (placeholder - you may have a uc_uploads table)
+            const ucUploaded = false; // TODO: Check UC uploads table
+
+            districtFundStatus.push({
+                districtName: district.name,
+                fundReleased: fundReleased,
+                fundUtilized: fundUtilized,
+                utilizationPercent: utilizationPercent,
+                projectStatus: utilizationPercent > 50 ? 'On Track' : 'Needs Attention',
+                ucUploaded: ucUploaded
             });
         }
+
+        console.log('✅ State stats calculated:', {
+            totalFundReceived,
+            fundUtilizedPercentage,
+            districtsReporting,
+            pendingApprovals
+        });
 
         res.json({
             success: true,
             data: {
-                totalFundReceived,
-                fundUtilizedPercentage: parseFloat(fundUtilizedPercentage),
-                districtsReporting,
-                totalDistricts,
-                pendingApprovals,
-                districtFundStatus
+                totalFundReceived: totalFundReceived,
+                fundUtilizedPercentage: fundUtilizedPercentage,
+                districtsReporting: districtsReporting,
+                totalDistricts: totalDistricts,
+                pendingApprovals: pendingApprovals,
+                districtFundStatus: districtFundStatus
             }
         });
+
     } catch (error) {
         console.error('Error fetching state stats:', error);
         res.status(500).json({ success: false, error: error.message });

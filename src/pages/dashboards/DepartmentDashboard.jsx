@@ -116,11 +116,11 @@ const DepartmentDashboard = () => {
     // Calculate Stats for Dashboard Panel
     const stats = {
         totalWorks: workOrders.length,
-        ongoing: workOrders.filter(o => o.status === 'In Progress').length,
+        ongoing: workOrders.filter(o => o.status === 'In Progress' || o.status === 'Work in Progress' || o.status === 'Assigned to EA').length,
         completed: workOrders.filter(o => o.status === 'Completed').length,
         pendingDPR: dprs.filter(d => d.status === 'Draft' || d.status === 'Submitted').length,
-        fundsAllocated: 150000000, // Static for now
-        fundsUtilized: 85000000 // Static for now
+        fundsAllocated: workOrders.reduce((total, work) => total + (work.amount || 0), 0),
+        fundsUtilized: workOrders.reduce((total, work) => total + (work.fundsUsed || 0), 0)
     };
 
     const sidebarMenu = [

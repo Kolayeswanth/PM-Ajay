@@ -7,7 +7,7 @@ import DistrictDashboard from './DistrictDashboard';
 import GPDashboard from './GPDashboard';
 import DepartmentDashboard from './DepartmentDashboard';
 import ContractorDashboard from './ContractorDashboard';
-import PublicDashboard from './PublicDashboard';
+
 const DashboardRouter = () => {
     const { user } = useAuth();
 
@@ -39,9 +39,6 @@ const DashboardRouter = () => {
 
         case ROLES.EXECUTING_AGENCY:
             return <ContractorDashboard />;
-
-        case ROLES.PUBLIC:
-            return <PublicDashboard />;
 
         default:
             return <Navigate to="/login" replace />;

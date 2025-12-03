@@ -350,7 +350,7 @@ exports.updateProposalStatus = async (req, res) => {
                     // Get district name
                     const { data: districtData, error: districtError } = await supabase
                         .from('districts')
-                        .select('name')
+                        .select('name, state_id')
                         .eq('id', proposalData.district_id)
                         .single();
 
@@ -432,6 +432,66 @@ exports.updateProposalStatus = async (req, res) => {
                 }
             } catch (notifErr) {
                 console.error('Error creating notification:', notifErr);
+                // Don't fail the request, just log it
+            }
+        }
+
+        // 5. Create notification for District Admin when approved/rejected by Ministry
+        if (status === 'APPROVED_BY_MINISTRY' || status === 'REJECTED_BY_MINISTRY') {
+            try {
+                // Get full proposal details with district info
+                const { data: proposalData, error: proposalError } = await supabase
+                    .from('district_proposals')
+                    .select('project_name, estimated_cost, component, district_id')
+                    .eq('id', id)
+                    .single();
+
+                if (!proposalError && proposalData) {
+                    // Get district name and state info
+                    const { data: districtData, error: districtError } = await supabase
+                        .from('districts')
+                        .select('name, state_id')
+                        .eq('id', proposalData.district_id)
+                        .single();
+
+                    if (!districtError && districtData) {
+                        const isApproved = status === 'APPROVED_BY_MINISTRY';
+                        console.log('Ministry decision - District:', districtData.name, 'Approved?', isApproved);
+
+                        // Create notification for District Admin
+                        const districtNotification = {
+                            user_role: 'district',
+                            district_name: districtData.name,
+                            title: isApproved ? 'Proposal Approved by Ministry' : 'Proposal Rejected by Ministry',
+                            message: isApproved
+                                ? `Your proposal "${proposalData.project_name}" for ${proposalData.component} (₹${proposalData.estimated_cost} Lakhs) has been approved by the Ministry of Social Justice & Empowerment!`
+                                : `Your proposal "${proposalData.project_name}" has been rejected by the Ministry. Reason: ${rejectReason || 'Not specified'}`,
+                            type: isApproved ? 'success' : 'error',
+                            read: false,
+                            metadata: {
+                                proposal_id: id,
+                                project_name: proposalData.project_name,
+                                component: proposalData.component,
+                                estimated_cost: proposalData.estimated_cost,
+                                status: status,
+                                reject_reason: rejectReason || null,
+                                approved_by: 'Ministry'
+                            }
+                        };
+
+                        const { error: notifError } = await supabase
+                            .from('notifications')
+                            .insert([districtNotification]);
+
+                        if (notifError) {
+                            console.error('Failed to create district notification for ministry decision:', notifError);
+                        } else {
+                            console.log(`✅ District notification created: ${districtData.name} - Ministry ${isApproved ? 'Approved' : 'Rejected'} "${proposalData.project_name}"`);
+                        }
+                    }
+                }
+            } catch (notifErr) {
+                console.error('Error creating notification for ministry decision:', notifErr);
                 // Don't fail the request, just log it
             }
         }
