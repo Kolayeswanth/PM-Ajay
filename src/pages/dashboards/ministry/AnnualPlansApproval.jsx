@@ -162,7 +162,12 @@ const AnnualPlansApproval = () => {
                 <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                     <select
                         className="form-select"
-                        style={{ width: '150px' }}
+                        style={{
+                            width: '180px',
+                            padding: '10px 16px',
+                            fontSize: '14px',
+                            borderRadius: '4px'
+                        }}
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >

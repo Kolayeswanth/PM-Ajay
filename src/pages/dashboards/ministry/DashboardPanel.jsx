@@ -220,9 +220,6 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
                                 ← Back to {selectedDistrict ? 'State View' : 'National View'}
                             </button>
                         )}
-                        <button className="btn btn-primary btn-sm" onClick={handleExportMapData}>
-                            📥 Export Map Data
-                        </button>
                     </div>
                 </div>
                 <div style={{ height: '800px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>

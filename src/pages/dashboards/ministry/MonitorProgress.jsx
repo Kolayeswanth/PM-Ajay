@@ -69,6 +69,69 @@ const generateStateData = (stateName) => {
     };
 };
 
+const generateDistrictData = (stateName, districtName) => {
+    console.log('📊 Generating district data for:', districtName, 'in', stateName);
+
+    // Sample district data for common districts
+    const mockDistrictData = {
+        'Maharashtra': {
+            'Pune': { villages: 25, vdps: 18, adarshGram: 12, fundUtilization: { utilized: 62, total: 100 } },
+            'Mumbai': { villages: 0, vdps: 0, adarshGram: 0, fundUtilization: { utilized: 0, total: 100 } },
+            'Nagpur': { villages: 32, vdps: 24, adarshGram: 15, fundUtilization: { utilized: 68, total: 100 } },
+            'Nashik': { villages: 28, vdps: 20, adarshGram: 14, fundUtilization: { utilized: 58, total: 100 } },
+            'Thane': { villages: 18, vdps: 12, adarshGram: 8, fundUtilization: { utilized: 55, total: 100 } }
+        },
+        'Bihar': {
+            'Muzaffarpur': { villages: 35, vdps: 28, adarshGram: 20, fundUtilization: { utilized: 72, total: 100 } },
+            'Patna': { villages: 30, vdps: 25, adarshGram: 18, fundUtilization: { utilized: 65, total: 100 } },
+            'Gaya': { villages: 28, vdps: 22, adarshGram: 16, fundUtilization: { utilized: 60, total: 100 } }
+        },
+        'Gujarat': {
+            'Ahmedabad': { villages: 30, vdps: 24, adarshGram: 18, fundUtilization: { utilized: 70, total: 100 } },
+            'Surat': { villages: 25, vdps: 20, adarshGram: 15, fundUtilization: { utilized: 65, total: 100 } },
+            'Vadodara': { villages: 22, vdps: 18, adarshGram: 13, fundUtilization: { utilized: 62, total: 100 } }
+        }
+    };
+
+    // Get district-specific data or generate random
+    const stateDistricts = mockDistrictData[stateName];
+    const districtInfo = stateDistricts?.[districtName]
+        ? stateDistricts[districtName]
+        : {
+            villages: Math.floor(Math.random() * 30) + 10,
+            vdps: Math.floor(Math.random() * 20) + 5,
+            fundUtilization: {
+                utilized: Math.floor(Math.random() * 40) + 40,
+                total: 100
+            }
+        };
+
+    return {
+        name: districtName,
+        state: stateName,
+        fundUtilization: districtInfo.fundUtilization,
+        projectTrends: {
+            months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [
+                { label: 'Completed', values: [20, 28, 36, 44, 52, 60], color: THEME.completed },
+                { label: 'Pending', values: [50, 45, 40, 35, 30, 25], color: THEME.pending },
+                { label: 'Not Started', values: [30, 27, 24, 21, 18, 15], color: THEME.notStarted }
+            ]
+        },
+        components: {
+            'Adarsh Gram': {
+                progress: districtInfo.vdps && districtInfo.villages
+                    ? Math.floor((districtInfo.vdps / districtInfo.villages) * 100)
+                    : Math.floor(Math.random() * 30) + 60,
+                color: '#7C3AED'
+            },
+            'GIA': { progress: Math.floor(Math.random() * 30) + 40, color: '#EC4899' },
+            'Hostel': { progress: Math.floor(Math.random() * 30) + 20, color: '#F59E0B' }
+        }
+    };
+};
+
+
 const generateNationalOverview = (component) => {
     const baseValue =
         component === 'All Components'
@@ -495,13 +558,16 @@ const MonitorProgress = () => {
     );
 
     useEffect(() => {
-        if (selectedState) {
+        if (selectedDistrict) {
+            // Generate district-specific data when a district is selected
+            setStateData(generateDistrictData(selectedState, selectedDistrict));
+        } else if (selectedState) {
             setStateData(generateStateData(selectedState));
         } else {
             setStateData(null);
             setSelectedDistrict(null);
         }
-    }, [selectedState]);
+    }, [selectedState, selectedDistrict]);
 
     useEffect(() => {
         setNationalOverview(generateNationalOverview(selectedComponent));

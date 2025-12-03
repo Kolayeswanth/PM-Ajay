@@ -4,13 +4,17 @@ export const DistrictService = {
     // Get district statistics including fund utilization
     getDistrictStats: async (districtId) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/dashboard/district-stats/${districtId}`);
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const response = await fetch(`${apiUrl}/api/dashboard/district-stats/${districtId}`);
 
             if (!response.ok) {
-                throw new Error('Failed to fetch district stats');
+                const errorData = await response.json();
+                console.error('Failed to fetch district stats:', errorData);
+                throw new Error(errorData.error || 'Failed to fetch district stats');
             }
 
             const result = await response.json();
+            console.log('✅ District stats fetched successfully:', result.data);
             return result.data;
         } catch (error) {
             console.error('Error fetching district stats:', error);

@@ -160,105 +160,66 @@ const generateNationalData = () => {
 
 
 const fetchDistrictData = async (stateName, districtName) => {
-    try {
-        // Import the service dynamically
-        const { DistrictService } = await import('../services/DistrictService');
+    // Generate mock data similar to State Dashboard
+    console.log('📊 Generating mock data for:', districtName, 'in', stateName);
 
-        // Get district ID
-        const districtInfo = await DistrictService.getDistrictByName(districtName, stateName);
-
-        if (!districtInfo) {
-            console.error('District not found:', districtName, stateName);
-            // Return fallback data
-            return {
-                name: districtName,
-                state: stateName,
-                fundUtilization: { utilized: 0, total: 0 },
-                projectTrends: {
-                    months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [
-                        { label: 'Completed', values: [0, 0, 0, 0, 0, 0], color: THEME.completed },
-                        { label: 'Pending', values: [0, 0, 0, 0, 0, 0], color: THEME.pending },
-                        { label: 'Not Started', values: [0, 0, 0, 0, 0, 0], color: THEME.notStarted }
-                    ]
-                },
-                components: {
-                    'Adarsh Gram': { progress: 0, color: '#7C3AED' },
-                    'GIA': { progress: 0, color: '#EC4899' },
-                    'Hostel': { progress: 0, color: '#F59E0B' }
-                }
-            };
+    // Sample district data for common districts
+    const mockDistrictData = {
+        'Maharashtra': {
+            'Pune': { villages: 25, vdps: 18, adarshGram: 12, fundUtilization: { utilized: 62, total: 100 } },
+            'Mumbai': { villages: 0, vdps: 0, adarshGram: 0, fundUtilization: { utilized: 0, total: 100 } },
+            'Nagpur': { villages: 32, vdps: 24, adarshGram: 15, fundUtilization: { utilized: 68, total: 100 } },
+            'Nashik': { villages: 28, vdps: 20, adarshGram: 14, fundUtilization: { utilized: 58, total: 100 } },
+            'Thane': { villages: 18, vdps: 12, adarshGram: 8, fundUtilization: { utilized: 55, total: 100 } }
+        },
+        'Bihar': {
+            'Muzaffarpur': { villages: 35, vdps: 28, adarshGram: 20, fundUtilization: { utilized: 72, total: 100 } },
+            'Patna': { villages: 30, vdps: 25, adarshGram: 18, fundUtilization: { utilized: 65, total: 100 } },
+            'Gaya': { villages: 28, vdps: 22, adarshGram: 16, fundUtilization: { utilized: 60, total: 100 } }
+        },
+        'Gujarat': {
+            'Ahmedabad': { villages: 30, vdps: 24, adarshGram: 18, fundUtilization: { utilized: 70, total: 100 } },
+            'Surat': { villages: 25, vdps: 20, adarshGram: 15, fundUtilization: { utilized: 65, total: 100 } },
+            'Vadodara': { villages: 22, vdps: 18, adarshGram: 13, fundUtilization: { utilized: 62, total: 100 } }
         }
+    };
 
-        // Fetch real stats
-        const stats = await DistrictService.getDistrictStats(districtInfo.id);
-
-        if (!stats) {
-            console.error('Failed to fetch district stats');
-            // Return fallback data
-            return {
-                name: districtName,
-                state: stateName,
-                fundUtilization: { utilized: 0, total: 0 },
-                projectTrends: {
-                    months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [
-                        { label: 'Completed', values: [0, 0, 0, 0, 0, 0], color: THEME.completed },
-                        { label: 'Pending', values: [0, 0, 0, 0, 0, 0], color: THEME.pending },
-                        { label: 'Not Started', values: [0, 0, 0, 0, 0, 0], color: THEME.notStarted }
-                    ]
-                },
-                components: {
-                    'Adarsh Gram': { progress: 0, color: '#7C3AED' },
-                    'GIA': { progress: 0, color: '#EC4899' },
-                    'Hostel': { progress: 0, color: '#F59E0B' }
-                }
-            };
-        }
-
-        return {
-            name: districtName,
-            state: stateName,
+    // Get district-specific data or generate random
+    const stateDistricts = mockDistrictData[stateName];
+    const districtInfo = stateDistricts?.[districtName]
+        ? stateDistricts[districtName]
+        : {
+            villages: Math.floor(Math.random() * 30) + 10,
+            vdps: Math.floor(Math.random() * 20) + 5,
             fundUtilization: {
-                utilized: stats.fundUtilized || 0,
-                total: stats.fundAllocated || 0
-            },
-            projectTrends: {
-                months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [
-                    { label: 'Completed', values: [20, 28, 36, 44, 52, 60], color: THEME.completed },
-                    { label: 'Pending', values: [50, 45, 40, 35, 30, 25], color: THEME.pending },
-                    { label: 'Not Started', values: [30, 27, 24, 21, 18, 15], color: THEME.notStarted }
-                ]
-            },
-            components: {
-                'Adarsh Gram': { progress: stats.utilizationPercentage || 0, color: '#7C3AED' },
-                'GIA': { progress: Math.floor(Math.random() * 30) + 40, color: '#EC4899' },
-                'Hostel': { progress: Math.floor(Math.random() * 30) + 20, color: '#F59E0B' }
+                utilized: Math.floor(Math.random() * 40) + 40,
+                total: 100
             }
         };
-    } catch (error) {
-        console.error('Error fetching district data:', error);
-        // Return fallback data on error
-        return {
-            name: districtName,
-            state: stateName,
-            fundUtilization: { utilized: 0, total: 0 },
-            projectTrends: {
-                months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [
-                    { label: 'Completed', values: [0, 0, 0, 0, 0, 0], color: THEME.completed },
-                    { label: 'Pending', values: [0, 0, 0, 0, 0, 0], color: THEME.pending },
-                    { label: 'Not Started', values: [0, 0, 0, 0, 0, 0], color: THEME.notStarted }
-                ]
+
+    return {
+        name: districtName,
+        state: stateName,
+        fundUtilization: districtInfo.fundUtilization,
+        projectTrends: {
+            months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [
+                { label: 'Completed', values: [20, 28, 36, 44, 52, 60], color: THEME.completed },
+                { label: 'Pending', values: [50, 45, 40, 35, 30, 25], color: THEME.pending },
+                { label: 'Not Started', values: [30, 27, 24, 21, 18, 15], color: THEME.notStarted }
+            ]
+        },
+        components: {
+            'Adarsh Gram': {
+                progress: districtInfo.vdps && districtInfo.villages
+                    ? Math.floor((districtInfo.vdps / districtInfo.villages) * 100)
+                    : Math.floor(Math.random() * 30) + 60,
+                color: '#7C3AED'
             },
-            components: {
-                'Adarsh Gram': { progress: 0, color: '#7C3AED' },
-                'GIA': { progress: 0, color: '#EC4899' },
-                'Hostel': { progress: 0, color: '#F59E0B' }
-            }
-        };
-    }
+            'GIA': { progress: Math.floor(Math.random() * 30) + 40, color: '#EC4899' },
+            'Hostel': { progress: Math.floor(Math.random() * 30) + 20, color: '#F59E0B' }
+        }
+    };
 };
 
 const AnimatedLineChart = ({ data, height = 180 }) => {
@@ -322,7 +283,7 @@ const PieChart = ({ data, size = 180 }) => {
         return () => clearTimeout(timer);
     }, [data]);
 
-    const percentage = (data.utilized / data.total) * 100;
+    const percentage = data.total > 0 ? (data.utilized / data.total) * 100 : 0;
     const radius = size / 2;
     const strokeWidth = 30;
     const normalizedRadius = radius - strokeWidth / 2;
