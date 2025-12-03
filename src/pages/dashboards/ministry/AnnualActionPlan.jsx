@@ -51,7 +51,7 @@ const AnnualActionPlan = () => {
     }, []);
 
     return (
-        <div className="dashboard-panel" style={{ padding: '20px', fontFamily: "'Inter', sans-serif" }}>
+        <div className="dashboard-panel" style={{ padding: '20px', fontFamily: "'Inter', sans-serif", maxWidth: '1200px', margin: '0 auto' }}>
             <div className="section-header" style={{ marginBottom: '25px' }}>
                 <h2 className="section-title" style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>Annual Plan Approvals</h2>
             </div>
@@ -171,26 +171,13 @@ const AnnualActionPlan = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto', marginTop: 'auto' }}>
-                    <button className="btn" style={{
-                        background: '#10b981',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 20px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
-                        cursor: 'pointer',
-                        transition: 'transform 0.1s'
-                    }}
-                        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    <InteractiveButton
+                        variant="info"
+                        size="sm"
+                        onClick={() => { }}
                     >
-                        <Eye size={18} /> View
-                    </button>
+                        <Eye size={16} style={{ marginRight: '5px' }} /> View
+                    </InteractiveButton>
                 </div>
             </div>
 

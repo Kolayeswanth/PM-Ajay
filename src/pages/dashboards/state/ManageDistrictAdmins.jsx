@@ -299,20 +299,24 @@ const ManageDistrictAdmins = () => {
                                     <td>{admin.phone}</td>
                                     <td>{admin.email}</td>
                                     <td>
-                                        <button
-                                            className={`btn btn-sm ${admin.status === 'Active' ? 'btn-success' : admin.status === 'Activated' ? 'btn-info' : 'btn-secondary'}`}
+                                        <InteractiveButton
+                                            variant={admin.status === 'Active' ? 'success' : 'secondary'}
+                                            size="sm"
                                             onClick={() => handleStatusClick(admin)}
                                             disabled={admin.status !== 'Active' || loading}
                                             style={{
                                                 cursor: admin.status === 'Active' ? 'pointer' : 'not-allowed',
-                                                opacity: admin.status === 'Active' ? 1 : 0.7,
+                                                opacity: 1,
                                                 minWidth: '90px',
-                                                marginRight: '8px'
+                                                marginRight: '8px',
+                                                backgroundColor: admin.status === 'Activated' ? '#F3F4F6' : undefined,
+                                                color: admin.status === 'Activated' ? '#6B7280' : undefined,
+                                                border: admin.status === 'Activated' ? '1px solid #E5E7EB' : undefined
                                             }}
                                             title={admin.status === 'Active' ? 'Click to activate and send WhatsApp' : ''}
                                         >
                                             {admin.status}
-                                        </button>
+                                        </InteractiveButton>
                                         <InteractiveButton variant="success" size="sm" onClick={() => handleEdit(admin)}>Edit</InteractiveButton>
                                     </td>
                                 </tr>

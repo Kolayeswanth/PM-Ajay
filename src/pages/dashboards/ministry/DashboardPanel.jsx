@@ -4,6 +4,8 @@ import IndiaMap from '../../../components/maps/IndiaMap';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
 import { nationalStats, states, mockProjects } from '../../../data/mockData';
+import { Download } from 'lucide-react';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, setSelectedDistrict, formatCurrency }) => {
     const [stats, setStats] = useState({
@@ -220,9 +222,9 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
                                 ← Back to {selectedDistrict ? 'State View' : 'National View'}
                             </button>
                         )}
-                        <button className="btn btn-primary btn-sm" onClick={handleExportMapData}>
-                            📥 Export Map Data
-                        </button>
+                        <InteractiveButton variant="secondary" size="sm" onClick={handleExportMapData}>
+                            <Download size={16} style={{ marginRight: '5px' }} /> Export Map Data
+                        </InteractiveButton>
                     </div>
                 </div>
                 <div style={{ height: '800px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>

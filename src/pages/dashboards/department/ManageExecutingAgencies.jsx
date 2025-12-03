@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabaseClient';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const ManageExecutingAgencies = () => {
     const { user } = useAuth();
@@ -253,7 +254,7 @@ const ManageExecutingAgencies = () => {
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h2 style={{ margin: 0 }}>Manage Executing Agencies</h2>
-                <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>+ Add Executing Agency</button>
+                <InteractiveButton variant="primary" onClick={() => setIsModalOpen(true)}>+ Add Executing Agency</InteractiveButton>
             </div>
 
             <div className="table-wrapper">
@@ -287,30 +288,33 @@ const ManageExecutingAgencies = () => {
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '5px' }}>
-                                            <button
-                                                className="btn btn-secondary btn-sm"
+                                            <InteractiveButton
+                                                variant="secondary"
+                                                size="sm"
                                                 onClick={() => handleEdit(agency)}
                                                 style={{ marginRight: '5px' }}
                                                 disabled={processingId === agency.id}
                                             >
                                                 Edit
-                                            </button>
+                                            </InteractiveButton>
                                             {agency.status === 'Active' ? (
-                                                <button
-                                                    className="btn btn-outline btn-sm"
+                                                <InteractiveButton
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={() => handleStatusChange(agency, 'Inactive')}
                                                     disabled={processingId === agency.id}
                                                 >
                                                     {processingId === agency.id ? 'Wait...' : 'Deactivate'}
-                                                </button>
+                                                </InteractiveButton>
                                             ) : (
-                                                <button
-                                                    className="btn btn-primary btn-sm"
+                                                <InteractiveButton
+                                                    variant="primary"
+                                                    size="sm"
                                                     onClick={() => handleStatusChange(agency, 'Active')}
                                                     disabled={processingId === agency.id}
                                                 >
                                                     {processingId === agency.id ? 'Wait...' : 'Activate'}
-                                                </button>
+                                                </InteractiveButton>
                                             )}
                                         </div>
                                     </td>
@@ -329,8 +333,8 @@ const ManageExecutingAgencies = () => {
                 title={editingId ? "Edit Executing Agency" : "Add Executing Agency"}
                 footer={
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                        <button className="btn btn-outline" onClick={handleCloseModal}>Cancel</button>
-                        <button className="btn btn-primary" onClick={handleSubmit}>{editingId ? "Update" : "Submit"}</button>
+                        <InteractiveButton variant="outline" onClick={handleCloseModal}>Cancel</InteractiveButton>
+                        <InteractiveButton variant="primary" onClick={handleSubmit}>{editingId ? "Update" : "Submit"}</InteractiveButton>
                     </div>
                 }
             >
@@ -428,13 +432,13 @@ const ManageExecutingAgencies = () => {
                         <p style={{ color: '#7f8c8d', marginBottom: '25px', lineHeight: '1.5' }}>
                             {successModal.message}
                         </p>
-                        <button
-                            className="btn btn-primary"
+                        <InteractiveButton
+                            variant="primary"
                             onClick={() => setSuccessModal({ show: false, message: '' })}
                             style={{ width: '100%' }}
                         >
                             Close
-                        </button>
+                        </InteractiveButton>
                     </div>
                 </div>
             )}

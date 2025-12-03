@@ -1,7 +1,50 @@
 import React, { useState } from 'react';
-import StatCard from '../../../components/StatCard';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import { districtStats, mockProjects } from '../../../data/mockData';
+import { Building2, FileText, IndianRupee, CheckCircle2, Plus, Download, XCircle, Eye } from 'lucide-react';
+import InteractiveButton from '../../../components/InteractiveButton';
+
+const ModernStatCard = ({ icon: Icon, value, label, color, bgColor }) => (
+    <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '24px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        border: '1px solid #F3F4F6',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        cursor: 'default',
+        height: '100%'
+    }}
+        onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+        }}
+        onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)';
+        }}
+    >
+        <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '16px',
+            backgroundColor: bgColor,
+            color: color,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            <Icon size={28} strokeWidth={1.5} />
+        </div>
+        <div>
+            <div style={{ fontSize: '36px', fontWeight: '800', color: '#1F2937', lineHeight: '1.2', letterSpacing: '-0.02em' }}>{value}</div>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.05em' }}>{label}</div>
+        </div>
+    </div>
+);
 
 const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
     const [stats, setStats] = useState({
@@ -123,7 +166,9 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
             'SUBMITTED': 'badge-info',
             'APPROVED_BY_STATE': 'badge-warning',
             'APPROVED_BY_MINISTRY': 'badge-success',
+            // All rejected statuses use error color (#EF4444)
             'REJECTED_BY_STATE': 'badge-error',
+            'REJECTED_BY_MINISTRY': 'badge-error',
             'REJECTED': 'badge-error'
         };
         return badges[status] || 'badge-info';
@@ -134,6 +179,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
         if (status === 'APPROVED_BY_STATE') return 'Pending at Ministry';
         if (status === 'APPROVED_BY_MINISTRY') return 'Approved & Active';
         if (status === 'REJECTED_BY_STATE') return 'Rejected by State';
+        if (status === 'REJECTED_BY_MINISTRY') return 'Rejected by Ministry';
         if (status === 'REJECTED') return 'Rejected';
         return status;
     };
@@ -155,31 +201,26 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
         <>
             {/* District KPIs */}
             <div className="kpi-row">
-                <StatCard
-                    icon="🏡"
-                    value={stats.gramPanchayats}
-                    label="Gram Panchayats"
-                    color="var(--color-primary)"
-                />
-                <StatCard
-                    icon="📊"
+                <ModernStatCard
+                    icon={FileText}
                     value={stats.totalProjects}
                     label="Total Projects"
-                    color="var(--color-secondary)"
+                    color="#D97706"
+                    bgColor="#FEF3C7"
                 />
-                <StatCard
-                    icon="💰"
+                <ModernStatCard
+                    icon={IndianRupee}
                     value={`₹${stats.fundAllocated.toFixed(2)} Cr`}
                     label="Fund Allocated"
-                    color="var(--color-success)"
+                    color="#2563EB"
+                    bgColor="#EFF6FF"
                 />
-                <StatCard
-                    icon="✔️"
+                <ModernStatCard
+                    icon={CheckCircle2}
                     value={stats.completedProjects}
                     label="Completed"
-                    trend="positive"
-                    trendValue="+5 this month"
-                    color="var(--color-success)"
+                    color="#059669"
+                    bgColor="#ECFDF5"
                 />
             </div>
 
@@ -188,7 +229,14 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                 <div className="section-header">
                     <h2 className="section-title">Recent Funds Received from State</h2>
                 </div>
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="card" style={{
+                    padding: 0,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: 'white'
+                }}>
                     <table className="table" style={{ margin: 0 }}>
                         <thead>
                             <tr>
@@ -232,6 +280,87 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
             <div className="dashboard-section" style={{ marginBottom: 'var(--space-6)' }}>
                 <div className="section-header" style={{ marginBottom: 'var(--space-4)' }}>
                     <h2 className="section-title">District Overview</h2>
+                    {/* Component Dropdown - Top Right */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)', position: 'relative', button: 'var(--shadow-lg)' }}>
+                        <button
+                            className="btn"
+                            onClick={() => setShowComponentDropdown(!showComponentDropdown)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                backgroundColor: 'white',
+                                border: '2px solid #7C3AED',
+                                borderRadius: '24px',
+                                color: '#7C3AED',
+                                fontWeight: '600',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 2px 4px rgba(124, 58, 237, 0.1)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F3F4F6';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'white';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                        >
+                            <span>{selectedComponent}</span>
+                            <span style={{ fontSize: '12px' }}>▼</span>
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showComponentDropdown && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '8px',
+                                backgroundColor: 'white',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                                zIndex: 1000,
+                                minWidth: '200px',
+                                overflow: 'hidden'
+                            }}>
+                                {['All Components', 'Adarsh Gram', 'GIA', 'Hostel'].map((component) => (
+                                    <div
+                                        key={component}
+                                        onClick={() => {
+                                            setSelectedComponent(component);
+                                            setShowComponentDropdown(false);
+                                        }}
+                                        style={{
+                                            padding: '12px 20px',
+                                            cursor: 'pointer',
+                                            transition: 'background-color 0.2s ease',
+                                            backgroundColor: selectedComponent === component ? '#F3F4F6' : 'white',
+                                            fontWeight: selectedComponent === component ? '600' : '500',
+                                            color: selectedComponent === component ? '#7C3AED' : '#374151',
+                                            fontSize: '14px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (selectedComponent !== component) {
+                                                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (selectedComponent !== component) {
+                                                e.currentTarget.style.backgroundColor = 'white';
+                                            }
+                                        }}
+                                    >
+                                        {component}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                 </div>
 
@@ -245,88 +374,6 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
 
                     {/* Right: Fund Utilization & Component Progress */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-                        {/* Component Dropdown - Top Right */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-10px', position: 'relative' }}>
-                            <button
-                                className="btn"
-                                onClick={() => setShowComponentDropdown(!showComponentDropdown)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '10px 20px',
-                                    backgroundColor: 'white',
-                                    border: '2px solid #7C3AED',
-                                    borderRadius: '24px',
-                                    color: '#7C3AED',
-                                    fontWeight: '600',
-                                    fontSize: '14px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    boxShadow: '0 2px 4px rgba(124, 58, 237, 0.1)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#F3F4F6';
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'white';
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                }}
-                            >
-                                <span>{selectedComponent}</span>
-                                <span style={{ fontSize: '12px' }}>▼</span>
-                            </button>
-
-                            {/* Dropdown Menu */}
-                            {showComponentDropdown && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    right: 0,
-                                    marginTop: '8px',
-                                    backgroundColor: 'white',
-                                    border: '1px solid #E5E7EB',
-                                    borderRadius: '12px',
-                                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                                    zIndex: 1000,
-                                    minWidth: '200px',
-                                    overflow: 'hidden'
-                                }}>
-                                    {['All Components', 'Adarsh Gram', 'GIA', 'Hostel'].map((component) => (
-                                        <div
-                                            key={component}
-                                            onClick={() => {
-                                                setSelectedComponent(component);
-                                                setShowComponentDropdown(false);
-                                            }}
-                                            style={{
-                                                padding: '12px 20px',
-                                                cursor: 'pointer',
-                                                transition: 'background-color 0.2s ease',
-                                                backgroundColor: selectedComponent === component ? '#F3F4F6' : 'white',
-                                                fontWeight: selectedComponent === component ? '600' : '500',
-                                                color: selectedComponent === component ? '#7C3AED' : '#374151',
-                                                fontSize: '14px'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (selectedComponent !== component) {
-                                                    e.currentTarget.style.backgroundColor = '#F9FAFB';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (selectedComponent !== component) {
-                                                    e.currentTarget.style.backgroundColor = 'white';
-                                                }
-                                            }}
-                                        >
-                                            {component}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
                         {/* Fund Utilization Card */}
                         <div className="card" style={{ padding: 'var(--space-6)' }}>
                             <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
@@ -373,92 +420,92 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                             </div>
                         </div>
 
-                    </div>
-                    {/* Component Progress Card */}
-                    <div className="card" style={{ padding: 'var(--space-6)' }}>
-                        <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
-                            {selectedComponent === 'All Components' ? 'Component Progress' : `${selectedComponent} Progress`}
-                        </h3>
+                        {/* Component Progress Card */}
+                        <div className="card" style={{ padding: 'var(--space-6)' }}>
+                            <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
+                                {selectedComponent === 'All Components' ? 'Component Progress' : `${selectedComponent} Progress`}
+                            </h3>
 
-                        {(() => {
-                            const componentData = {
-                                'Adarsh Gram': { progress: 27, color: '#7C3AED', label: 'Adarsh Gram' },
-                                'GIA': { progress: 42, color: '#EC4899', label: 'GIA (Grant-in-Aid)' },
-                                'Hostel': { progress: 89, color: '#F59E0B', label: 'Hostel' }
-                            };
+                            {(() => {
+                                const componentData = {
+                                    'Adarsh Gram': { progress: 27, color: '#7C3AED', label: 'Adarsh Gram' },
+                                    'GIA': { progress: 42, color: '#EC4899', label: 'GIA (Grant-in-Aid)' },
+                                    'Hostel': { progress: 89, color: '#F59E0B', label: 'Hostel' }
+                                };
 
-                            if (selectedComponent === 'All Components') {
-                                return (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 0' }}>
-                                        {Object.entries(componentData).map(([key, data]) => (
-                                            <div key={key}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                    <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-navy)' }}>{data.label}</span>
-                                                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: data.color }}>{data.progress}%</span>
+                                if (selectedComponent === 'All Components') {
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 0' }}>
+                                            {Object.entries(componentData).map(([key, data]) => (
+                                                <div key={key}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                        <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-navy)' }}>{data.label}</span>
+                                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: data.color }}>{data.progress}%</span>
+                                                    </div>
+                                                    <div style={{ width: '100%', height: '12px', backgroundColor: '#E5E7EB', borderRadius: '6px', overflow: 'hidden' }}>
+                                                        <div style={{ width: `${data.progress}%`, height: '100%', backgroundColor: data.color, borderRadius: '6px', transition: 'width 0.8s ease' }}></div>
+                                                    </div>
                                                 </div>
-                                                <div style={{ width: '100%', height: '12px', backgroundColor: '#E5E7EB', borderRadius: '6px', overflow: 'hidden' }}>
-                                                    <div style={{ width: `${data.progress}%`, height: '100%', backgroundColor: data.color, borderRadius: '6px', transition: 'width 0.8s ease' }}></div>
+                                            ))}
+                                        </div>
+                                    );
+                                } else {
+                                    const data = componentData[selectedComponent];
+                                    if (!data) return null;
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                                                {/* Large percentage display */}
+                                                <div style={{
+                                                    fontSize: '48px',
+                                                    fontWeight: 'bold',
+                                                    color: data.color,
+                                                    marginBottom: '16px'
+                                                }}>
+                                                    {data.progress}%
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                );
-                            } else {
-                                const data = componentData[selectedComponent];
-                                if (!data) return null;
-                                return (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                                            {/* Large percentage display */}
-                                            <div style={{
-                                                fontSize: '48px',
-                                                fontWeight: 'bold',
-                                                color: data.color,
-                                                marginBottom: '16px'
-                                            }}>
-                                                {data.progress}%
-                                            </div>
 
-                                            {/* Large vertical bar */}
-                                            <div style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                width: '60%',
-                                                maxWidth: '200px'
-                                            }}>
+                                                {/* Large vertical bar */}
                                                 <div style={{
-                                                    width: '100%',
-                                                    height: `${data.progress * 2.5}px`,
-                                                    maxHeight: '250px',
-                                                    backgroundColor: data.color,
-                                                    borderRadius: '8px 8px 0 0',
-                                                    transition: 'height 0.8s ease',
-                                                    minHeight: '40px'
-                                                }}></div>
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    width: '60%',
+                                                    maxWidth: '200px'
+                                                }}>
+                                                    <div style={{
+                                                        width: '100%',
+                                                        height: `${data.progress * 2.5}px`,
+                                                        maxHeight: '250px',
+                                                        backgroundColor: data.color,
+                                                        borderRadius: '8px 8px 0 0',
+                                                        transition: 'height 0.8s ease',
+                                                        minHeight: '40px'
+                                                    }}></div>
 
-                                                {/* Base line */}
+                                                    {/* Base line */}
+                                                    <div style={{
+                                                        width: '100%',
+                                                        height: '4px',
+                                                        backgroundColor: '#E5E7EB'
+                                                    }}></div>
+                                                </div>
+
+                                                {/* Component name */}
                                                 <div style={{
-                                                    width: '100%',
-                                                    height: '4px',
-                                                    backgroundColor: '#E5E7EB'
-                                                }}></div>
-                                            </div>
-
-                                            {/* Component name */}
-                                            <div style={{
-                                                fontSize: '18px',
-                                                fontWeight: '600',
-                                                color: 'var(--color-navy)',
-                                                marginTop: '16px'
-                                            }}>
-                                                {data.label}
+                                                    fontSize: '18px',
+                                                    fontWeight: '600',
+                                                    color: 'var(--color-navy)',
+                                                    marginTop: '16px'
+                                                }}>
+                                                    {data.label}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            }
-                        })()}
+                                    );
+                                }
+                            })()}
+                        </div>
                     </div>
 
                 </div>
@@ -470,7 +517,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
             <div className="dashboard-section">
                 <div className="section-header">
                     <h2 className="section-title">GP Proposals Pending Approval</h2>
-                    <span className="badge badge-warning" style={{ fontSize: 'var(--text-base)', padding: 'var(--space-2) var(--space-4)' }}>
+                    <span className="badge badge-warning" style={{ fontSize: 'var(--text-base)', padding: 'var(--space-2) var(--space-4)', boxShadow: 'var(--shadow-lg)' }}>
                         {stats.projectsProposed} Pending
                     </span>
                 </div>
@@ -484,7 +531,9 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                             marginBottom: 'var(--space-3)',
                             display: 'flex',
                             justifyContent: 'space-between',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            boxShadow: 'var(--shadow-sm)',
+                            backgroundColor: 'white'
                         }}>
                             <div>
                                 <h4 style={{ margin: 0, marginBottom: 'var(--space-2)' }}>{proposal}</h4>
@@ -494,9 +543,9 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                                 </p>
                             </div>
                             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                                <button className="btn btn-secondary btn-sm">📄 Review</button>
-                                <button className="btn btn-primary btn-sm">✅ Approve</button>
-                                <button className="btn btn-outline btn-sm">❌ Reject</button>
+                                <InteractiveButton variant="info" size="sm"><Eye size={16} /> View</InteractiveButton>
+                                <InteractiveButton variant="success" size="sm"><CheckCircle2 size={16} /> Approve</InteractiveButton>
+                                <InteractiveButton variant="danger" size="sm"><XCircle size={16} /> Reject</InteractiveButton>
                             </div>
                         </div>
                     ))}
@@ -547,8 +596,8 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                 <div className="section-header">
                     <h2 className="section-title">All District Projects</h2>
                     <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                        <button className="btn btn-secondary btn-sm">➕ Assign Work</button>
-                        <button className="btn btn-outline btn-sm">📊 Export Data</button>
+                        <InteractiveButton variant="saffron" size="sm"><Plus size={16} /> Assign Work</InteractiveButton>
+                        <InteractiveButton variant="secondary" size="sm"><Download size={16} /> Export Data</InteractiveButton>
                     </div>
                 </div>
 
@@ -592,7 +641,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                                         </div>
                                     </td>
                                     <td>
-                                        <button className="btn btn-primary btn-sm">View</button>
+                                        <InteractiveButton variant="info" size="sm"><Eye size={16} /> View</InteractiveButton>
                                     </td>
                                 </tr>
                             ))}

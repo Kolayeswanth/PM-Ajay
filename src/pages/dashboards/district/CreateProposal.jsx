@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const CreateProposal = ({ districtId }) => {
     const [formData, setFormData] = useState({
@@ -46,7 +47,9 @@ const CreateProposal = ({ districtId }) => {
             'SUBMITTED': 'badge-info',
             'APPROVED_BY_STATE': 'badge-warning',
             'APPROVED_BY_MINISTRY': 'badge-success',
+            // All rejected statuses use error color (#EF4444)
             'REJECTED_BY_STATE': 'badge-error',
+            'REJECTED_BY_MINISTRY': 'badge-error',
             'REJECTED': 'badge-error'
         };
         return badges[status] || 'badge-info';
@@ -57,6 +60,7 @@ const CreateProposal = ({ districtId }) => {
         if (status === 'APPROVED_BY_STATE') return 'Pending at Ministry';
         if (status === 'APPROVED_BY_MINISTRY') return 'Approved & Active';
         if (status === 'REJECTED_BY_STATE') return 'Rejected by State';
+        if (status === 'REJECTED_BY_MINISTRY') return 'Rejected by Ministry';
         if (status === 'REJECTED') return 'Rejected';
         return 'Unknown';
     };
@@ -114,148 +118,159 @@ const CreateProposal = ({ districtId }) => {
     };
 
     return (
-        <>
+        <div>
             <div className="dashboard-section">
-                <div className="section-header">
-                    <h2 className="section-title">Create New Proposal</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-                        Submit a new project proposal for State Government approval.
-                    </p>
-                </div>
+                <div style={{
+                    maxWidth: '1000px',
+                    margin: '0 auto',
+                    background: 'white',
+                    padding: '32px',
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div className="section-header" style={{ marginBottom: '24px', borderBottom: '1px solid #F3F4F6', paddingBottom: '16px' }}>
+                        <h2 className="section-title" style={{ fontSize: '24px', fontWeight: '700', color: '#1F2937' }}>Create New Proposal</h2>
+                        <p style={{ color: '#6B7280', fontSize: '14px', marginTop: '4px' }}>
+                            Submit a new project proposal for State Government approval.
+                        </p>
+                    </div>
 
-                <div className="card" style={{ maxWidth: '800px', marginBottom: 'var(--space-6)' }}>
-                    {success && (
-                        <div className="alert alert-success" style={{ marginBottom: 'var(--space-4)' }}>
-                            {success}
-                        </div>
-                    )}
-                    {error && (
-                        <div className="alert alert-error" style={{ marginBottom: 'var(--space-4)' }}>
-                            {error}
-                        </div>
-                    )}
+                    <div style={{ marginBottom: 'var(--space-6)' }}>
+                        {success && (
+                            <div className="alert alert-success" style={{ marginBottom: 'var(--space-4)' }}>
+                                {success}
+                            </div>
+                        )}
+                        {error && (
+                            <div className="alert alert-error" style={{ marginBottom: 'var(--space-4)' }}>
+                                {error}
+                            </div>
+                        )}
 
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-                            <label className="form-label">District ID</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={districtId || ''}
-                                disabled
-                                style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }}
-                            />
-                        </div>
-
-                        <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-                            <label className="form-label">Project Name</label>
-                            <input
-                                type="text"
-                                name="projectName"
-                                className="form-control"
-                                value={formData.projectName}
-                                onChange={handleInputChange}
-                                placeholder="Enter project title"
-                                required
-                            />
-                        </div>
-
-                        <div className="grid grid-2" style={{ gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
-                            <div className="form-group">
-                                <label className="form-label">Component</label>
-                                <select
-                                    name="component"
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                                <label className="form-label">District ID</label>
+                                <input
+                                    type="text"
                                     className="form-control"
-                                    value={formData.component}
-                                    onChange={handleInputChange}
-                                >
-                                    <option value="Adarsh Gram">Adarsh Gram</option>
-                                    <option value="GIA (Grant-in-Aid)">GIA (Grant-in-Aid)</option>
-                                    <option value="Hostel">Hostel</option>
-                                    <option value="Skill Development">Skill Development</option>
-                                </select>
+                                    value={districtId || ''}
+                                    disabled
+                                    style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }}
+                                />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Estimated Cost (₹ Lakhs)</label>
+                            <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                                <label className="form-label">Project Name</label>
                                 <input
-                                    type="number"
-                                    name="estimatedCost"
+                                    type="text"
+                                    name="projectName"
                                     className="form-control"
-                                    value={formData.estimatedCost}
+                                    value={formData.projectName}
                                     onChange={handleInputChange}
-                                    placeholder="e.g. 25.50"
-                                    step="0.01"
+                                    placeholder="Enter project title"
                                     required
                                 />
                             </div>
-                        </div>
 
-                        <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-                            <label className="form-label">Description & Justification</label>
-                            <textarea
-                                name="description"
-                                className="form-control"
-                                value={formData.description}
-                                onChange={handleInputChange}
-                                placeholder="Describe the project and why it is needed..."
-                                rows="5"
-                                required
-                            />
-                        </div>
+                            <div className="grid grid-2" style={{ gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                                <div className="form-group">
+                                    <label className="form-label">Component</label>
+                                    <select
+                                        name="component"
+                                        className="form-control"
+                                        value={formData.component}
+                                        onChange={handleInputChange}
+                                    >
+                                        <option value="Adarsh Gram">Adarsh Gram</option>
+                                        <option value="GIA (Grant-in-Aid)">GIA (Grant-in-Aid)</option>
+                                        <option value="Hostel">Hostel</option>
+                                        <option value="Skill Development">Skill Development</option>
+                                    </select>
+                                </div>
 
-                        <div className="form-group" style={{ marginBottom: 'var(--space-6)' }}>
-                            <label className="form-label">Upload Documents</label>
-                            <div style={{
-                                border: '2px dashed var(--border-light)',
-                                borderRadius: 'var(--radius-md)',
-                                padding: 'var(--space-6)',
-                                textAlign: 'center',
-                                backgroundColor: 'var(--bg-secondary)'
-                            }}>
-                                <input
-                                    type="file"
-                                    multiple
-                                    onChange={handleFileChange}
-                                    style={{ display: 'none' }}
-                                    id="file-upload"
-                                />
-                                <label htmlFor="file-upload" className="btn btn-outline btn-sm" style={{ cursor: 'pointer' }}>
-                                    📁 Choose Files
-                                </label>
-                                <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                                    Upload DPR, Technical Sanction, or other supporting docs.
-                                </p>
-                                {formData.files.length > 0 && (
-                                    <div style={{ marginTop: 'var(--space-3)', textAlign: 'left' }}>
-                                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'bold' }}>Selected Files:</p>
-                                        <ul style={{ listStyle: 'none', padding: 0, fontSize: 'var(--text-sm)' }}>
-                                            {formData.files.map((f, i) => (
-                                                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                                    📄 {f.name} <span style={{ color: 'var(--text-tertiary)' }}>({(f.size / 1024).toFixed(1)} KB)</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
+                                <div className="form-group">
+                                    <label className="form-label">Estimated Cost (₹ Lakhs)</label>
+                                    <input
+                                        type="number"
+                                        name="estimatedCost"
+                                        className="form-control"
+                                        value={formData.estimatedCost}
+                                        onChange={handleInputChange}
+                                        placeholder="e.g. 25.50"
+                                        step="0.01"
+                                        required
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
-                            <button type="button" className="btn btn-outline" onClick={() => setFormData({
-                                projectName: '',
-                                component: 'Adarsh Gram',
-                                estimatedCost: '',
-                                description: '',
-                                files: []
-                            })}>
-                                Reset
-                            </button>
-                            <button type="submit" className="btn btn-primary" disabled={loading}>
-                                {loading ? 'Submitting...' : 'Submit Proposal to State'}
-                            </button>
-                        </div>
-                    </form>
+                            <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                                <label className="form-label">Description & Justification</label>
+                                <textarea
+                                    name="description"
+                                    className="form-control"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    placeholder="Describe the project and why it is needed..."
+                                    rows="5"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: 'var(--space-6)' }}>
+                                <label className="form-label">Upload Documents</label>
+                                <div style={{
+                                    border: '2px dashed var(--border-light)',
+                                    borderRadius: 'var(--radius-md)',
+                                    padding: 'var(--space-6)',
+                                    textAlign: 'center',
+                                    backgroundColor: 'var(--bg-secondary)'
+                                }}>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={handleFileChange}
+                                        style={{ display: 'none' }}
+                                        id="file-upload"
+                                    />
+                                    <label htmlFor="file-upload" className="btn btn-outline btn-sm" style={{ cursor: 'pointer' }}>
+                                        📁 Choose Files
+                                    </label>
+                                    <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                                        Upload DPR, Technical Sanction, or other supporting docs.
+                                    </p>
+                                    {formData.files.length > 0 && (
+                                        <div style={{ marginTop: 'var(--space-3)', textAlign: 'left' }}>
+                                            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'bold' }}>Selected Files:</p>
+                                            <ul style={{ listStyle: 'none', padding: 0, fontSize: 'var(--text-sm)' }}>
+                                                {formData.files.map((f, i) => (
+                                                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                                        📄 {f.name} <span style={{ color: 'var(--text-tertiary)' }}>({(f.size / 1024).toFixed(1)} KB)</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+                                <InteractiveButton variant="outline" onClick={() => setFormData({
+                                    projectName: '',
+                                    component: 'Adarsh Gram',
+                                    estimatedCost: '',
+                                    description: '',
+                                    files: []
+                                })}>
+                                    Reset
+                                </InteractiveButton>
+                                <InteractiveButton variant="primary" type="submit" disabled={loading}>
+                                    {loading ? 'Submitting...' : 'Submit Proposal to State'}
+                                </InteractiveButton>
+                            </div>
+                        </form>
+                    </div>
+
                 </div>
             </div>
 
@@ -279,7 +294,7 @@ const CreateProposal = ({ districtId }) => {
                         <tbody>
                             {myProposals.length > 0 ? (
                                 myProposals.map(p => (
-                                    <tr key={p.id}>
+                                    <tr key={p.id} style={{ backgroundColor: p.status.toLowerCase().includes('rejected') ? '#ffebee' : 'inherit' }}>
                                         <td>
                                             <strong>{p.project_name}</strong>
                                             {p.documents && p.documents.length > 0 && (
@@ -302,7 +317,10 @@ const CreateProposal = ({ districtId }) => {
                                                     width: '10px',
                                                     height: '10px',
                                                     borderRadius: '50%',
-                                                    backgroundColor: p.status === 'APPROVED_BY_MINISTRY' ? 'var(--color-success)' : 'var(--color-warning)'
+                                                    backgroundColor:
+                                                        p.status === 'APPROVED_BY_MINISTRY' ? 'var(--color-success)' :
+                                                            (p.status === 'REJECTED_BY_STATE' || p.status === 'REJECTED_BY_MINISTRY' || p.status === 'REJECTED') ? 'var(--color-error)' :
+                                                                'var(--color-warning)'
                                                 }}></div>
                                                 <span style={{ fontSize: 'var(--text-sm)', fontWeight: '500' }}>
                                                     {getTrackingStatus(p.status)}
@@ -322,7 +340,7 @@ const CreateProposal = ({ districtId }) => {
                     </table>
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabaseClient';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Eye } from 'lucide-react';
 
 const AssignedWorks = () => {
     const { user } = useAuth();
@@ -321,7 +323,9 @@ const AssignedWorks = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewWorkOrder(work)}>View Order</button>
+                                        <InteractiveButton variant="info" size="sm" onClick={() => handleViewWorkOrder(work)}>
+                                            <Eye size={16} /> View Order
+                                        </InteractiveButton>
                                     </td>
                                 </tr>
                             ))

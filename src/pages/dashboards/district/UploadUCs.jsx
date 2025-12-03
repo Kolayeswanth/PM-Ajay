@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Eye } from 'lucide-react';
 
 const UploadUCs = () => {
     const [ucs, setUcs] = useState([
@@ -162,7 +164,9 @@ const UploadUCs = () => {
                                 </td>
                                 <td>{uc.file}</td>
                                 <td>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleViewFile(uc)}>View File</button>
+                                    <InteractiveButton variant="info" size="sm" onClick={() => handleViewFile(uc)}>
+                                        <Eye size={16} /> View
+                                    </InteractiveButton>
                                 </td>
                             </tr>
                         ))}

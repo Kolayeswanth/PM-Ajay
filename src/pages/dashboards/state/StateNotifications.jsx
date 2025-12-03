@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Eye, CheckCheck } from 'lucide-react';
 
 const StateNotifications = () => {
     const [notifications, setNotifications] = useState([
@@ -284,9 +286,13 @@ const StateNotifications = () => {
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                                            <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(notif)}>View</button>
+                                            <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(notif)}>
+                                                <Eye size={16} style={{ marginRight: '5px' }} /> View
+                                            </InteractiveButton>
                                             {notif.status === 'Unread' && (
-                                                <button className="btn btn-primary btn-sm" onClick={() => handleMarkAsRead(notif.id)}>Mark Read</button>
+                                                <InteractiveButton variant="success" size="sm" onClick={() => handleMarkAsRead(notif.id)}>
+                                                    <CheckCheck size={16} /> Unread
+                                                </InteractiveButton>
                                             )}
                                         </div>
                                     </td>

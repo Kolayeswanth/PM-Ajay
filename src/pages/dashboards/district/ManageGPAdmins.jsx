@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 import { useAuth } from '../../../contexts/AuthContext';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const ManageGPAdmins = () => {
     const { user } = useAuth();
@@ -272,7 +273,7 @@ const ManageGPAdmins = () => {
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h2 style={{ margin: 0 }}>Manage Implementing Agencies</h2>
-                <button className="btn btn-primary btn-sm" onClick={handleAdd}>+ Add New Agency</button>
+                <InteractiveButton variant="primary" size="sm" onClick={handleAdd}>+ Add New Agency</InteractiveButton>
             </div>
 
             {toast && (
@@ -315,24 +316,29 @@ const ManageGPAdmins = () => {
                                     <td>{admin.phone}</td>
                                     <td>{admin.email}</td>
                                     <td>
-                                        <button
-                                            className={`btn btn-sm ${admin.status === 'Activated' ? 'btn-success' : 'btn-primary'}`}
+                                        <InteractiveButton
+                                            variant={admin.status === 'Activated' ? 'secondary' : 'primary'}
+                                            size="sm"
                                             onClick={() => handleActivate(admin)}
                                             disabled={admin.status === 'Activated' || loading}
                                             style={{
                                                 marginRight: '8px',
-                                                opacity: admin.status === 'Activated' ? 0.7 : 1,
-                                                cursor: admin.status === 'Activated' ? 'default' : 'pointer'
+                                                opacity: 1,
+                                                cursor: admin.status === 'Activated' ? 'default' : 'pointer',
+                                                backgroundColor: admin.status === 'Activated' ? '#F3F4F6' : undefined,
+                                                color: admin.status === 'Activated' ? '#6B7280' : undefined,
+                                                border: admin.status === 'Activated' ? '1px solid #E5E7EB' : undefined
                                             }}
                                         >
                                             {admin.status === 'Activated' ? 'Activated' : 'Activate'}
-                                        </button>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
+                                        </InteractiveButton>
+                                        <InteractiveButton
+                                            variant="secondary"
+                                            size="sm"
                                             onClick={() => handleEdit(admin)}
                                         >
                                             Edit
-                                        </button>
+                                        </InteractiveButton>
                                     </td>
                                 </tr>
                             ))
@@ -353,12 +359,12 @@ const ManageGPAdmins = () => {
                 title={currentAdmin ? "Edit Implementing Agency" : "Add New Implementing Agency"}
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => { setIsModalOpen(false); setErrors({}); }} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <InteractiveButton variant="outline" onClick={() => { setIsModalOpen(false); setErrors({}); }}>
                             Cancel
-                        </button>
-                        <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 14px' }}>
+                        </InteractiveButton>
+                        <InteractiveButton variant="primary" onClick={handleSave}>
                             Save
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >
