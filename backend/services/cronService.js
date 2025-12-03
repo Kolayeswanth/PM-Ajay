@@ -126,6 +126,16 @@ async function checkAndRemindPendingProposals() {
                     continue;
                 }
 
+                // Check if proposal has been pending for at least 1 minute
+                const createdAt = new Date(proposal.created_at);
+                const now = new Date();
+                const minutesPending = (now - createdAt) / (1000 * 60);
+
+                if (minutesPending < 1) {
+                    console.log(`⏳ Proposal ${proposalId} (${proposal.project_name}) is too recent (${minutesPending.toFixed(1)} min). Skipping.`);
+                    continue;
+                }
+
                 // Get District and State info
                 const { data: districtData } = await supabase
                     .from('districts')
@@ -147,7 +157,8 @@ async function checkAndRemindPendingProposals() {
                         .select('admin_name, phone_no')
                         .ilike('state_name', stateName)
                         .eq('status', 'Activated')
-                        .single();
+                        .limit(1)
+                        .maybeSingle();
 
                     if (adminData) {
                         stateAdmin = adminData;
@@ -170,7 +181,7 @@ async function checkAndRemindPendingProposals() {
 
                         // USER REQUEST: Send only 1 message per interval.
                         // Stop processing other proposals for this cycle.
-                        break;
+                        // break; // Removed to allow sending reminders for all pending proposals
                     }
                 } else {
                     console.log(`⚠️ No active State Admin found for ${stateName} to send reminder.`);
