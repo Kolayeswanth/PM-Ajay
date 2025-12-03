@@ -120,14 +120,7 @@ const FundsReceivedFromMinistry = ({ formatCurrency }) => {
                                     <td>
                                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                             {item.component.map((comp, idx) => (
-                                                <span key={idx} style={{
-                                                    background: '#e3f2fd',
-                                                    color: '#1976d2',
-                                                    padding: '4px 8px',
-                                                    borderRadius: 4,
-                                                    fontSize: 12,
-                                                    fontWeight: 600
-                                                }}>
+                                                <span key={idx} className="badge badge-info">
                                                     {comp}
                                                 </span>
                                             ))}
@@ -138,14 +131,7 @@ const FundsReceivedFromMinistry = ({ formatCurrency }) => {
                                     </td>
                                     <td>{new Date(item.date).toLocaleDateString('en-IN')}</td>
                                     <td>
-                                        <span style={{
-                                            background: '#fff3cd',
-                                            color: '#856404',
-                                            padding: '4px 8px',
-                                            borderRadius: 4,
-                                            fontSize: 12,
-                                            fontWeight: 600
-                                        }}>
+                                        <span className="badge badge-warning">
                                             {item.sanctionNo || '-'}
                                         </span>
                                     </td>

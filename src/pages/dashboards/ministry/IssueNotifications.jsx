@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../../../components/Modal';
 import InteractiveButton from '../../../components/InteractiveButton';
+import { Eye } from 'lucide-react';
 
 const IssueNotifications = () => {
     const [notifications, setNotifications] = useState([
@@ -277,7 +278,9 @@ const IssueNotifications = () => {
                                 </td>
                                 <td>
                                     <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                                        <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(notif)}>View</InteractiveButton>
+                                        <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(notif)}>
+                                            <Eye size={16} style={{ marginRight: '5px' }} /> View
+                                        </InteractiveButton>
                                         {notif.status !== 'Deactivated' && (
                                             <InteractiveButton variant="danger" size="sm" onClick={() => handleDeactivate(notif.id)}>Deactivate</InteractiveButton>
                                         )}

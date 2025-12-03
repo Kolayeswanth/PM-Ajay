@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import Modal from '../../../components/Modal';
 import InteractiveButton from '../../../components/InteractiveButton';
+import { Eye } from 'lucide-react';
 
 const ApproveProposals = () => {
     const { user } = useAuth();
@@ -352,13 +353,13 @@ const ApproveProposals = () => {
                     <tbody>
                         {filteredProposals.length > 0 ? (
                             filteredProposals.map(proposal => (
-                                <tr key={proposal.id}>
+                                <tr key={proposal.id} style={{ backgroundColor: proposal.status.toLowerCase().includes('rejected') ? '#ffebee' : 'inherit' }}>
                                     <td>{proposal.district}</td>
                                     <td>{proposal.title}</td>
                                     <td>{proposal.date}</td>
                                     <td>₹{proposal.budget}</td>
                                     <td>
-                                        <span className={`badge badge-${proposal.status === 'Approved' ? 'success' : proposal.status === 'Rejected' ? 'error' : 'warning'}`}>
+                                        <span className={`badge badge-${proposal.status === 'Approved' ? 'warning' : proposal.status.toLowerCase().includes('approved') ? 'success' : proposal.status.toLowerCase().includes('rejected') ? 'error' : 'warning'}`}>
                                             {proposal.status}
                                         </span>
                                     </td>
@@ -369,7 +370,7 @@ const ApproveProposals = () => {
                                                 size="sm"
                                                 onClick={() => handleViewPDF(proposal)}
                                             >
-                                                View
+                                                <Eye size={16} style={{ marginRight: '5px' }} /> View
                                             </InteractiveButton>
                                             {proposal.status === 'Pending' && (
                                                 <>
@@ -438,7 +439,7 @@ const ApproveProposals = () => {
                     <div className="form-helper">This reason will be sent to the district admin</div>
                 </div>
             </Modal>
-        </div>
+        </div >
     );
 };
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const DistrictHelp = () => {
     const [formData, setFormData] = useState({
@@ -82,7 +83,7 @@ const DistrictHelp = () => {
                                 How to release funds to Gram Panchayats?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Go to <strong>Fund Release to GPs</strong>, click <strong>"+ Release New Funds"</strong>, select the GP and scheme component, enter the amount, officer ID, and click Confirm Release.
+                                Go to <strong>Fund Release to GPs</strong>, click the <strong>"+ Release New Funds"</strong> button, select the GP and scheme component, enter the amount, officer ID, and click Confirm Release.
                             </p>
                         </details>
 
@@ -91,7 +92,7 @@ const DistrictHelp = () => {
                                 How to approve GP proposals?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Navigate to <strong>Approve GP Proposals</strong>, filter by status if needed, click <strong>"View"</strong> to see details, then click <strong>"Approve"</strong> or <strong>"Reject"</strong> with appropriate reason.
+                                Navigate to <strong>Approve GP Proposals</strong>, filter by status if needed, click the blue <strong>"View"</strong> button (with eye icon) to see details, then click the green <strong>"Approve"</strong> button (with checkmark icon) or red <strong>"Reject"</strong> button (with X icon) with appropriate reason.
                             </p>
                         </details>
 
@@ -100,7 +101,7 @@ const DistrictHelp = () => {
                                 How to add a new GP Admin?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Go to <strong>Manage GP Admins</strong>, click <strong>"+ Add New Admin"</strong>, select the GP, fill in admin details, username, password, and contact information, then click Save.
+                                Go to <strong>Manage GP Admins</strong>, click the <strong>"+ Add New Admin"</strong> button, select the GP, fill in admin details, username, password, and contact information, then click Save.
                             </p>
                         </details>
 
@@ -109,7 +110,7 @@ const DistrictHelp = () => {
                                 How to upload Utilization Certificates?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Go to <strong>Upload Utilisation Certificates</strong>, click <strong>"+ Upload New UC"</strong>, select the GP and component, choose the file, and click Upload.
+                                Go to <strong>Upload Utilisation Certificates</strong>, click the <strong>"+ Upload New UC"</strong> button, select the GP and component, choose the file, and click Upload.
                             </p>
                         </details>
 
@@ -118,7 +119,7 @@ const DistrictHelp = () => {
                                 How to export reports as PDF?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Go to <strong>Reports</strong>, select the report type (Financial, Progress, or UC Status), and click <strong>"📥 Export Report"</strong>. A print dialog will open where you can save as PDF.
+                                Go to <strong>Reports</strong>, select the report type (Financial, Progress, or UC Status), and click the <strong>"Export Report"</strong> button (with download icon). A print dialog will open where you can save as PDF.
                             </p>
                         </details>
                     </div>
@@ -126,8 +127,16 @@ const DistrictHelp = () => {
 
                 {/* Contact Support Form */}
                 <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: 15 }}>Submit Support Ticket</h3>
-                    <div className="card" style={{ padding: 20 }}>
+                    <div style={{
+                        background: 'white',
+                        padding: '32px',
+                        borderRadius: '16px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                        border: '1px solid #F3F4F6'
+                    }}>
+                        <div style={{ marginBottom: '24px', borderBottom: '1px solid #F3F4F6', paddingBottom: '16px' }}>
+                            <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#1F2937', margin: 0 }}>Submit Support Ticket</h3>
+                        </div>
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
                                 <label className="form-label">Subject</label>
@@ -210,9 +219,9 @@ const DistrictHelp = () => {
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 10 }}>
+                            <InteractiveButton variant="primary" type="submit" style={{ width: '100%', marginTop: 10 }}>
                                 Submit Support Ticket
-                            </button>
+                            </InteractiveButton>
                         </form>
                     </div>
                 </div>

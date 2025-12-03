@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { Bell } from 'lucide-react';
 
 
 
@@ -112,7 +113,7 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
     return (
         <div className="notification-bell" style={{ position: 'relative' }}>
             <div onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
-                <span className="notification-icon">🔔</span>
+                <span className="notification-icon"><Bell size={34} /></span>
                 {unreadCount > 0 && (
                     <span className="notification-badge">{unreadCount}</span>
                 )}
