@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import IndiaMap from '../../../components/maps/IndiaMap';
 import DistrictMap from '../../../components/maps/DistrictMap';
+import MonitorProgressMinistry from './MonitorProgressMinistry';
 
 const THEME = {
     primary: '#7C3AED',
@@ -1156,6 +1157,9 @@ const MonitorProgress = () => {
                     </div>
                 </div>
             </div>
+
+            {/* All Projects List */}
+            <MonitorProgressMinistry />
         </div>
     );
 };
