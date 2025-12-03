@@ -465,44 +465,6 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
             </div>
 
 
-
-            {/* GP Proposals Pending */}
-            <div className="dashboard-section">
-                <div className="section-header">
-                    <h2 className="section-title">GP Proposals Pending Approval</h2>
-                    <span className="badge badge-warning" style={{ fontSize: 'var(--text-base)', padding: 'var(--space-2) var(--space-4)' }}>
-                        {stats.projectsProposed} Pending
-                    </span>
-                </div>
-
-                <div className="card">
-                    {['Shirur GP - Community Center', 'Khed GP - Water Tank'].map((proposal, index) => (
-                        <div key={index} style={{
-                            padding: 'var(--space-4)',
-                            border: '1px solid var(--border-light)',
-                            borderRadius: 'var(--radius-md)',
-                            marginBottom: 'var(--space-3)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}>
-                            <div>
-                                <h4 style={{ margin: 0, marginBottom: 'var(--space-2)' }}>{proposal}</h4>
-                                <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                                    Submitted: Nov {22 + index}, 2025 • Component: Adarsh Gram •
-                                    Estimated Cost: ₹{(Math.random() * 50 + 20).toFixed(2)} L
-                                </p>
-                            </div>
-                            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                                <button className="btn btn-secondary btn-sm">📄 Review</button>
-                                <button className="btn btn-primary btn-sm">✅ Approve</button>
-                                <button className="btn btn-outline btn-sm">❌ Reject</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
             {/* My Submitted Proposals (To State) */}
             <div className="dashboard-section">
                 <div className="section-header">
