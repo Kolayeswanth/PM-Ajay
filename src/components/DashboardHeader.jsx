@@ -142,22 +142,6 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, showNotifi
                                     />
                                 </li>
                             )}
-                            <li className="nav-item">
-                                <button
-                                    onClick={handleLogout}
-                                    className="nav-link logout-link"
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: 'var(--color-white)',
-                                        padding: 'var(--space-3) var(--space-4)',
-                                        cursor: 'pointer',
-                                        font: 'inherit'
-                                    }}
-                                >
-                                    Logout
-                                </button>
-                            </li>
                         </ul>
                     </nav>
                 </div>
