@@ -27,6 +27,9 @@ app.use('/api/district-admins', require('./routes/districtAdminRoutes'));
 app.use('/api/implementing-agencies', require('./routes/implementingAgencyRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/monitor', require('./routes/monitorRoutes'));
+app.use('/api/circulars', require('./routes/circularRoutes'));
+app.use('/api/ucs', require('./routes/ucRoutes'));
+
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
