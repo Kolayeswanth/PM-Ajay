@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
+import DashboardHeader from '../../components/DashboardHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import DistrictDashboardPanel from './district/DistrictDashboardPanel';
 import ManageGPAdmins from './district/ManageGPAdmins';
@@ -12,6 +13,18 @@ import DistrictNotifications from './district/DistrictNotifications';
 import DistrictHelp from './district/DistrictHelp';
 import CreateProposal from './district/CreateProposal';
 import AssignProjectsDistrict from './district/AssignProjectsDistrict';
+import {
+    LayoutDashboard,
+    FilePlus,
+    ClipboardList,
+    Users,
+    Wallet,
+    Upload,
+    FileBarChart,
+    Bell,
+    HelpCircle,
+    LogOut
+} from 'lucide-react';
 
 const DistrictDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -19,8 +32,13 @@ const DistrictDashboard = () => {
     const [districtId, setDistrictId] = useState(null);
     const [stateId, setStateId] = useState(null);
     const [stateName, setStateName] = useState(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const navigate = useNavigate();
     const { logout, user } = useAuth();
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
 
     // Fetch district name from user profile
     React.useEffect(() => {
@@ -94,16 +112,16 @@ const DistrictDashboard = () => {
     }, []);
 
     const sidebarMenu = [
-        { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
-        { icon: '📝', label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
-        { icon: '✍️', label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
-        { icon: '🏢', label: 'Manage Implementing Agencies', action: () => setActiveTab('gp-admins'), active: activeTab === 'gp-admins' },
-        { icon: '💰', label: 'Funds Received from State', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
-        { icon: '📄', label: 'Upload UCs', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
-        { icon: '📊', label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
-        { icon: '🔔', label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
-        { icon: '❓', label: 'Help', action: () => setActiveTab('help'), active: activeTab === 'help' },
-        { icon: '🚪', label: 'Logout', action: () => { logout(); navigate('/login'); } }
+        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <FilePlus size={20} />, label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
+        { icon: <ClipboardList size={20} />, label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
+        { icon: <Users size={20} />, label: 'Manage Implementing Agencies', action: () => setActiveTab('gp-admins'), active: activeTab === 'gp-admins' },
+        { icon: <Wallet size={20} />, label: 'Funds Received from State', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
+        { icon: <Upload size={20} />, label: 'Upload UCs', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
+        { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
+        { icon: <Bell size={20} />, label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
+        { icon: <HelpCircle size={20} />, label: 'Help', action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
 
     const formatCurrency = (amount) => {
@@ -151,16 +169,14 @@ const DistrictDashboard = () => {
     };
 
     return (
-        <div className="dashboard-layout">
-            <DashboardSidebar menuItems={sidebarMenu} />
+        <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+            <DashboardHeader toggleSidebar={toggleSidebar} breadcrumb={getBreadcrumb()} showNotificationBell={false} />
+            <DashboardSidebar menuItems={sidebarMenu} user={user} isOpen={isSidebarOpen} />
 
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
-                        <h1>District Dashboard - {districtName}</h1>
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
-                            {getBreadcrumb()}
-                        </p>
+                        <h3 style={{ margin: 0 }}>District Dashboard - {districtName}</h3>
                     </div>
                     <div className="dashboard-actions">
                         <NotificationBell userRole="district" districtName={districtName} />

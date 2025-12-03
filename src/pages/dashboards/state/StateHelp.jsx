@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const StateHelp = () => {
     const [formData, setFormData] = useState({
@@ -82,7 +83,7 @@ const StateHelp = () => {
                                 How to release funds to districts?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Go to <strong>Fund Release to Districts</strong>, click <strong>"+ Release New Funds"</strong>, select the district and scheme component, enter the amount, officer ID, and click Confirm Release.
+                                Go to <strong>Fund Release to Districts</strong>, click the <strong>"+ Release New Funds"</strong> button, select the district and scheme component, enter the amount, officer ID, and click Confirm Release.
                             </p>
                         </details>
 
@@ -91,7 +92,7 @@ const StateHelp = () => {
                                 How to approve district proposals?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Navigate to <strong>Approve District Proposals</strong>, filter by status if needed, click <strong>"View"</strong> to see details, then click <strong>"Approve"</strong> or <strong>"Reject"</strong> with appropriate reason.
+                                Navigate to <strong>Approve District Proposals</strong>, filter by status if needed, click the blue <strong>"View"</strong> button (with eye icon) to see details, then click the green <strong>"Approve"</strong> button or red <strong>"Reject"</strong> button with appropriate reason.
                             </p>
                         </details>
 
@@ -100,7 +101,7 @@ const StateHelp = () => {
                                 How to add a new District Admin?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Go to <strong>Manage District Admins</strong>, click <strong>"+ Add New Admin"</strong>, select the district, fill in admin details, username, password, and contact information, then click Save.
+                                Go to <strong>Manage District Admins</strong>, click the <strong>"+ Add New Admin"</strong> button, select the district, fill in admin details, username, password, and contact information, then click Save.
                             </p>
                         </details>
 
@@ -109,7 +110,7 @@ const StateHelp = () => {
                                 How to upload Utilization Certificates?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Go to <strong>Upload Utilisation Certificates</strong>, click <strong>"+ Upload New UC"</strong>, select the district and component, choose the file, and click Upload.
+                                Go to <strong>Upload Utilisation Certificates</strong>, click the <strong>"+ Upload New UC"</strong> button, select the district and component, choose the file, and click Upload.
                             </p>
                         </details>
 
@@ -118,7 +119,7 @@ const StateHelp = () => {
                                 How to export reports as PDF?
                             </summary>
                             <p style={{ marginTop: 10, color: '#666', paddingLeft: 10, lineHeight: 1.6 }}>
-                                Go to <strong>Reports</strong>, select the report type (Financial, Progress, or UC Status), and click <strong>"📥 Export Report"</strong>. A print dialog will open where you can save as PDF.
+                                Go to <strong>Reports</strong>, select the report type (Financial, Progress, or UC Status), and click the <strong>"Export Report"</strong> button (with download icon). A print dialog will open where you can save as PDF.
                             </p>
                         </details>
                     </div>
@@ -210,9 +211,9 @@ const StateHelp = () => {
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 10 }}>
+                            <InteractiveButton variant="primary" type="submit" style={{ width: '100%', marginTop: 10 }}>
                                 Submit Support Ticket
-                            </button>
+                            </InteractiveButton>
                         </form>
                     </div>
                 </div>

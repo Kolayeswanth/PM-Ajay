@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import InteractiveButton from '../../../components/InteractiveButton';
+
+import { Download } from 'lucide-react';
 
 const DistrictReports = () => {
     const [reportType, setReportType] = useState('Financial');
@@ -151,9 +154,9 @@ const DistrictReports = () => {
     };
 
     return (
-        <div className="dashboard-panel" style={{ padding: 20 }}>
+        <div className="dashboard-panel" style={{ padding: '0px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ margin: 0 }}>Reports & Analytics</h2>
+                <h3 style={{ margin: 0 }}>Reports & Analytics</h3>
                 <div style={{ display: 'flex', gap: 12 }}>
                     <select
                         className="form-control"
@@ -165,7 +168,7 @@ const DistrictReports = () => {
                         <option value="Progress">Project Progress</option>
                         <option value="UCs">UC Status Report</option>
                     </select>
-                    <button className="btn btn-primary btn-sm" onClick={handleExportPDF}>📥 Export Report</button>
+                    <InteractiveButton variant="secondary" size="sm" onClick={handleExportPDF}><Download size={16} /> Export Report</InteractiveButton>
                 </div>
             </div>
 
@@ -183,14 +186,31 @@ const DistrictReports = () => {
 
                 {/* Summary Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 30 }}>
-                    {Object.entries(reportData[reportType].summary).map(([key, value]) => (
-                        <div key={key} style={{ padding: 15, backgroundColor: '#f8f9fa', borderRadius: 8, textAlign: 'center', border: '1px solid #e9ecef' }}>
-                            <div style={{ fontSize: '14px', color: '#666', marginBottom: 5, textTransform: 'capitalize' }}>
-                                {key.replace(/([A-Z])/g, ' $1').trim()}
+                    {Object.entries(reportData[reportType].summary).map(([key, value], index) => {
+                        const colors = [
+                            { bg: '#EEF2FF', text: '#4F46E5', label: '#6366F1' },  // Purple for Total Allocated
+                            { bg: '#FEF3C7', text: '#D97706', label: '#F59E0B' },  // Amber for Total Released
+                            { bg: '#ECFDF5', text: '#059669', label: '#10B981' },  // Green for Total Utilized
+                            { bg: '#EFF6FF', text: '#2563EB', label: '#3B82F6' }   // Blue for Balance
+                        ];
+                        const color = colors[index] || colors[0];
+
+                        return (
+                            <div key={key} style={{
+                                padding: 20,
+                                backgroundColor: color.bg,
+                                borderRadius: 12,
+                                textAlign: 'center',
+                                border: `1px solid ${color.bg}`,
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+                            }}>
+                                <div style={{ fontSize: '13px', color: color.label, marginBottom: 8, textTransform: 'capitalize', fontWeight: '600', letterSpacing: '0.05em' }}>
+                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                </div>
+                                <div style={{ fontSize: '32px', fontWeight: '800', color: color.text }}>{value}</div>
                             </div>
-                            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2c3e50' }}>{value}</div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Data Table */}

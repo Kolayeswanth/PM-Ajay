@@ -43,17 +43,33 @@ const FundsReceivedFromState = ({ formatCurrency, districtId }) => {
                 </p>
             </div>
 
-            {/* Summary Card */}
-            <div className="card" style={{ padding: 20, marginBottom: 20, backgroundColor: '#f8f9fa', border: '1px solid #e9ecef' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Funds Received</h3>
-                        <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2c3e50' }}>₹{totalReceived.toFixed(2)} Cr</div>
+            {/* Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginBottom: 30 }}>
+                <div style={{
+                    padding: 20,
+                    backgroundColor: '#EEF2FF',
+                    borderRadius: 12,
+                    textAlign: 'center',
+                    border: '1px solid #EEF2FF',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+                }}>
+                    <div style={{ fontSize: '13px', color: '#6366F1', marginBottom: 8, textTransform: 'capitalize', fontWeight: '600', letterSpacing: '0.05em' }}>
+                        Total Funds Received
                     </div>
-                    <div>
-                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Releases</h3>
-                        <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#27ae60' }}>{fundReleases.length}</div>
+                    <div style={{ fontSize: '32px', fontWeight: '800', color: '#4F46E5' }}>₹{totalReceived.toFixed(2)} Cr</div>
+                </div>
+                <div style={{
+                    padding: 20,
+                    backgroundColor: '#ECFDF5',
+                    borderRadius: 12,
+                    textAlign: 'center',
+                    border: '1px solid #ECFDF5',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+                }}>
+                    <div style={{ fontSize: '13px', color: '#10B981', marginBottom: 8, textTransform: 'capitalize', fontWeight: '600', letterSpacing: '0.05em' }}>
+                        Total Releases
                     </div>
+                    <div style={{ fontSize: '32px', fontWeight: '800', color: '#059669' }}>{fundReleases.length}</div>
                 </div>
             </div>
 
