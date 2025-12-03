@@ -123,18 +123,11 @@ const Header = () => {
                                 ))}
 
                                 {isAuthenticated ? (
-                                    <>
-                                        <li className="nav-item" style={{ marginLeft: 'auto' }}>
-                                            <span className="nav-link" style={{ cursor: 'default' }}>
-                                                {user?.name} ({getRoleName(user?.role)})
-                                            </span>
-                                        </li>
-                                        <li className="nav-item">
-                                            <button onClick={handleLogout} className="nav-link logout-link">
-                                                Logout
-                                            </button>
-                                        </li>
-                                    </>
+                                    <li className="nav-item" style={{ marginLeft: 'auto' }}>
+                                        <span className="nav-link" style={{ cursor: 'default' }}>
+                                            {user?.name} ({getRoleName(user?.role)})
+                                        </span>
+                                    </li>
                                 ) : (
                                     <li className="nav-item" style={{ marginLeft: 'auto' }}>
                                         <Link to="/login" className="nav-link">
