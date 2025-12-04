@@ -242,8 +242,8 @@ const ManageStateAdmins = () => {
                 <table className="table" style={{ minWidth: 800 }}>
                     <thead>
                         <tr>
-                            <th>Name</th>
                             <th>State Name</th>
+                            <th>Name</th>
                             <th>Phone No</th>
                             <th>Email</th>
                             <th>Actions</th>
@@ -253,8 +253,8 @@ const ManageStateAdmins = () => {
                         {filteredAdmins.length > 0 ? (
                             filteredAdmins.map(admin => (
                                 <tr key={admin.id}>
-                                    <td style={{ fontWeight: 600 }}>{admin.admin_name}</td>
                                     <td>{admin.state_name}</td>
+                                    <td style={{ fontWeight: 600 }}>{admin.admin_name}</td>
                                     <td>{admin.phone_no}</td>
                                     <td>{admin.email}</td>
                                     <td>

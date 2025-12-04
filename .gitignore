@@ -19,6 +19,9 @@ yarn-error.log*
 # CSV files with sensitive data
 CSV_IMPORTS/*.csv
 
+# Scripts with potential secrets
+scripts/
+
 # Logs
 logs/
 *.log
@@ -49,3 +52,12 @@ out/
 # Database dumps
 *.sql.backup
 *.dump
+
+# Backend temporary/debug files
+backend/*debug*.js
+backend/*debug*.sql
+backend/*test*.js
+backend/*check*.js
+backend/*find*.js
+backend/*get*.js
+backend/*temp*.js

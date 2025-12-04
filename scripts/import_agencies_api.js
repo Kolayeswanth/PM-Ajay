@@ -7,14 +7,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- CONFIGURATION ---
-const SUPABASE_URL = 'https://gwfeaubvzjepmmhxgdvc.supabase.co';
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 
 //removed csv file name and default password
 
-if (!SERVICE_ROLE_KEY) {
-    console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY environment variable is missing.');
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    console.error('❌ Error: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variable is missing.');
     process.exit(1);
 }
 
