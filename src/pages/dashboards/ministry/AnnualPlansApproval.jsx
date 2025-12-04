@@ -11,8 +11,11 @@ const AnnualPlansApproval = () => {
     const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
+    const [minAllocationAmount, setMinAllocationAmount] = useState('');
     const [toast, setToast] = useState(null);
     const [statusFilter, setStatusFilter] = useState('');
+    const [componentFilter, setComponentFilter] = useState('');
+    const [stateFilter, setStateFilter] = useState('');
     const { user } = useAuth();
 
     const fetchPlans = async () => {
@@ -42,6 +45,7 @@ const AnnualPlansApproval = () => {
 
     const handleApproveClick = (plan) => {
         setSelectedPlan(plan);
+        setMinAllocationAmount(plan.estimated_cost || '');
         setIsApproveModalOpen(true);
     };
 
@@ -51,18 +55,25 @@ const AnnualPlansApproval = () => {
         setIsRejectModalOpen(true);
     };
 
-    const updateStatus = async (status, reason = '') => {
+    const updateStatus = async (status, reason = '', allocationAmount = null) => {
         try {
+            const requestBody = {
+                status: status,
+                rejectReason: reason,
+                userId: user?.id
+            };
+
+            // Add allocation amount if approving
+            if (status === 'APPROVED_BY_MINISTRY' && allocationAmount) {
+                requestBody.allocatedAmount = parseFloat(allocationAmount);
+            }
+
             const response = await fetch(`http://localhost:5001/api/proposals/${selectedPlan.id}/status`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    status: status,
-                    rejectReason: reason,
-                    userId: user?.id
-                })
+                body: JSON.stringify(requestBody)
             });
 
             const result = await response.json();
@@ -79,7 +90,17 @@ const AnnualPlansApproval = () => {
     };
 
     const confirmApprove = async () => {
-        await updateStatus('APPROVED_BY_MINISTRY');
+        if (!minAllocationAmount || parseFloat(minAllocationAmount) <= 0) {
+            showToast('Please enter a valid minimum allocation amount');
+            return;
+        }
+
+        if (parseFloat(minAllocationAmount) > parseFloat(selectedPlan.estimated_cost)) {
+            showToast('Allocation amount cannot exceed the project cost');
+            return;
+        }
+
+        await updateStatus('APPROVED_BY_MINISTRY', '', minAllocationAmount);
         setIsApproveModalOpen(false);
     };
 
@@ -148,20 +169,77 @@ const AnnualPlansApproval = () => {
         }
     };
 
-    const filteredPlans = statusFilter
-        ? plans.filter(plan => {
-            if (statusFilter === 'Pending') return plan.status === 'APPROVED_BY_STATE';
-            if (statusFilter === 'Approved') return plan.status === 'APPROVED_BY_MINISTRY';
-            if (statusFilter === 'Rejected') return plan.status === 'REJECTED_BY_MINISTRY';
-            return true;
-        })
-        : plans;
+    const filteredPlans = plans.filter(plan => {
+        // Status filter
+        if (statusFilter) {
+            if (statusFilter === 'Pending' && plan.status !== 'APPROVED_BY_STATE') return false;
+            if (statusFilter === 'Approved' && plan.status !== 'APPROVED_BY_MINISTRY') return false;
+            if (statusFilter === 'Rejected' && plan.status !== 'REJECTED_BY_MINISTRY') return false;
+        }
+
+        // Component filter
+        if (componentFilter && plan.component !== componentFilter) return false;
+
+        // State filter
+        if (stateFilter && plan.state_name !== stateFilter) return false;
+
+        return true;
+    });
+
+    // Get unique components and states for filter dropdowns
+    const uniqueComponents = [...new Set(plans.map(p => p.component))].filter(Boolean);
+    const uniqueStates = [...new Set(plans.map(p => p.state_name))].filter(Boolean);
 
     return (
         <div className="dashboard-panel">
             <div className="section-header">
                 <h2 className="section-title">Project Approval</h2>
-                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    {/* Component Filter */}
+                    <select
+                        className="form-select"
+                        value={componentFilter}
+                        onChange={(e) => setComponentFilter(e.target.value)}
+                        style={{
+                            width: '180px',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            backgroundColor: '#fff',
+                            fontSize: '14px',
+                            color: '#4a5568',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="">All Components</option>
+                        {uniqueComponents.map(comp => (
+                            <option key={comp} value={comp}>{comp}</option>
+                        ))}
+                    </select>
+
+                    {/* State Filter */}
+                    <select
+                        className="form-select"
+                        value={stateFilter}
+                        onChange={(e) => setStateFilter(e.target.value)}
+                        style={{
+                            width: '180px',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            backgroundColor: '#fff',
+                            fontSize: '14px',
+                            color: '#4a5568',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="">All States</option>
+                        {uniqueStates.map(state => (
+                            <option key={state} value={state}>{state}</option>
+                        ))}
+                    </select>
+
+                    {/* Status Filter */}
                     <select
                         className="form-select"
                         style={{
@@ -287,7 +365,7 @@ const AnnualPlansApproval = () => {
             <Modal
                 isOpen={isApproveModalOpen}
                 onClose={() => setIsApproveModalOpen(false)}
-                title="Confirm Approval"
+                title="Approve Project & Set Minimum Allocation"
                 footer={
                     <>
                         <InteractiveButton variant="secondary" onClick={() => setIsApproveModalOpen(false)}>Cancel</InteractiveButton>
@@ -295,10 +373,49 @@ const AnnualPlansApproval = () => {
                     </>
                 }
             >
-                <p>Are you sure you want to approve the project <strong>{selectedPlan?.project_name}</strong>?</p>
-                <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
-                    This will authorize the release of funds for this project.
-                </p>
+                <div style={{ marginBottom: '20px' }}>
+                    <p style={{ fontSize: '14px', color: '#555', marginBottom: '15px' }}>
+                        You are approving the project <strong>{selectedPlan?.project_name}</strong> from <strong>{selectedPlan?.district_name}</strong>.
+                    </p>
+
+                    <div style={{
+                        background: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        marginBottom: '20px',
+                        border: '1px solid #e2e8f0'
+                    }}>
+                        <div style={{ fontSize: '13px', color: '#666', marginBottom: '5px' }}>Actual Project Cost:</div>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2c3e50' }}>
+                            ₹{selectedPlan?.estimated_cost} Lakhs
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label" style={{ fontWeight: '600', color: '#2c3e50' }}>
+                            Minimum Allocation Amount (in Lakhs) <span style={{ color: '#e74c3c' }}>*</span>
+                        </label>
+                        <input
+                            type="number"
+                            className="form-input"
+                            value={minAllocationAmount}
+                            onChange={(e) => setMinAllocationAmount(e.target.value)}
+                            placeholder="Enter the minimum amount you want to allocate for this project"
+                            min="0"
+                            step="0.01"
+                            style={{
+                                padding: '12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                border: '1px solid #cbd5e0',
+                                width: '100%'
+                            }}
+                        />
+                        <small style={{ display: 'block', marginTop: '8px', color: '#718096', fontSize: '12px' }}>
+                            Enter the minimum amount you want to allocate for this project.
+                        </small>
+                    </div>
+                </div>
             </Modal>
 
             <Modal

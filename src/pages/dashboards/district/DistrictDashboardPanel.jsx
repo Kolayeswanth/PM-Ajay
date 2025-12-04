@@ -1,52 +1,8 @@
 import React, { useState } from 'react';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import { districtStats, mockProjects } from '../../../data/mockData';
-import { Building2, FileText, IndianRupee, CheckCircle2, Plus, Download, XCircle, Eye } from 'lucide-react';
-import InteractiveButton from '../../../components/InteractiveButton';
 
-const ModernStatCard = ({ icon: Icon, value, label, color, bgColor }) => (
-    <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        border: '1px solid #F3F4F6',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        cursor: 'default',
-        height: '100%'
-    }}
-        onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-        }}
-        onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)';
-        }}
-    >
-        <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
-            backgroundColor: bgColor,
-            color: color,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-        }}>
-            <Icon size={28} strokeWidth={1.5} />
-        </div>
-        <div>
-            <div style={{ fontSize: '36px', fontWeight: '800', color: '#1F2937', lineHeight: '1.2', letterSpacing: '-0.02em' }}>{value}</div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.05em' }}>{label}</div>
-        </div>
-    </div>
-);
-
-const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
+const DistrictDashboardPanel = ({ formatCurrency, districtId, stateId }) => {
     const [stats, setStats] = useState({
         gramPanchayats: 0,
         totalProjects: 0,
@@ -54,17 +10,21 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
         completedProjects: 0
     });
     const [fundAllocated, setFundAllocated] = useState(0);
+    const [fundUtilized, setFundUtilized] = useState(0);
+    const [districtProgress, setDistrictProgress] = useState(0);
     const [recentReleases, setRecentReleases] = useState([]);
-    const [stateName, setStateName] = useState('Maharashtra');
+    const [stateName, setStateName] = useState(null);
     const [districtName, setDistrictName] = useState(null);
     const [myProposals, setMyProposals] = useState([]);
+    const [selectedComponent, setSelectedComponent] = useState('All Components');
+    const [showComponentDropdown, setShowComponentDropdown] = useState(false);
 
     // Fetch district statistics
     React.useEffect(() => {
         if (!districtId) return;
         const fetchStats = async () => {
             try {
-                const response = await fetch(`http://localhost:5001/api/dashboard/district-stats/${districtId}`);
+                const response = await fetch(`http://localhost:5001/api/funds/district-stats?districtId=${districtId}`);
                 const result = await response.json();
                 if (result.success) {
                     setStats(result.data);
@@ -93,10 +53,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
         fetchProposals();
     }, [districtId]);
 
-    const [selectedComponent, setSelectedComponent] = useState('All Components');
-    const [showComponentDropdown, setShowComponentDropdown] = useState(false);
-
-    // Fetch allocated funds and district info
+    // Fetch allocated funds and dist rict info
     React.useEffect(() => {
         const fetchData = async () => {
             if (!districtId) return;
@@ -112,6 +69,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
 
                 if (districtResponse.ok) {
                     const districtData = await districtResponse.json();
+
                     if (districtData && districtData.length > 0) {
                         setDistrictName(districtData[0].name);
 
@@ -125,6 +83,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                             });
                             if (stateResponse.ok) {
                                 const stateData = await stateResponse.json();
+
                                 if (stateData && stateData.length > 0) {
                                     setStateName(stateData[0].name);
                                 }
@@ -132,7 +91,6 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                         }
                     }
                 }
-
 
                 // Fetch fund releases
                 const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/fund_releases?district_id=eq.${districtId}&select=*&order=created_at.desc`, {
@@ -155,6 +113,34 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
 
         fetchData();
     }, [districtId]);
+
+    // Fallback to mock data for implemented districts when real data is missing
+    React.useEffect(() => {
+        if (!districtName || !stateName) return;
+
+        // Check if this district is implemented (exists in mock data)
+        const stateDistricts = districts[stateName];
+        const isImplemented = stateDistricts && stateDistricts.some(d => d.name === districtName);
+
+        // If implemented but no real data, use mock data
+        if (isImplemented && stats.totalProjects === 0 && fundAllocated === 0) {
+            const mockDistrict = stateDistricts.find(d => d.name === districtName);
+            if (mockDistrict) {
+                const allocated = mockDistrict.fundAllocated;
+                const utilized = allocated * (mockDistrict.progress / 100);
+
+                setStats({
+                    gramPanchayats: 0,
+                    totalProjects: mockDistrict.projects,
+                    fundAllocated: allocated / 10000000, // Convert to Cr
+                    completedProjects: Math.floor(mockDistrict.projects * (mockDistrict.progress / 100))
+                });
+                setFundAllocated(allocated);
+                setFundUtilized(utilized);
+                setDistrictProgress(mockDistrict.progress);
+            }
+        }
+    }, [districtName, stateName, stats.totalProjects, fundAllocated]);
 
     const getStatusBadge = (status) => {
         const badges = {
@@ -210,7 +196,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                 />
                 <ModernStatCard
                     icon={IndianRupee}
-                    value={`₹${stats.fundAllocated.toFixed(2)} Cr`}
+                    value={`₹${stats.fundAllocated} Cr`}
                     label="Fund Allocated"
                     color="#2563EB"
                     bgColor="#EFF6FF"
@@ -280,87 +266,6 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
             <div className="dashboard-section" style={{ marginBottom: 'var(--space-6)' }}>
                 <div className="section-header" style={{ marginBottom: 'var(--space-4)' }}>
                     <h2 className="section-title">District Overview</h2>
-                    {/* Component Dropdown - Top Right */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)', position: 'relative', button: 'var(--shadow-lg)' }}>
-                        <button
-                            className="btn"
-                            onClick={() => setShowComponentDropdown(!showComponentDropdown)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '10px 20px',
-                                backgroundColor: 'white',
-                                border: '2px solid #7C3AED',
-                                borderRadius: '24px',
-                                color: '#7C3AED',
-                                fontWeight: '600',
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                boxShadow: '0 2px 4px rgba(124, 58, 237, 0.1)'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#F3F4F6';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'white';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                            }}
-                        >
-                            <span>{selectedComponent}</span>
-                            <span style={{ fontSize: '12px' }}>▼</span>
-                        </button>
-
-                        {/* Dropdown Menu */}
-                        {showComponentDropdown && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                marginTop: '8px',
-                                backgroundColor: 'white',
-                                border: '1px solid #E5E7EB',
-                                borderRadius: '12px',
-                                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                                zIndex: 1000,
-                                minWidth: '200px',
-                                overflow: 'hidden'
-                            }}>
-                                {['All Components', 'Adarsh Gram', 'GIA', 'Hostel'].map((component) => (
-                                    <div
-                                        key={component}
-                                        onClick={() => {
-                                            setSelectedComponent(component);
-                                            setShowComponentDropdown(false);
-                                        }}
-                                        style={{
-                                            padding: '12px 20px',
-                                            cursor: 'pointer',
-                                            transition: 'background-color 0.2s ease',
-                                            backgroundColor: selectedComponent === component ? '#F3F4F6' : 'white',
-                                            fontWeight: selectedComponent === component ? '600' : '500',
-                                            color: selectedComponent === component ? '#7C3AED' : '#374151',
-                                            fontSize: '14px'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (selectedComponent !== component) {
-                                                e.currentTarget.style.backgroundColor = '#F9FAFB';
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            if (selectedComponent !== component) {
-                                                e.currentTarget.style.backgroundColor = 'white';
-                                            }
-                                        }}
-                                    >
-                                        {component}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
 
                 </div>
 
@@ -374,6 +279,88 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
 
                     {/* Right: Fund Utilization & Component Progress */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+                        {/* Component Dropdown - Top Right */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-10px', position: 'relative' }}>
+                            <button
+                                className="btn"
+                                onClick={() => setShowComponentDropdown(!showComponentDropdown)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '10px 20px',
+                                    backgroundColor: 'white',
+                                    border: '2px solid #7C3AED',
+                                    borderRadius: '24px',
+                                    color: '#7C3AED',
+                                    fontWeight: '600',
+                                    fontSize: '14px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: '0 2px 4px rgba(124, 58, 237, 0.1)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#F3F4F6';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'white';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }}
+                            >
+                                <span>{selectedComponent}</span>
+                                <span style={{ fontSize: '12px' }}>▼</span>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {showComponentDropdown && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '8px',
+                                    backgroundColor: 'white',
+                                    border: '1px solid #E5E7EB',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                                    zIndex: 1000,
+                                    minWidth: '200px',
+                                    overflow: 'hidden'
+                                }}>
+                                    {['All Components', 'Adarsh Gram', 'GIA', 'Hostel'].map((component) => (
+                                        <div
+                                            key={component}
+                                            onClick={() => {
+                                                setSelectedComponent(component);
+                                                setShowComponentDropdown(false);
+                                            }}
+                                            style={{
+                                                padding: '12px 20px',
+                                                cursor: 'pointer',
+                                                transition: 'background-color 0.2s ease',
+                                                backgroundColor: selectedComponent === component ? '#F3F4F6' : 'white',
+                                                fontWeight: selectedComponent === component ? '600' : '500',
+                                                color: selectedComponent === component ? '#7C3AED' : '#374151',
+                                                fontSize: '14px'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (selectedComponent !== component) {
+                                                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (selectedComponent !== component) {
+                                                    e.currentTarget.style.backgroundColor = 'white';
+                                                }
+                                            }}
+                                        >
+                                            {component}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
                         {/* Fund Utilization Card */}
                         <div className="card" style={{ padding: 'var(--space-6)' }}>
                             <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
@@ -381,137 +368,135 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                             </h3>
 
 
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
-                                {/* Circular Progress */}
-                                <div style={{ position: 'relative', width: '200px', height: '200px' }}>
-                                    <svg height="200" width="200" style={{ transform: 'rotate(-90deg)' }}>
-                                        <circle stroke="#E5E7EB" strokeWidth="30" fill="transparent" r="70" cx="100" cy="100" />
-                                        <circle
-                                            stroke="#7C3AED"
-                                            strokeWidth="30"
-                                            strokeDasharray={`${2 * Math.PI * 70}`}
-                                            style={{ strokeDashoffset: `${2 * Math.PI * 70 * (1 - (fundAllocated / (fundAllocated + 49000000)))}`, transition: 'stroke-dashoffset 1.5s ease-out' }}
-                                            strokeLinecap="round"
-                                            fill="transparent"
-                                            r="70"
-                                            cx="100"
-                                            cy="100"
-                                        />
-                                    </svg>
-                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--color-navy)' }}>
-                                            {Math.round((fundAllocated / (fundAllocated + 49000000)) * 100)}%
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Utilized</div>
-                                    </div>
-                                </div>
-
-                                {/* Legend */}
-                                <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: '13px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#7C3AED' }}></div>
-                                        <span style={{ color: 'var(--color-navy)' }}>Utilized: ₹{(fundAllocated / 10000000).toFixed(2)} Cr</span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#E5E7EB' }}></div>
-                                        <span style={{ color: 'var(--text-secondary)' }}>Remaining: ₹{(49000000 / 10000000).toFixed(2)} Cr</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Component Progress Card */}
-                        <div className="card" style={{ padding: 'var(--space-6)' }}>
-                            <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
-                                {selectedComponent === 'All Components' ? 'Component Progress' : `${selectedComponent} Progress`}
-                            </h3>
-
-                            {(() => {
-                                const componentData = {
-                                    'Adarsh Gram': { progress: 27, color: '#7C3AED', label: 'Adarsh Gram' },
-                                    'GIA': { progress: 42, color: '#EC4899', label: 'GIA (Grant-in-Aid)' },
-                                    'Hostel': { progress: 89, color: '#F59E0B', label: 'Hostel' }
-                                };
-
-                                if (selectedComponent === 'All Components') {
-                                    return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 0' }}>
-                                            {Object.entries(componentData).map(([key, data]) => (
-                                                <div key={key}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                        <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-navy)' }}>{data.label}</span>
-                                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: data.color }}>{data.progress}%</span>
-                                                    </div>
-                                                    <div style={{ width: '100%', height: '12px', backgroundColor: '#E5E7EB', borderRadius: '6px', overflow: 'hidden' }}>
-                                                        <div style={{ width: `${data.progress}%`, height: '100%', backgroundColor: data.color, borderRadius: '6px', transition: 'width 0.8s ease' }}></div>
-                                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
+                                        {/* Circular Progress */}
+                                        <div style={{ position: 'relative', width: '200px', height: '200px' }}>
+                                            <svg height="200" width="200" style={{ transform: 'rotate(-90deg)' }}>
+                                                <circle stroke="#E5E7EB" strokeWidth="30" fill="transparent" r="70" cx="100" cy="100" />
+                                                <circle
+                                                    stroke="#7C3AED"
+                                                    strokeWidth="30"
+                                                    strokeDasharray={`${2 * Math.PI * 70}`}
+                                                    style={{ strokeDashoffset: `${2 * Math.PI * 70 * (1 - (districtProgress / 100))}`, transition: 'stroke-dashoffset 1.5s ease-out' }}
+                                                    strokeLinecap="round"
+                                                    fill="transparent"
+                                                    r="70"
+                                                    cx="100"
+                                                    cy="100"
+                                                />
+                                            </svg>
+                                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--color-navy)' }}>
+                                                    {districtProgress}%
                                                 </div>
-                                            ))}
-                                        </div>
-                                    );
-                                } else {
-                                    const data = componentData[selectedComponent];
-                                    if (!data) return null;
-                                    return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                                                {/* Large percentage display */}
-                                                <div style={{
-                                                    fontSize: '48px',
-                                                    fontWeight: 'bold',
-                                                    color: data.color,
-                                                    marginBottom: '16px'
-                                                }}>
-                                                    {data.progress}%
-                                                </div>
-
-                                                {/* Large vertical bar */}
-                                                <div style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                    width: '60%',
-                                                    maxWidth: '200px'
-                                                }}>
-                                                    <div style={{
-                                                        width: '100%',
-                                                        height: `${data.progress * 2.5}px`,
-                                                        maxHeight: '250px',
-                                                        backgroundColor: data.color,
-                                                        borderRadius: '8px 8px 0 0',
-                                                        transition: 'height 0.8s ease',
-                                                        minHeight: '40px'
-                                                    }}></div>
-
-                                                    {/* Base line */}
-                                                    <div style={{
-                                                        width: '100%',
-                                                        height: '4px',
-                                                        backgroundColor: '#E5E7EB'
-                                                    }}></div>
-                                                </div>
-
-                                                {/* Component name */}
-                                                <div style={{
-                                                    fontSize: '18px',
-                                                    fontWeight: '600',
-                                                    color: 'var(--color-navy)',
-                                                    marginTop: '16px'
-                                                }}>
-                                                    {data.label}
-                                                </div>
+                                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Utilized</div>
                                             </div>
                                         </div>
-                                    );
-                                }
-                            })()}
-                        </div>
+
+                                        {/* Legend */}
+                                        <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: '13px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#7C3AED' }}></div>
+                                                <span style={{ color: 'var(--color-navy)' }}>Utilized: ₹{(fundUtilized / 10000000).toFixed(2)} Cr</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#E5E7EB' }}></div>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Remaining: ₹{((fundAllocated - fundUtilized) / 10000000).toFixed(2)} Cr</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                    </div>
+                    {/* Component Progress Card */}
+                    <div className="card" style={{ padding: 'var(--space-6)' }}>
+                        <h3 style={{ margin: '0 0 var(--space-6) 0', color: 'var(--color-navy)', fontSize: 'var(--text-xl)', textAlign: 'center' }}>
+                            {selectedComponent === 'All Components' ? 'Component Progress' : `${selectedComponent} Progress`}
+                        </h3>
+
+                        {(() => {
+                            const componentData = {
+                                'Adarsh Gram': { progress: 27, color: '#7C3AED', label: 'Adarsh Gram' },
+                                'GIA': { progress: 42, color: '#EC4899', label: 'GIA (Grant-in-Aid)' },
+                                'Hostel': { progress: 89, color: '#F59E0B', label: 'Hostel' }
+                            };
+
+                            if (selectedComponent === 'All Components') {
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 0' }}>
+                                        {Object.entries(componentData).map(([key, data]) => (
+                                            <div key={key}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                    <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-navy)' }}>{data.label}</span>
+                                                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: data.color }}>{data.progress}%</span>
+                                                </div>
+                                                <div style={{ width: '100%', height: '12px', backgroundColor: '#E5E7EB', borderRadius: '6px', overflow: 'hidden' }}>
+                                                    <div style={{ width: `${data.progress}%`, height: '100%', backgroundColor: data.color, borderRadius: '6px', transition: 'width 0.8s ease' }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            } else {
+                                const data = componentData[selectedComponent];
+                                if (!data) return null;
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                                            {/* Large percentage display */}
+                                            <div style={{
+                                                fontSize: '48px',
+                                                fontWeight: 'bold',
+                                                color: data.color,
+                                                marginBottom: '16px'
+                                            }}>
+                                                {data.progress}%
+                                            </div>
+
+                                            {/* Large vertical bar */}
+                                            <div style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                width: '60%',
+                                                maxWidth: '200px'
+                                            }}>
+                                                <div style={{
+                                                    width: '100%',
+                                                    height: `${data.progress * 2.5}px`,
+                                                    maxHeight: '250px',
+                                                    backgroundColor: data.color,
+                                                    borderRadius: '8px 8px 0 0',
+                                                    transition: 'height 0.8s ease',
+                                                    minHeight: '40px'
+                                                }}></div>
+
+                                                {/* Base line */}
+                                                <div style={{
+                                                    width: '100%',
+                                                    height: '4px',
+                                                    backgroundColor: '#E5E7EB'
+                                                }}></div>
+                                            </div>
+
+                                            {/* Component name */}
+                                            <div style={{
+                                                fontSize: '18px',
+                                                fontWeight: '600',
+                                                color: 'var(--color-navy)',
+                                                marginTop: '16px'
+                                            }}>
+                                                {data.label}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
 
                 </div>
             </div>
-
-
 
             {/* GP Proposals Pending */}
             <div className="dashboard-section">

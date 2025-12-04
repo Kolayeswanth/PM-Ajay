@@ -13,6 +13,7 @@ import DistrictNotifications from './district/DistrictNotifications';
 import DistrictHelp from './district/DistrictHelp';
 import CreateProposal from './district/CreateProposal';
 import AssignProjectsDistrict from './district/AssignProjectsDistrict';
+import FundReleaseToAgencies from './district/FundReleaseToAgencies';
 import {
     LayoutDashboard,
     FilePlus,
@@ -23,7 +24,8 @@ import {
     FileBarChart,
     Bell,
     HelpCircle,
-    LogOut
+    LogOut,
+    Send
 } from 'lucide-react';
 
 const DistrictDashboard = () => {
@@ -117,6 +119,7 @@ const DistrictDashboard = () => {
         { icon: <ClipboardList size={20} />, label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
         { icon: <Users size={20} />, label: 'Manage Implementing Agencies', action: () => setActiveTab('gp-admins'), active: activeTab === 'gp-admins' },
         { icon: <Wallet size={20} />, label: 'Funds Received from State', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
+        { icon: <Send size={20} />, label: 'Fund Release to Agencies', action: () => setActiveTab('fund-release'), active: activeTab === 'fund-release' },
         { icon: <Upload size={20} />, label: 'Upload UCs', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
         { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
         { icon: <Bell size={20} />, label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
@@ -131,7 +134,7 @@ const DistrictDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} />;
+                return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} stateId={stateId} />;
             case 'create-proposal':
                 return <CreateProposal districtId={districtId} />;
             case 'assign-projects':
@@ -140,6 +143,8 @@ const DistrictDashboard = () => {
                 return <ManageGPAdmins />;
             case 'funds-received':
                 return <FundsReceivedFromState formatCurrency={formatCurrency} districtId={districtId} />;
+            case 'fund-release':
+                return <FundReleaseToAgencies formatCurrency={formatCurrency} />;
             case 'ucs':
                 return <UploadUCs />;
             case 'reports':
@@ -149,7 +154,7 @@ const DistrictDashboard = () => {
             case 'help':
                 return <DistrictHelp />;
             default:
-                return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} />;
+                return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} stateId={stateId} />;
         }
     };
 
@@ -160,6 +165,7 @@ const DistrictDashboard = () => {
             'assign-projects': 'Assign Projects',
             'gp-admins': 'Manage Implementing Agencies',
             'funds-received': 'Funds Received from State',
+            'fund-release': 'Fund Release to Agencies',
             'ucs': 'Upload UCs',
             'reports': 'Reports',
             'notifications': 'Notifications',

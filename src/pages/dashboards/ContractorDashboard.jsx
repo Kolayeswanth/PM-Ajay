@@ -4,6 +4,9 @@ import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import DashboardHeader from '../../components/DashboardHeader';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { t } from '../../utils/translations';
 import ContractorDashboardPanel from './contractor/ContractorDashboardPanel';
 import AssignedWorks from './contractor/AssignedWorks';
 import WorkProgress from './contractor/WorkProgress';
@@ -25,6 +28,7 @@ const ContractorDashboard = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const navigate = useNavigate();
     const { logout, user } = useAuth();
+    const { language } = useLanguage();
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -224,10 +228,9 @@ const ContractorDashboard = () => {
             'assigned-works': 'Assigned Works',
             'work-progress': 'Update Progress',
             'payment-status': 'Payment Status',
-            'notifications': 'Notifications',
             'help': 'Help'
         };
-        return `Home > ${labels[activeTab] || 'Dashboard'}`;
+        return `${t('home', language)} > ${labels[activeTab] || t('dashboard', language)}`;
     };
 
     return (
@@ -245,7 +248,7 @@ const ContractorDashboard = () => {
                         <h3 style={{ margin: 0 }}>{user?.role === 'executing_agency' ? `${user?.full_name || user?.user_metadata?.full_name || 'Executing Agency'} Dashboard` : 'Contractor Dashboard'}</h3>
                     </div>
                     <div className="dashboard-actions">
-                        <NotificationBell userRole="executing_agency" />
+                        <NotificationBell />
                     </div>
                 </div>
 

@@ -18,7 +18,8 @@ export const states = [
     { id: 15, name: 'Jharkhand', code: 'JH', districts: 24, projects: 98, fundAllocated: 5600000000 },
     { id: 16, name: 'Chhattisgarh', code: 'CG', districts: 33, projects: 105, fundAllocated: 6200000000 },
     { id: 17, name: 'Haryana', code: 'HR', districts: 22, projects: 123, fundAllocated: 7100000000 },
-    { id: 18, name: 'Punjab', code: 'PB', districts: 23, projects: 145, fundAllocated: 8900000000 }
+    { id: 18, name: 'Punjab', code: 'PB', districts: 23, projects: 145, fundAllocated: 8900000000 },
+    { id: 19, name: 'Delhi', code: 'DL', districts: 11, projects: 75, fundAllocated: 5500000000 }
 ];
 
 export const districts = {
@@ -205,7 +206,23 @@ export const districts = {
     ],
     'NCT of Delhi': [
         { id: 1, name: 'New Delhi', projects: 40, fundAllocated: 800000000, progress: 85 },
-        { id: 2, name: 'North West Delhi', projects: 35, fundAllocated: 700000000, progress: 80 }
+        { id: 2, name: 'North West Delhi', projects: 35, fundAllocated: 700000000, progress: 80 },
+        { id: 3, name: 'North', projects: 32, fundAllocated: 650000000, progress: 78 },
+        { id: 4, name: 'North East', projects: 30, fundAllocated: 620000000, progress: 75 },
+        { id: 5, name: 'East', projects: 28, fundAllocated: 580000000, progress: 72 },
+        { id: 6, name: 'West', projects: 25, fundAllocated: 520000000, progress: 70 },
+        { id: 7, name: 'South', projects: 33, fundAllocated: 680000000, progress: 80 },
+        { id: 8, name: 'South West', projects: 27, fundAllocated: 560000000, progress: 73 }
+    ],
+    Delhi: [
+        { id: 1, name: 'New Delhi', projects: 40, fundAllocated: 800000000, progress: 85 },
+        { id: 2, name: 'North West Delhi', projects: 35, fundAllocated: 700000000, progress: 80 },
+        { id: 3, name: 'North', projects: 32, fundAllocated: 650000000, progress: 78 },
+        { id: 4, name: 'North East', projects: 30, fundAllocated: 620000000, progress: 75 },
+        { id: 5, name: 'East', projects: 28, fundAllocated: 580000000, progress: 72 },
+        { id: 6, name: 'West', projects: 25, fundAllocated: 520000000, progress: 70 },
+        { id: 7, name: 'South', projects: 33, fundAllocated: 680000000, progress: 80 },
+        { id: 8, name: 'South West', projects: 27, fundAllocated: 560000000, progress: 73 }
     ],
     Puducherry: [
         { id: 1, name: 'Puducherry', projects: 15, fundAllocated: 250000000, progress: 75 },
@@ -712,5 +729,19 @@ export const majorCities = {
     Amritsar: [
         { id: 1, name: 'Amritsar City', coordinates: [31.6340, 74.8723], population: '1.1M', type: 'Municipal Corp' },
         { id: 2, name: 'Ajnala', coordinates: [31.8446, 74.7603], population: '16K', type: 'Municipal Council' }
+    ],
+    // Delhi
+    Delhi: [
+        { id: 1, name: 'New Delhi', coordinates: [28.6139, 77.2090], population: '257K', type: 'Municipal Council' },
+        { id: 2, name: 'North West Delhi', coordinates: [28.7186, 77.0662], population: '3.6M', type: 'District' },
+        { id: 3, name: 'North Delhi', coordinates: [28.7041, 77.1025], population: '887K', type: 'District' },
+        { id: 4, name: 'North East Delhi', coordinates: [28.7126, 77.2706], population: '2.2M', type: 'District' },
+        { id: 5, name: 'East Delhi', coordinates: [28.6276, 77.2965], population: '1.7M', type: 'District' },
+        { id: 6, name: 'Central Delhi', coordinates: [28.6453, 77.2456], population: '582K', type: 'District' },
+        { id: 7, name: 'West Delhi', coordinates: [28.6663, 77.0681], population: '2.5M', type: 'District' },
+        { id: 8, name: 'South West Delhi', coordinates: [28.5921, 77.0276], population: '2.2M', type: 'District' },
+        { id: 9, name: 'South Delhi', coordinates: [28.4817, 77.1873], population: '2.7M', type: 'District' },
+        { id: 10, name: 'South East Delhi', coordinates: [28.5632, 77.2796], population: '1.8M', type: 'District' },
+        { id: 11, name: 'Shahdara', coordinates: [28.6980, 77.2926], population: '3.2M', type: 'District' }
     ]
 };

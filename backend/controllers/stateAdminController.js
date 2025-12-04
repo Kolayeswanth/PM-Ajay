@@ -399,15 +399,16 @@ exports.getDistricts = async (req, res) => {
         if (stateError || !stateData) return res.status(404).json({ success: false, error: 'State not found' });
 
         // Get districts
+        // Get districts
         const { data, error } = await supabase
             .from('districts')
-            .select('name')
+            .select('id, name')
             .eq('state_id', stateData.id)
             .order('name', { ascending: true });
 
         if (error) return res.status(500).json({ success: false, error: error.message });
 
-        res.json({ success: true, data: data.map(d => d.name) });
+        res.json({ success: true, data });
 
     } catch (error) {
         console.error('Error fetching districts:', error);
