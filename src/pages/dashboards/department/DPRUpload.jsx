@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../lib/supabaseClient';
 
 const DPRUpload = () => {
     const { user } = useAuth();
@@ -24,18 +25,17 @@ const DPRUpload = () => {
         if (!user?.id) return;
         setLoading(true);
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/dprs?uploaded_by=eq.${user.id}&select=*&order=created_at.desc`, {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setDprs(data);
-            }
+            const { data, error } = await supabase
+                .from('dprs')
+                .select('*')
+                .eq('uploaded_by', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setDprs(data || []);
         } catch (error) {
             console.error('Error fetching DPRs:', error);
+            showToast('Error loading DPRs');
         } finally {
             setLoading(false);
         }
@@ -59,6 +59,16 @@ const DPRUpload = () => {
     const handleUpload = async () => {
         if (!validate()) return;
 
+        // Check if user is authenticated
+        if (!user || !user.id) {
+            showToast('User not authenticated. Please log in again.');
+            return;
+        }
+
+        console.log('Starting DPR upload...');
+        console.log('User ID:', user.id);
+        console.log('Form data:', formData);
+
         try {
             const payload = {
                 project_title: formData.title,
@@ -70,30 +80,31 @@ const DPRUpload = () => {
                 uploaded_by: user.id
             };
 
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/dprs`, {
-                method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('supabase.auth.token')).access_token : ''}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
-                },
-                body: JSON.stringify(payload)
-            });
+            console.log('Payload to insert:', payload);
 
-            if (response.ok) {
-                fetchDPRs();
-                showToast('DPR uploaded successfully');
-                setIsModalOpen(false);
-                setFormData({ title: '', location: '', estimatedCost: '', file: null });
-                setErrors({});
-            } else {
-                console.error('Failed to upload DPR');
-                showToast('Failed to upload DPR');
+            const { data, error } = await supabase
+                .from('dprs')
+                .insert([payload])
+                .select();
+
+            if (error) {
+                console.error('Supabase error details:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+                console.error('Error details:', error.details);
+                showToast(`Failed to upload DPR: ${error.message}`);
+                return;
             }
+
+            console.log('Upload successful:', data);
+            fetchDPRs();
+            showToast('DPR uploaded successfully');
+            setIsModalOpen(false);
+            setFormData({ title: '', location: '', estimatedCost: '', file: null });
+            setErrors({});
         } catch (error) {
-            console.error('Error uploading DPR:', error);
-            showToast('Error uploading DPR');
+            console.error('Catch block error:', error);
+            showToast(`Error uploading DPR: ${error.message || 'Unknown error'}`);
         }
     };
 

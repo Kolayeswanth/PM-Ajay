@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Download } from 'lucide-react';
 
 const PaymentStatus = () => {
     const [payments, setPayments] = useState([
@@ -150,7 +152,14 @@ const PaymentStatus = () => {
                                 </td>
                                 <td>{payment.transactionId}</td>
                                 <td>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleDownloadInvoice(payment)}>Invoice</button>
+                                    <InteractiveButton
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => handleDownloadInvoice(payment)}
+                                    >
+                                        <Download size={16} style={{ marginRight: 'var(--space-1)' }} />
+                                        Invoice
+                                    </InteractiveButton>
                                 </td>
                             </tr>
                         ))}

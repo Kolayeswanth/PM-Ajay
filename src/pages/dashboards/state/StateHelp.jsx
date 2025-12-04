@@ -74,10 +74,10 @@ const StateHelp = () => {
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 30 }}>
-                {/* FAQ Section */}
+                {/* FAQ Section - Left Box */}
                 <div>
                     <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: 15 }}>Frequently Asked Questions</h3>
-                    <div className="card" style={{ padding: 20 }}>
+                    <div className="card" style={{ padding: 20, borderRadius: '12px' }}>
                         <details style={{ marginBottom: 15, cursor: 'pointer' }}>
                             <summary style={{ fontWeight: 600, padding: '10px', backgroundColor: '#f9f9f9', borderRadius: 6 }}>
                                 How to release funds to districts?
@@ -125,97 +125,118 @@ const StateHelp = () => {
                     </div>
                 </div>
 
-                {/* Contact Support Form */}
-                <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: 15 }}>Submit Support Ticket</h3>
-                    <div className="card" style={{ padding: 20 }}>
-                        <form onSubmit={handleSubmit}>
+                {/* Submit Support Ticket - Right Box */}
+                <div className="card" style={{ padding: '2.5rem', boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', borderRadius: '12px' }}>
+                    <div style={{ marginBottom: '2rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1F2937', margin: '0 0 0.5rem 0' }}>
+                            Submit Support Ticket
+                        </h2>
+                    </div>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label className="form-label">Subject</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Brief description of your issue"
+                                value={formData.subject}
+                                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                            />
+                            {errors.subject && <div className="form-error">{errors.subject}</div>}
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="form-group">
-                                <label className="form-label">Subject</label>
+                                <label className="form-label">Category</label>
+                                <select
+                                    className="form-control"
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                >
+                                    <option value="Technical Issue">Technical Issue</option>
+                                    <option value="General Query">General Query</option>
+                                    <option value="Feature Request">Feature Request</option>
+                                    <option value="Bug Report">Bug Report</option>
+                                    <option value="Account Issue">Account Issue</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Priority</label>
+                                <select
+                                    className="form-control"
+                                    value={formData.priority}
+                                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                                >
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                    <option value="Urgent">Urgent</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Detailed Description</label>
+                            <textarea
+                                className="form-control"
+                                rows="4"
+                                placeholder="Please describe your issue in detail..."
+                                value={formData.message}
+                                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                            />
+                            {errors.message && <div className="form-error">{errors.message}</div>}
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div className="form-group">
+                                <label className="form-label">Email</label>
                                 <input
-                                    type="text"
+                                    type="email"
                                     className="form-control"
-                                    placeholder="Brief description of your issue"
-                                    value={formData.subject}
-                                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                                    placeholder="your.email@mah.gov.in"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 />
-                                {errors.subject && <div className="form-error">{errors.subject}</div>}
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                <div className="form-group">
-                                    <label className="form-label">Category</label>
-                                    <select
-                                        className="form-control"
-                                        value={formData.category}
-                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                    >
-                                        <option value="Technical Issue">Technical Issue</option>
-                                        <option value="General Query">General Query</option>
-                                        <option value="Feature Request">Feature Request</option>
-                                        <option value="Bug Report">Bug Report</option>
-                                        <option value="Account Issue">Account Issue</option>
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Priority</label>
-                                    <select
-                                        className="form-control"
-                                        value={formData.priority}
-                                        onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                                    >
-                                        <option value="Low">Low</option>
-                                        <option value="Medium">Medium</option>
-                                        <option value="High">High</option>
-                                        <option value="Urgent">Urgent</option>
-                                    </select>
-                                </div>
+                                {errors.email && <div className="form-error">{errors.email}</div>}
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Detailed Description</label>
-                                <textarea
+                                <label className="form-label">Phone</label>
+                                <input
+                                    type="tel"
                                     className="form-control"
-                                    rows="4"
-                                    placeholder="Please describe your issue in detail..."
-                                    value={formData.message}
-                                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                    placeholder="9876543210"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                 />
-                                {errors.message && <div className="form-error">{errors.message}</div>}
+                                {errors.phone && <div className="form-error">{errors.phone}</div>}
                             </div>
+                        </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                <div className="form-group">
-                                    <label className="form-label">Email</label>
-                                    <input
-                                        type="email"
-                                        className="form-control"
-                                        placeholder="your.email@mah.gov.in"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    />
-                                    {errors.email && <div className="form-error">{errors.email}</div>}
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Phone</label>
-                                    <input
-                                        type="tel"
-                                        className="form-control"
-                                        placeholder="9876543210"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    />
-                                    {errors.phone && <div className="form-error">{errors.phone}</div>}
-                                </div>
-                            </div>
-
-                            <InteractiveButton variant="primary" type="submit" style={{ width: '100%', marginTop: 10 }}>
+                        <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 10, justifyContent: 'flex-end' }}>
+                            <InteractiveButton
+                                variant="outline"
+                                type="button"
+                                onClick={() => {
+                                    setFormData({
+                                        subject: '',
+                                        category: 'Technical Issue',
+                                        priority: 'Medium',
+                                        message: '',
+                                        email: '',
+                                        phone: ''
+                                    });
+                                    setErrors({});
+                                }}
+                            >
+                                Cancel
+                            </InteractiveButton>
+                            <InteractiveButton variant="primary" type="submit">
                                 Submit Support Ticket
                             </InteractiveButton>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
             </div>
 

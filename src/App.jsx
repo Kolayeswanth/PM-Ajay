@@ -38,8 +38,16 @@ const AppLayout = ({ children }) => {
     const location = useLocation();
     const { user } = useAuth();
 
-    // Hide global header on dashboard for PUBLIC users, Ministry users, State users, and District users (who have custom header)
-    const shouldHideHeader = location.pathname === '/dashboard' && (user?.role === ROLES.PUBLIC || user?.role === ROLES.MINISTRY || user?.role === ROLES.STATE || user?.role === ROLES.DISTRICT);
+    // Hide global header on dashboard for PUBLIC users, Ministry users, State users, District users, Department users, Implementing Agencies, and Executing Agencies (who have custom header)
+    const shouldHideHeader = location.pathname === '/dashboard' && (
+        user?.role === ROLES.PUBLIC ||
+        user?.role === ROLES.MINISTRY ||
+        user?.role === ROLES.STATE ||
+        user?.role === ROLES.DISTRICT ||
+        user?.role === ROLES.DEPARTMENT ||
+        user?.role === ROLES.IMPLEMENTING_AGENCY ||
+        user?.role === ROLES.EXECUTING_AGENCY
+    );
 
     return (
         <>

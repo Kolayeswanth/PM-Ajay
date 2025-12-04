@@ -13,6 +13,16 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, showNotifi
         navigate('/login');
     };
 
+    const getNotificationRole = (role) => {
+        switch (role) {
+            case 'centre_admin': return 'ministry';
+            case 'state_admin': return 'state';
+            case 'district_admin': return 'district';
+            case 'department_admin': return 'department';
+            default: return role;
+        }
+    };
+
     return (
         <header
             className="dashboard-header-component"
@@ -85,7 +95,7 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, showNotifi
                         {/* Right side logo */}
                         <div className="header-logos">
                             <img
-                                src="/logos/swachh.png"
+                                src="/logos/logo-amrit.png"
                                 alt="PM-AJAY"
                                 className="logo-emblem"
                                 style={{ height: '60px', width: 'auto' }}
@@ -136,7 +146,7 @@ const DashboardHeader = ({ toggleSidebar, breadcrumb, dashboardTitle, showNotifi
                             {showNotificationBell && (
                                 <li className="nav-item">
                                     <NotificationBell
-                                        userRole={user?.role === 'centre_admin' ? 'ministry' : user?.role}
+                                        userRole={getNotificationRole(user?.role)}
                                         stateName={user?.state_name}
                                         districtName={user?.district_name}
                                     />

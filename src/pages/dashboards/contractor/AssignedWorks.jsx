@@ -260,13 +260,13 @@ const AssignedWorks = () => {
                 <h2 style={{ marginBottom: 20 }}>Assigned Works</h2>
                 <div style={{ textAlign: 'center', padding: 40, color: '#dc2626' }}>
                     <p>Error: {error}</p>
-                    <button
-                        className="btn btn-primary"
+                    <InteractiveButton
+                        variant="primary"
                         onClick={() => window.location.reload()}
                         style={{ marginTop: 10 }}
                     >
                         Retry
-                    </button>
+                    </InteractiveButton>
                 </div>
             </div>
         );

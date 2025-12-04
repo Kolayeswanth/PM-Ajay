@@ -102,7 +102,7 @@ const StateDashboard = () => {
         { icon: <FileCheck size={20} />, label: 'Verify Utilisation Certificates', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
         { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
         { icon: <Bell size={20} />, label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
-        { icon: <HelpCircle size={20} />, label: 'Help', action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => setActiveTab('help'), active: activeTab === 'help' },
         { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
 
