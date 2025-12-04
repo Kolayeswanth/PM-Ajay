@@ -1228,7 +1228,10 @@ const MonitorProgress = () => {
             </div>
 
             {/* All Projects List */}
-            <MonitorProgressMinistry />
+            <MonitorProgressMinistry
+                selectedState={selectedState}
+                selectedDistrict={selectedDistrict}
+            />
         </div>
     );
 };

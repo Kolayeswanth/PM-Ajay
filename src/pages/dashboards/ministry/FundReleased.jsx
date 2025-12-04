@@ -10,11 +10,34 @@ const FundReleased = ({ formatCurrency }) => {
     const [selectedProject, setSelectedProject] = useState(null);
     const [bankAccount, setBankAccount] = useState('');
     const [toast, setToast] = useState(null);
+    const [statesWithAdmins, setStatesWithAdmins] = useState([]);
 
     // Fetch Data on Mount
     useEffect(() => {
-        fetchApprovedProjects();
+        fetchStatesWithAdmins();
     }, []);
+
+    // Refetch projects when states with admins are loaded
+    useEffect(() => {
+        if (statesWithAdmins.length > 0) {
+            fetchApprovedProjects();
+        }
+    }, [statesWithAdmins]);
+
+    // Fetch states that have registered state admins
+    const fetchStatesWithAdmins = async () => {
+        try {
+            const response = await fetch('http://localhost:5001/api/state-admins');
+            const result = await response.json();
+            if (result.success) {
+                // Extract unique state names from state admins
+                const uniqueStates = [...new Set(result.data.map(admin => admin.state_name))];
+                setStatesWithAdmins(uniqueStates);
+            }
+        } catch (error) {
+            console.error('Error fetching state admins:', error);
+        }
+    };
 
     const fetchApprovedProjects = async () => {
         setLoading(true);
@@ -23,7 +46,11 @@ const FundReleased = ({ formatCurrency }) => {
             if (response.ok) {
                 const result = await response.json();
                 if (result.success) {
-                    setReleasedFunds(result.data);
+                    // Filter projects to only show states with registered admins
+                    const filteredProjects = result.data.filter(project =>
+                        statesWithAdmins.includes(project.stateName)
+                    );
+                    setReleasedFunds(filteredProjects);
                 }
             }
         } catch (error) {
