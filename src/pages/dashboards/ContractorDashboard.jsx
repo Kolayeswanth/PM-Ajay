@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { t } from '../../utils/translations';
 import ContractorDashboardPanel from './contractor/ContractorDashboardPanel';
 import AssignedWorks from './contractor/AssignedWorks';
 import WorkProgress from './contractor/WorkProgress';
@@ -13,6 +16,7 @@ const ContractorDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const navigate = useNavigate();
     const { logout, user } = useAuth();
+    const { language } = useLanguage();
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -165,12 +169,12 @@ const ContractorDashboard = () => {
     };
 
     const sidebarMenu = [
-        { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
-        { icon: '📋', label: 'Assigned Works', action: () => setActiveTab('assigned-works'), active: activeTab === 'assigned-works' },
-        { icon: '📈', label: 'Update Progress', action: () => setActiveTab('work-progress'), active: activeTab === 'work-progress' },
-        { icon: '💰', label: 'Payment Status', action: () => setActiveTab('payment-status'), active: activeTab === 'payment-status' },
-        { icon: '❓', label: 'Help', action: () => setActiveTab('help'), active: activeTab === 'help' },
-        { icon: '🚪', label: 'Logout', action: () => { logout(); navigate('/login'); } }
+        { icon: '📊', label: t('dashboard', language), action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: '📋', label: t('assignedWorks', language), action: () => setActiveTab('assigned-works'), active: activeTab === 'assigned-works' },
+        { icon: '📈', label: t('updateProgress', language), action: () => setActiveTab('work-progress'), active: activeTab === 'work-progress' },
+        { icon: '💰', label: t('paymentStatus', language), action: () => setActiveTab('payment-status'), active: activeTab === 'payment-status' },
+        { icon: '❓', label: t('help', language), action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: '🚪', label: t('logout', language), action: () => { logout(); navigate('/login'); } }
     ];
 
     const formatCurrency = (amount) => {
@@ -201,13 +205,13 @@ const ContractorDashboard = () => {
 
     const getBreadcrumb = () => {
         const labels = {
-            'dashboard': 'Dashboard',
-            'assigned-works': 'Assigned Works',
-            'work-progress': 'Update Progress',
-            'payment-status': 'Payment Status',
-            'help': 'Help'
+            'dashboard': t('dashboard', language),
+            'assigned-works': t('assignedWorks', language),
+            'work-progress': t('updateProgress', language),
+            'payment-status': t('paymentStatus', language),
+            'help': t('help', language)
         };
-        return `Home > ${labels[activeTab] || 'Dashboard'}`;
+        return `${t('home', language)} > ${labels[activeTab] || t('dashboard', language)}`;
     };
 
     return (
@@ -222,7 +226,8 @@ const ContractorDashboard = () => {
                             {getBreadcrumb()}
                         </p>
                     </div>
-                    <div className="dashboard-actions">
+                    <div className="dashboard-actions" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <LanguageSwitcher />
                         <NotificationBell />
                     </div>
                 </div>

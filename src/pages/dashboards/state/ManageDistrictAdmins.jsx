@@ -357,8 +357,8 @@ const ManageDistrictAdmins = () => {
                             onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                         >
                             <option value="">-- select district --</option>
-                            {districts.map((name) => (
-                                <option key={name} value={name}>{name}</option>
+                            {districts.map((d) => (
+                                <option key={d.id} value={d.name}>{d.name}</option>
                             ))}
                         </select>
                         {errors.district && <div className="form-error">{errors.district}</div>}

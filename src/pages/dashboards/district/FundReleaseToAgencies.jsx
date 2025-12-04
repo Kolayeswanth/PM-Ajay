@@ -3,24 +3,27 @@ import Modal from '../../../components/Modal';
 import { useAuth } from '../../../contexts/AuthContext';
 import InteractiveButton from '../../../components/InteractiveButton';
 
-const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
+const FundReleaseToAgencies = ({ formatCurrency }) => {
     const { user } = useAuth();
     const [releasedFunds, setReleasedFunds] = useState([]);
     const [receivedFunds, setReceivedFunds] = useState([]);
-    const [districts, setDistricts] = useState([]);
+    const [agencies, setAgencies] = useState([]);
     const [totalReceived, setTotalReceived] = useState(0);
     const [totalReleased, setTotalReleased] = useState(0);
     const [componentStats, setComponentStats] = useState({});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [toast, setToast] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [districtStats, setDistrictStats] = useState(null);
+
+    const [districtName, setDistrictName] = useState('');
+    const [districtId, setDistrictId] = useState(null);
 
     const [formData, setFormData] = useState({
-        districtId: '',
+        agencyId: '',
         amount: '',
         date: new Date().toISOString().slice(0, 10),
-        bankAccount: ''
+        bankAccount: '',
+        remarks: ''
     });
 
     const [errors, setErrors] = useState({});
@@ -28,116 +31,124 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     // API Base URL
     const API_BASE_URL = 'http://localhost:5001/api';
 
-    // Fetch state name from user profile
-    const [stateName, setStateName] = useState('');
-
+    // Fetch district info from user profile
     useEffect(() => {
-        const fetchStateName = async () => {
+        const fetchDistrictInfo = async () => {
             if (!user?.id) return;
             try {
                 const response = await fetch(`${API_BASE_URL}/profile?userId=${user.id}`);
                 const result = await response.json();
                 if (result.success && result.data?.full_name) {
                     let name = result.data.full_name;
-                    name = name.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
-                    setStateName(name);
+                    name = name.replace(' District Admin', '').replace(' Admin', '').replace(' District', '').trim();
+                    setDistrictName(name);
+
+                    // Fetch District ID
+                    const distRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/districts?name=eq.${encodeURIComponent(name)}&select=id`, {
+                        headers: {
+                            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                        }
+                    });
+                    const distData = await distRes.json();
+                    if (distData && distData.length > 0) {
+                        setDistrictId(distData[0].id);
+                    }
                 }
             } catch (error) {
-                console.error('Error fetching state name:', error);
+                console.error('Error fetching district info:', error);
             }
         };
-        fetchStateName();
+        fetchDistrictInfo();
     }, [user]);
 
-    // Fetch Data when stateName is available
+    // Fetch Data when districtId is available
     useEffect(() => {
-        if (stateName && stateCode) {
-            fetchDistricts();
+        if (districtId) {
+            fetchAgencies();
             fetchReleasedFunds();
+            fetchReceivedFunds();
         }
-    }, [stateName, stateCode]);
+    }, [districtId]);
 
-    const fetchDistricts = async () => {
-        if (!stateCode) return;
+    const fetchAgencies = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/state-admins/districts?stateName=${encodeURIComponent(stateName)}`);
+            console.log('Fetching agencies for district:', districtName);
+            const response = await fetch(`${API_BASE_URL}/implementing-agencies?districtName=${encodeURIComponent(districtName)}&activeOnly=true`);
             const result = await response.json();
+            console.log('Agencies response:', result);
             if (result.success) {
-                // Transform to match expected format
-                // Use real district IDs from backend
-                setDistricts(result.data);
+                setAgencies(result.data);
+                console.log('Agencies set:', result.data);
             }
         } catch (error) {
-            console.error('Error fetching districts:', error);
+            console.error('Error fetching agencies:', error);
         }
     };
 
     const fetchReleasedFunds = async () => {
         setLoading(true);
         try {
-            console.log('📊 Fetching fund releases for state:', stateName);
-
-            // Use new backend API that filters by state
-            const response = await fetch(`${API_BASE_URL}/funds/district-releases?stateName=${encodeURIComponent(stateName)}`);
-
+            const response = await fetch(`${API_BASE_URL}/funds/agency-releases?districtId=${districtId}`);
             if (response.ok) {
                 const result = await response.json();
-                console.log('📊 Fund releases received:', result);
-
                 if (result.success) {
-                    // Transform data to match UI structure
-                    const formattedData = result.data.map(item => ({
-                        id: item.id,
-                        districtName: item.districts?.name || 'Unknown District',
-                        component: item.component,
-                        amountInRupees: item.amount_rupees,
-                        amountCr: item.amount_cr,
-                        date: item.release_date,
-                        officerId: item.officer_id,
-                        remarks: item.remarks
-                    }));
-                    setReleasedFunds(formattedData);
+                    const formattedData = result.data.map(item => {
+                        // Get the state release date for this component
+                        const component = Array.isArray(item.component) ? item.component[0] : item.component;
+                        const stateReleaseDate = window.stateReleaseDates?.[component] || null;
 
-                    // Calculate total released
+                        return {
+                            id: item.id,
+                            agencyName: item.implementing_agencies_assignment?.agency_name || 'Unknown Agency',
+                            adminName: item.implementing_agencies_assignment?.admin_name,
+                            component: item.component,
+                            amountInRupees: item.amount_rupees,
+                            amountCr: item.amount_cr,
+                            date: item.release_date,
+                            stateReleaseDate: stateReleaseDate,
+                            remarks: item.remarks
+                        };
+                    });
+                    setReleasedFunds(formattedData);
                     const total = formattedData.reduce((sum, item) => sum + (item.amountCr || 0), 0);
                     setTotalReleased(total);
-                } else {
-                    console.error('Failed to fetch fund releases:', result.error);
                 }
-            } else {
-                console.error('API request failed with status:', response.status);
             }
         } catch (error) {
-            console.error('Error fetching funds:', error);
+            console.error('Error fetching released funds:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch Total Funds Received from Ministry
-    useEffect(() => {
-        const fetchReceivedFunds = async () => {
-            if (!stateId || !stateName) return;
-            try {
-                const response = await fetch(`${API_BASE_URL}/funds/releases`);
+    const fetchReceivedFunds = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/funds/releases-to-district?districtId=${districtId}`);
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    setReceivedFunds(result.data);
+                    const total = result.data.reduce((sum, item) => sum + (item.amount_cr || 0), 0);
+                    setTotalReceived(total);
 
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success) {
-                        // Filter for current state
-                        const stateFunds = result.data.filter(item => item.states?.id === stateId);
-                        setReceivedFunds(stateFunds);
-
-                        const total = stateFunds.reduce((sum, item) => sum + (item.amount_cr || 0), 0);
-                        setTotalReceived(total);
-                    }
+                    // Store state release dates by component for later matching
+                    const datesByComponent = {};
+                    result.data.forEach(item => {
+                        const comps = Array.isArray(item.component) ? item.component : [item.component];
+                        comps.forEach(c => {
+                            if (!datesByComponent[c] || new Date(item.release_date) > new Date(datesByComponent[c])) {
+                                datesByComponent[c] = item.release_date;
+                            }
+                        });
+                    });
+                    window.stateReleaseDates = datesByComponent; // Store globally for access in fetchReleasedFunds
                 }
-            } catch (error) {
-                console.error('Error fetching received funds:', error);
             }
-        };
-        fetchReceivedFunds();
-    }, [stateId, stateName]);
+        } catch (error) {
+            console.error('Error fetching received funds:', error);
+        }
+    };
 
     // Calculate Component-wise Stats
     useEffect(() => {
@@ -147,7 +158,6 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
             'Hostel': { received: 0, released: 0 }
         };
 
-        // Process Received Funds
         receivedFunds.forEach(item => {
             const amount = item.amount_cr || 0;
             const comps = Array.isArray(item.component) ? item.component : [item.component];
@@ -156,7 +166,6 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
             });
         });
 
-        // Process Released Funds
         releasedFunds.forEach(item => {
             const amount = item.amountCr || 0;
             const comps = Array.isArray(item.component) ? item.component : [item.component];
@@ -168,44 +177,24 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
         setComponentStats(stats);
     }, [receivedFunds, releasedFunds]);
 
-    // Fetch District Stats when district is selected
-    useEffect(() => {
-        const fetchDistrictStats = async () => {
-            if (!formData.districtId) {
-                setDistrictStats(null);
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE_URL}/funds/district-stats?districtId=${formData.districtId}`);
-                const result = await response.json();
-                if (result.success) {
-                    setDistrictStats(result.data);
-                }
-            } catch (error) {
-                console.error('Error fetching district stats:', error);
-            }
-        };
-        fetchDistrictStats();
-    }, [formData.districtId]);
-
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
     };
 
     const openModal = () => {
-        // Identify components with available balance
         const availableComps = Object.keys(componentStats).filter(c =>
             (componentStats[c]?.received - componentStats[c]?.released) > 0
         );
 
         setFormData({
-            districtId: '',
-            component: availableComps.length === 1 ? availableComps[0] : '', // Auto-select if only one
+            agencyId: '',
+            component: availableComps.length === 1 ? availableComps[0] : '',
             amount: '',
             date: new Date().toISOString().slice(0, 10),
             bankAccount: '',
-            availableComponents: availableComps // Store for UI
+            remarks: '',
+            availableComponents: availableComps
         });
         setErrors({});
         setIsModalOpen(true);
@@ -216,18 +205,15 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
         setErrors({});
     };
 
-
-
     const validate = () => {
         const errs = {};
-        if (!formData.districtId) errs.districtId = 'Select a district.';
+        if (!formData.agencyId) errs.agencyId = 'Select an agency.';
         if (!formData.component) errs.component = 'Select a component.';
 
         const amountCr = parseFloat(formData.amount);
         if (isNaN(amountCr) || amountCr <= 0) errs.amount = 'Enter a valid amount (> 0).';
 
         if (!formData.date) errs.date = 'Select a release date.';
-        if (!formData.bankAccount.trim()) errs.bankAccount = 'Enter Bank Account Number.';
 
         setErrors(errs);
         return Object.keys(errs).length === 0;
@@ -237,9 +223,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
         if (!validate()) return;
 
         const amountCr = parseFloat(formData.amount);
-        const amountInRupees = Math.round(amountCr * 10000000);
         const activeComponent = formData.component;
-
         const compAvailable = componentStats[activeComponent]?.received - componentStats[activeComponent]?.released || 0;
 
         if (amountCr > compAvailable) {
@@ -249,25 +233,20 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
 
         try {
             const payload = {
-                district_id: formData.districtId,
-                component: [activeComponent],
-                amount_rupees: amountInRupees,
-                amount_cr: amountCr,
-                release_date: formData.date,
-                officer_id: 'STATE-ADMIN',
-                remarks: `Fund release to district for ${activeComponent}`,
-                created_by: user?.id,
-                state_name: stateName,
-                bankAccount: formData.bankAccount
+                districtId: districtId,
+                agencyId: formData.agencyId,
+                component: activeComponent,
+                amount: amountCr,
+                date: formData.date,
+                remarks: formData.remarks,
+                bankAccount: formData.bankAccount,
+                createdBy: user?.id,
+                districtName: districtName
             };
 
-            console.log('📤 Submitting fund release:', payload);
-
-            const response = await fetch(`${API_BASE_URL}/funds/release`, {
+            const response = await fetch(`${API_BASE_URL}/funds/agency-release`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
@@ -275,7 +254,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
 
             if (response.ok && result.success) {
                 showToast(`Successfully released ₹${amountCr} Cr`);
-                fetchReleasedFunds(); // Refresh the list
+                fetchReleasedFunds();
                 closeModal();
             } else {
                 showToast(`Error: ${result.error || 'Failed to release funds'}`, 'error');
@@ -289,7 +268,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     return (
         <div className="fund-released-page" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ margin: 0 }}>Fund Release to Districts</h2>
+                <h2 style={{ margin: 0 }}>Fund Release to Implementing Agencies</h2>
                 <InteractiveButton variant="primary" onClick={openModal}>
                     + Release New Funds
                 </InteractiveButton>
@@ -299,11 +278,11 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
             <div className="card" style={{ padding: 20, marginBottom: 20, backgroundColor: '#f8f9fa', border: '1px solid #e9ecef' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Funds Received (Ministry)</h3>
+                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Funds Received (State)</h3>
                         <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2c3e50' }}>₹{totalReceived.toFixed(2)} Cr</div>
                     </div>
                     <div>
-                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Released (Districts)</h3>
+                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Released (Agencies)</h3>
                         <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e67e22' }}>₹{totalReleased.toFixed(2)} Cr</div>
                     </div>
                     <div>
@@ -358,12 +337,12 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                 <table className="table">
                     <thead>
                         <tr>
-                            <th>District</th>
+                            <th>Agency Name</th>
+                            <th>Admin Name</th>
                             <th>Scheme Component</th>
                             <th style={{ textAlign: 'right' }}>Amount Released</th>
-                            <th>Release Date</th>
-                            <th>Officer ID</th>
-                            <th>Remarks</th>
+                            <th>State Release Date</th>
+                            <th>Agency Release Date</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -374,16 +353,14 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                         ) : releasedFunds.length > 0 ? (
                             releasedFunds.map((item) => (
                                 <tr key={item.id}>
-                                    <td style={{ fontWeight: 600 }}>{item.districtName}</td>
+                                    <td style={{ fontWeight: 600 }}>{item.agencyName}</td>
+                                    <td>{item.adminName}</td>
                                     <td>{item.component.join(', ')}</td>
                                     <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
                                         {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
                                     </td>
+                                    <td>{item.stateReleaseDate || '-'}</td>
                                     <td>{item.date}</td>
-                                    <td>{item.officerId || '-'}</td>
-                                    <td style={{ color: '#666', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.remarks}>
-                                        {item.remarks || '-'}
-                                    </td>
                                 </tr>
                             ))
                         ) : (
@@ -401,7 +378,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={closeModal}
-                title="Release Funds to District"
+                title="Release Funds to Agency"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
                         <InteractiveButton variant="outline" onClick={closeModal}>
@@ -414,8 +391,6 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                 }
             >
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-                    {/* Active Component Display */}
-                    {/* Component Selection Logic */}
                     <div className="form-group">
                         <label className="form-label">Scheme Component</label>
                         {formData.availableComponents && formData.availableComponents.length > 1 ? (
@@ -447,18 +422,18 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">District Name</label>
+                        <label className="form-label">Implementing Agency</label>
                         <select
                             className="form-control"
-                            value={formData.districtId}
-                            onChange={(e) => setFormData({ ...formData, districtId: e.target.value })}
+                            value={formData.agencyId}
+                            onChange={(e) => setFormData({ ...formData, agencyId: e.target.value })}
                         >
-                            <option value="">-- select district --</option>
-                            {districts.map((d) => (
-                                <option key={d.id} value={d.id}>{d.name}</option>
+                            <option value="">-- Select Agency --</option>
+                            {agencies.map((a) => (
+                                <option key={a.id} value={a.id}>{a.agency_name} ({a.admin_name})</option>
                             ))}
                         </select>
-                        {errors.districtId && <div className="form-error">{errors.districtId}</div>}
+                        {errors.agencyId && <div className="form-error">{errors.agencyId}</div>}
                     </div>
 
                     <div className="form-group">
@@ -478,7 +453,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Bank Account Number</label>
+                        <label className="form-label">Bank Account Number (Optional)</label>
                         <input
                             type="text"
                             className="form-control"
@@ -486,7 +461,6 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                             value={formData.bankAccount}
                             onChange={(e) => setFormData({ ...formData, bankAccount: e.target.value })}
                         />
-                        {errors.bankAccount && <div className="form-error">{errors.bankAccount}</div>}
                     </div>
 
                     <div className="form-group">
@@ -500,10 +474,9 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                         {errors.date && <div className="form-error">{errors.date}</div>}
                     </div>
                 </div>
-
-            </Modal >
-        </div >
+            </Modal>
+        </div>
     );
 };
 
-export default FundRelease;
+export default FundReleaseToAgencies;

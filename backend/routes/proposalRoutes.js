@@ -11,6 +11,7 @@ router.post('/create', upload.array('documents', 5), proposalController.createPr
 router.get('/district/:districtId', proposalController.getProposalsByDistrict);
 router.get('/state', proposalController.getProposalsByState);
 router.get('/ministry', proposalController.getMinistryProposals);
+router.get('/approved', proposalController.getApprovedProjects);
 router.patch('/:id/status', proposalController.updateProposalStatus);
 
 module.exports = router;

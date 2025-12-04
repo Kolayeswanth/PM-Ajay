@@ -281,16 +281,20 @@ exports.getMinistryProposals = async (req, res) => {
 exports.updateProposalStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status, rejectReason, remarks, userId } = req.body;
+        const { status, rejectReason, remarks, userId, allocatedAmount } = req.body;
 
-        // 1. Get current status for history
+        console.log(`📝 Update Proposal Status: ID=${id}, Status=${status}`);
+        console.log('📦 Request Body:', JSON.stringify(req.body, null, 2));
+
+        // 1. Get current status
         const { data: currentProposal, error: fetchError } = await supabase
             .from('district_proposals')
-            .select('status')
+            .select('*')
             .eq('id', id)
             .single();
 
         if (fetchError) {
+            console.error('Error fetching proposal:', fetchError);
             return res.status(404).json({ success: false, error: 'Proposal not found' });
         }
 
@@ -304,6 +308,10 @@ exports.updateProposalStatus = async (req, res) => {
         if (status.includes('APPROVED')) {
             updateData.approved_at = new Date().toISOString();
             if (userId) updateData.approved_by = userId;
+            // Save allocated amount to district_proposals if provided
+            if (allocatedAmount) {
+                updateData.allocated_amount = parseFloat(allocatedAmount);
+            }
         }
 
         // 2. Update Proposal
@@ -316,6 +324,54 @@ exports.updateProposalStatus = async (req, res) => {
         if (error) {
             console.error('Supabase update error:', error);
             return res.status(500).json({ success: false, error: error.message });
+        }
+
+        // 2.1 If Approved by Ministry, insert into approved_projects table
+        if (status === 'APPROVED_BY_MINISTRY' && allocatedAmount) {
+            console.log('🚀 Attempting to insert into approved_projects...');
+            try {
+                // Fetch district and state names explicitly
+                let districtName = 'Unknown';
+                let stateName = 'Unknown';
+
+                if (currentProposal.district_id) {
+                    const { data: districtInfo } = await supabase
+                        .from('districts')
+                        .select('name, states(name)')
+                        .eq('id', currentProposal.district_id)
+                        .single();
+
+                    if (districtInfo) {
+                        districtName = districtInfo.name;
+                        stateName = districtInfo.states?.name || 'Unknown';
+                    }
+                }
+
+                const { error: approvalError } = await supabase
+                    .from('approved_projects')
+                    .insert([{
+                        proposal_id: id,
+                        state_name: stateName,
+                        district_name: districtName,
+                        project_name: currentProposal.project_name,
+                        component: currentProposal.component,
+                        estimated_cost: currentProposal.estimated_cost,
+                        allocated_amount: parseFloat(allocatedAmount),
+                        total_amount: parseFloat(allocatedAmount),
+                        minimum_allocation: parseFloat(allocatedAmount),
+                        released_amount: 0,
+                        remaining_fund: parseFloat(allocatedAmount),
+                        approved_at: new Date().toISOString()
+                    }]);
+
+                if (approvalError) {
+                    console.error('Error inserting into approved_projects:', approvalError);
+                } else {
+                    console.log('✅ Project added to approved_projects table');
+                }
+            } catch (err) {
+                console.error('Exception inserting into approved_projects:', err);
+            }
         }
 
         // 3. Insert into History
@@ -500,6 +556,48 @@ exports.updateProposalStatus = async (req, res) => {
 
     } catch (error) {
         console.error('Error updating proposal status:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+// Get approved projects for fund release
+exports.getApprovedProjects = async (req, res) => {
+    try {
+        // Fetch approved projects from approved_projects table
+        // No need for joins as we store names directly now
+        const { data: projects, error } = await supabase
+            .from('approved_projects')
+            .select('*')
+            .order('approved_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching approved projects:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+
+        // Format the data for frontend
+        const formattedProjects = projects.map(p => ({
+            id: p.proposal_id, // Use proposal_id as the main ID for frontend
+            approvedProjectId: p.id, // Keep the approved_projects ID if needed
+            projectName: p.project_name,
+            component: p.component,
+            estimatedCost: p.estimated_cost,
+            allocatedAmount: p.allocated_amount,
+            minimumAllocation: p.minimum_allocation || p.allocated_amount, // Add this field
+            districtName: p.district_name || 'Unknown',
+            stateName: p.state_name || 'Unknown',
+            // stateId and districtId might be missing if we don't join, but frontend might not need them for display
+            // If needed, we'd have to store them or fetch them. 
+            // For now, let's assume names are enough for the table display.
+            approvedAt: p.approved_at,
+            releasedAmount: p.released_amount || 0,
+            // Remaining fund = Project Cost - Amount Released
+            remainingAmount: (p.estimated_cost || 0) - (p.released_amount || 0)
+        }));
+
+        res.json({ success: true, data: formattedProjects });
+
+    } catch (error) {
+        console.error('Error fetching approved projects:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };
