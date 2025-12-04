@@ -1,7 +1,10 @@
 import React from 'react';
 import StatCard from '../../../components/StatCard';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { t } from '../../../utils/translations';
 
 const ContractorDashboardPanel = ({ formatCurrency, stats, recentWorks, onNavigate }) => {
+    const { language } = useLanguage();
 
     const getStatusBadge = (status) => {
         const badges = {
@@ -13,6 +16,17 @@ const ContractorDashboardPanel = ({ formatCurrency, stats, recentWorks, onNaviga
         return badges[status] || 'badge-info';
     };
 
+    const translateStatus = (status) => {
+        const statusMap = {
+            'In Progress': t('inProgress', language),
+            'Completed': t('completed', language),
+            'Not Started': t('notStarted', language),
+            'Delayed': t('delayed', language),
+            'Pending': t('pending', language)
+        };
+        return statusMap[status] || status;
+    };
+
     return (
         <>
             {/* Contractor KPIs */}
@@ -20,25 +34,25 @@ const ContractorDashboardPanel = ({ formatCurrency, stats, recentWorks, onNaviga
                 <StatCard
                     icon="🏗️"
                     value={stats.totalWorks}
-                    label="Assigned Works"
+                    label={t('assignedWorks', language)}
                     color="var(--color-primary)"
                 />
                 <StatCard
                     icon="⚙️"
                     value={stats.ongoing}
-                    label="Works In Progress"
+                    label={t('worksInProgress', language)}
                     color="var(--color-warning)"
                 />
                 <StatCard
                     icon="💰"
                     value={formatCurrency(stats.pendingPayments)}
-                    label="Pending Payments"
+                    label={t('pendingPayments', language)}
                     color="var(--color-error)"
                 />
                 <StatCard
                     icon="✅"
                     value={stats.completed}
-                    label="Completed Works"
+                    label={t('completedWorks', language)}
                     color="var(--color-success)"
                 />
             </div>
@@ -46,8 +60,10 @@ const ContractorDashboardPanel = ({ formatCurrency, stats, recentWorks, onNaviga
             {/* Recent Assigned Works */}
             <div className="dashboard-section">
                 <div className="section-header">
-                    <h2 className="section-title">Recent Assigned Works</h2>
-                    <button className="btn btn-primary btn-sm" onClick={() => onNavigate('assigned-works')}>View All Works</button>
+                    <h2 className="section-title">{t('recentAssignedWorks', language)}</h2>
+                    <button className="btn btn-primary btn-sm" onClick={() => onNavigate('assigned-works')}>
+                        {t('viewAllWorks', language)}
+                    </button>
                 </div>
 
                 <div className="card">
@@ -65,39 +81,45 @@ const ContractorDashboardPanel = ({ formatCurrency, stats, recentWorks, onNaviga
                                 <div>
                                     <h4 style={{ margin: 0, marginBottom: 'var(--space-2)' }}>{work.title}</h4>
                                     <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                                        Location: {work.location} • ID: WO-{work.id}
+                                        {t('location', language)}: {work.location} • ID: WO-{work.id}
                                     </p>
                                 </div>
                                 <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                                    <span className={`badge ${getStatusBadge(work.status)}`}>{work.status}</span>
-                                    <button className="btn btn-outline btn-sm" onClick={() => onNavigate('work-progress')}>Update Progress</button>
+                                    <span className={`badge ${getStatusBadge(work.status)}`}>
+                                        {translateStatus(work.status)}
+                                    </span>
+                                    <button className="btn btn-outline btn-sm" onClick={() => onNavigate('work-progress')}>
+                                        {t('updateProgress', language)}
+                                    </button>
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>No assigned works found.</div>
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                            {t('noAssignedWorks', language)}
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* Quick Actions */}
             <div className="dashboard-section">
-                <h2 className="section-title">Quick Actions</h2>
+                <h2 className="section-title">{t('quickActions', language)}</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                     <div className="card action-card" onClick={() => onNavigate('work-progress')} style={{ cursor: 'pointer', textAlign: 'center', padding: '30px' }}>
                         <div style={{ fontSize: '30px', marginBottom: '10px' }}>📸</div>
-                        <h3>Upload Site Photos</h3>
-                        <p style={{ color: '#666', fontSize: '14px' }}>Update physical progress with images</p>
+                        <h3>{t('uploadSitePhotos', language)}</h3>
+                        <p style={{ color: '#666', fontSize: '14px' }}>{t('updatePhysicalProgress', language)}</p>
                     </div>
                     <div className="card action-card" onClick={() => onNavigate('payment-status')} style={{ cursor: 'pointer', textAlign: 'center', padding: '30px' }}>
                         <div style={{ fontSize: '30px', marginBottom: '10px' }}>🧾</div>
-                        <h3>Check Payments</h3>
-                        <p style={{ color: '#666', fontSize: '14px' }}>View bill status and history</p>
+                        <h3>{t('checkPayments', language)}</h3>
+                        <p style={{ color: '#666', fontSize: '14px' }}>{t('viewBillStatus', language)}</p>
                     </div>
                     <div className="card action-card" onClick={() => onNavigate('help')} style={{ cursor: 'pointer', textAlign: 'center', padding: '30px' }}>
                         <div style={{ fontSize: '30px', marginBottom: '10px' }}>🆘</div>
-                        <h3>Raise Issue</h3>
-                        <p style={{ color: '#666', fontSize: '14px' }}>Contact department for support</p>
+                        <h3>{t('raiseIssue', language)}</h3>
+                        <p style={{ color: '#666', fontSize: '14px' }}>{t('contactDepartment', language)}</p>
                     </div>
                 </div>
             </div>

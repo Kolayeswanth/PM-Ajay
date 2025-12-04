@@ -5,83 +5,29 @@ import { useAuth } from '../../../contexts/AuthContext';
 const FundReleased = ({ formatCurrency }) => {
     const { user } = useAuth();
     const [releasedFunds, setReleasedFunds] = useState([]);
-    const [states, setStates] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [toast, setToast] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    const [formData, setFormData] = useState({
-        stateId: '',
-        component: [],
-        amount: '',
-        date: new Date().toISOString().slice(0, 10),
-        remarks: '',
-        officerId: '',
-    });
-
-    const [errors, setErrors] = useState({});
-
-    // Supabase Configuration
-    // Supabase Configuration
-    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [bankAccount, setBankAccount] = useState('');
+    const [toast, setToast] = useState(null);
 
     // Fetch Data on Mount
     useEffect(() => {
-        fetchStates();
-        fetchReleasedFunds();
+        fetchApprovedProjects();
     }, []);
 
-    const fetchStates = async () => {
-        try {
-            // Fetch fund allocations which includes state details and amounts
-            const response = await fetch('http://localhost:5001/api/funds');
-            if (response.ok) {
-                const data = await response.json();
-                console.log('📊 Fetched fund data:', data); // Debug log
-                // Map to format needed for dropdown, but keep allocation info INCLUDING lastAllocation
-                const formattedStates = data.map(item => ({
-                    id: item.name, // Using name as ID since fund_allocations uses state_name
-                    name: item.name,
-                    allocated: item.fundAllocated || 0,
-                    released: item.amountReleased || 0,
-                    available: (item.fundAllocated || 0) - (item.amountReleased || 0),
-                    lastAllocation: item.lastAllocation || null // Include allocator info
-                }));
-                console.log('📋 Formatted states with allocator info:', formattedStates); // Debug log
-                setStates(formattedStates);
-            }
-        } catch (error) {
-            console.error('Error fetching states:', error);
-        }
-    };
-
-    const fetchReleasedFunds = async () => {
+    const fetchApprovedProjects = async () => {
         setLoading(true);
         try {
-            // Fetch releases from backend API
-            const response = await fetch('http://localhost:5001/api/funds/releases');
+            const response = await fetch('http://localhost:5001/api/proposals/approved');
             if (response.ok) {
                 const result = await response.json();
                 if (result.success) {
-                    const data = result.data;
-                    // Transform data to match UI structure
-                    const formattedData = data.map(item => ({
-                        id: item.id,
-                        stateName: item.states?.name || 'Unknown State',
-                        stateId: item.states?.id,
-                        component: item.component,
-                        amountInRupees: item.amount_rupees,
-                        amountCr: item.amount_cr,
-                        date: item.release_date,
-                        officerId: item.officer_id || item.sanction_order_no,
-                        remarks: item.remarks
-                    }));
-                    setReleasedFunds(formattedData);
+                    setReleasedFunds(result.data);
                 }
             }
         } catch (error) {
-            console.error('Error fetching funds:', error);
+            console.error('Error fetching projects:', error);
         } finally {
             setLoading(false);
         }
@@ -92,195 +38,63 @@ const FundReleased = ({ formatCurrency }) => {
         setTimeout(() => setToast(null), 3000);
     };
 
-    const openModal = () => {
-        setFormData({
-            stateId: '',
-            component: [],
-            amount: '',
-            date: new Date().toISOString().slice(0, 10),
-            remarks: '',
-            officerId: '',
-        });
-        setErrors({});
-        setIsModalOpen(true);
+    const handleReleaseClick = (project) => {
+        setSelectedProject(project);
+        setBankAccount('');
+        setIsReleaseModalOpen(true);
     };
 
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setErrors({});
-    };
-
-    const handleComponentChange = (e) => {
-        const { value, checked } = e.target;
-        setFormData((prev) => {
-            const next = checked ? [...prev.component, value] : prev.component.filter((c) => c !== value);
-            return { ...prev, component: next };
-        });
-    };
-
-    const validate = () => {
-        const errs = {};
-        if (!formData.stateId) errs.stateId = 'Select a state.';
-        if (formData.component.length === 0) errs.component = 'Select at least one component.';
-
-        const amountCr = parseFloat(formData.amount);
-        if (isNaN(amountCr) || amountCr <= 0) errs.amount = 'Enter a valid amount (> 0).';
-
-        // Check available balance
-        const selectedState = states.find(s => s.name === formData.stateId);
-        if (selectedState) {
-            const availableCr = selectedState.available / 10000000;
-            if (amountCr > availableCr) {
-                errs.amount = `Amount exceeds available balance (₹${availableCr.toFixed(2)} Cr).`;
-            }
+    const handleConfirmRelease = async () => {
+        if (!bankAccount.trim()) {
+            showToast('Please enter a bank account number', 'error');
+            return;
         }
 
-        if (!formData.date) errs.date = 'Select a release date.';
-        if (!formData.officerId.trim()) errs.officerId = 'Enter Officer ID / Sanction Order No.';
+        // Use the minimum allocation amount automatically
+        const releaseAmount = selectedProject.minimumAllocation || selectedProject.allocatedAmount;
 
-        setErrors(errs);
-        return Object.keys(errs).length === 0;
-    };
-
-    const handleReleaseSubmit = async () => {
-        if (!validate()) return;
+        if (!releaseAmount || parseFloat(releaseAmount) <= 0) {
+            showToast('Invalid minimum allocation amount', 'error');
+            return;
+        }
 
         try {
-            // Get selected state data to retrieve allocator info
-            const selectedState = states.find(s => s.name === formData.stateId);
-
-            const payload = {
-                stateName: formData.stateId, // formData.stateId holds the name
-                amount: formData.amount,
-                component: formData.component,
-                date: formData.date,
-                officerId: formData.officerId,
-                remarks: formData.remarks
-            };
-
-            console.log('=== RELEASING FUND VIA BACKEND ===');
-            console.log('Payload:', payload);
-
             const response = await fetch('http://localhost:5001/api/funds/release', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    stateName: selectedProject.stateName,
+                    amount: (parseFloat(releaseAmount) / 100).toFixed(4), // Convert Lakhs to Cr if needed
+                    amount_rupees: parseFloat(releaseAmount) * 100000,
+                    component: [selectedProject.component],
+                    date: new Date().toISOString().slice(0, 10),
+                    officerId: `PROJ-${selectedProject.id}`,
+                    remarks: `Fund release for project: ${selectedProject.projectName}`,
+                    bankAccount: bankAccount
+                })
             });
 
             const result = await response.json();
 
             if (result.success) {
-                console.log('✅ Successfully released!');
-
-                // Calculate remaining balance after this release
-                const releasedAmountInRupees = parseFloat(formData.amount) * 10000000;
-                const newReleasedTotal = (selectedState.released || 0) + releasedAmountInRupees;
-                const remainingBalance = (selectedState.allocated || 0) - newReleasedTotal;
-                const remainingBalanceCr = (remainingBalance / 10000000).toFixed(2);
-
-                // Debug: Log selected state data
-                console.log('🔍 Selected State Data:', selectedState);
-                console.log('🔍 Last Allocation:', selectedState?.lastAllocation);
-                console.log('🔍 Allocator Phone:', selectedState?.lastAllocation?.allocatorPhone);
-
-                // Send WhatsApp notification if allocator phone is available
-                if (selectedState?.lastAllocation?.allocatorPhone) {
-                    console.log('📱 Sending WhatsApp notification to allocator...');
-
-                    const notificationPayload = {
-                        allocatorPhone: selectedState.lastAllocation.allocatorPhone,
-                        allocatorName: selectedState.lastAllocation.allocatorName || 'State Officer',
-                        stateName: formData.stateId,
-                        amount: formData.amount,
-                        component: formData.component,
-                        date: formData.date,
-                        officerId: formData.officerId,
-                        remarks: formData.remarks,
-                        remainingBalance: remainingBalanceCr
-                    };
-
-                    try {
-                        const notificationResponse = await fetch('http://localhost:5001/api/notifications/send-release', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(notificationPayload)
-                        });
-
-                        const notificationResult = await notificationResponse.json();
-
-                        if (notificationResult.success) {
-                            console.log('✅ WhatsApp notification sent successfully!');
-
-                            // Show detailed success popup
-                            const successMessage =
-                                `✅ FUND RELEASED & WHATSAPP NOTIFICATION SENT!\n\n` +
-                                `📊 Fund Release Details:\n` +
-                                `• State: ${formData.stateId}\n` +
-                                `• Amount Released: ₹${formData.amount} Crore\n` +
-                                `• Remaining Balance: ₹${remainingBalanceCr} Crore\n` +
-                                `• Component: ${formData.component.join(', ') || 'N/A'}\n` +
-                                `• Release Date: ${formData.date}\n` +
-                                `• Officer ID: ${formData.officerId}\n\n` +
-                                `📱 WhatsApp Notification Sent To:\n` +
-                                `• Name: ${selectedState.lastAllocation.allocatorName}\n` +
-                                `• Role: ${selectedState.lastAllocation.allocatorRole || 'State Officer'}\n` +
-                                `• Phone: +91${selectedState.lastAllocation.allocatorPhone}\n\n` +
-                                `The allocator has been notified about the fund release!`;
-
-                            alert(successMessage);
-                            showToast(`Successfully released ${formData.amount} Cr & notified allocator`);
-                        } else {
-                            console.warn('⚠️ Fund released but notification failed:', notificationResult.error);
-
-                            // Show error popup
-                            alert(
-                                `⚠️ FUND RELEASED BUT WHATSAPP NOTIFICATION FAILED!\n\n` +
-                                `The fund has been released successfully, but the WhatsApp notification could not be sent.\n\n` +
-                                `Error: ${notificationResult.error || 'Unknown error'}\n\n` +
-                                `Please check:\n` +
-                                `• Backend server is running\n` +
-                                `• WATI API credentials are correct\n` +
-                                `• Phone number is valid`
-                            );
-                            showToast(`Released ${formData.amount} Cr (notification failed)`);
-                        }
-                    } catch (notifError) {
-                        console.error('❌ Notification error:', notifError);
-                        showToast(`Released ${formData.amount} Cr (notification failed)`);
-                    }
-                } else {
-                    console.warn('⚠️ No allocator phone number found for this state');
-                    console.warn('💡 TIP: Go to Fund Allocation page and create an allocation with allocator details first!');
-                    showToast(`Successfully released ${formData.amount} Cr`);
-                }
-
-                fetchReleasedFunds(); // Refresh the log
-                fetchStates(); // Refresh the allocations/balances
-                closeModal();
+                showToast('Funds released successfully!');
+                setIsReleaseModalOpen(false);
+                fetchApprovedProjects(); // Refresh list
             } else {
-                console.error('❌ Failed to release:', result);
-                showToast(`Error: ${result.error || 'Failed to release funds'}`, 'error');
+                showToast('Failed to release funds', 'error');
             }
         } catch (error) {
-            console.error('❌ Network error:', error);
-            showToast('Network error occurred', 'error');
+            console.error('Error releasing funds:', error);
+            showToast('Error releasing funds', 'error');
         }
     };
-
-    // Helper to get selected state details
-    const selectedStateData = states.find(s => s.name === formData.stateId);
 
     return (
         <div className="fund-released-page" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h2 style={{ margin: 0 }}>Fund Released Log</h2>
-                <button className="btn btn-primary" onClick={openModal}>
-                    + Release New Funds
-                </button>
             </div>
 
             {toast && (
@@ -303,48 +117,79 @@ const FundReleased = ({ formatCurrency }) => {
                 <table className="table">
                     <thead>
                         <tr>
-                            <th>State/UT</th>
-                            <th>Scheme Component</th>
-                            <th style={{ textAlign: 'right' }}>Amount Released</th>
-                            <th style={{ textAlign: 'right' }}>Remaining Fund</th>
-                            <th>Release Date</th>
-                            <th>Officer ID / Sanction No</th>
-                            <th>Remarks</th>
+                            <th>STATE/UT</th>
+                            <th>SCHEME COMPONENT</th>
+                            <th style={{ textAlign: 'right' }}>PROJECT COST</th>
+                            <th style={{ textAlign: 'right' }}>MINIMUM ALLOCATION</th>
+                            <th style={{ textAlign: 'right' }}>AMOUNT RELEASED</th>
+                            <th style={{ textAlign: 'right' }}>REMAINING FUND</th>
+                            <th>PROJECT NAME</th>
+                            <th>ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={7} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                                <td colSpan={8} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
                             </tr>
                         ) : releasedFunds.length > 0 ? (
-                            releasedFunds.map((item) => {
-                                // Find the state data to get remaining balance
-                                const stateData = states.find(s => s.name === item.stateName);
-                                const remainingCr = stateData ? (stateData.available / 10000000).toFixed(2) : '0.00';
-
-                                return (
-                                    <tr key={item.id}>
-                                        <td style={{ fontWeight: 600 }}>{item.stateName}</td>
-                                        <td>{item.component.join(', ')}</td>
-                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
-                                            {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
-                                        </td>
-                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#0984e3' }}>
-                                            ₹{remainingCr} Cr
-                                        </td>
-                                        <td>{item.date}</td>
-                                        <td>{item.officerId || '-'}</td>
-                                        <td style={{ color: '#666', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.remarks}>
-                                            {item.remarks || '-'}
-                                        </td>
-                                    </tr>
-                                );
-                            })
+                            releasedFunds.map((item) => (
+                                <tr key={item.id}>
+                                    <td style={{ fontWeight: 600 }}>{item.stateName}</td>
+                                    <td>
+                                        <span style={{
+                                            background: '#e3f2fd',
+                                            color: '#1976d2',
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase',
+                                            display: 'inline-block'
+                                        }}>
+                                            {item.component}
+                                        </span>
+                                    </td>
+                                    <td style={{ textAlign: 'right', color: '#555' }}>
+                                        ₹{item.estimatedCost} Lakhs
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#2c3e50' }}>
+                                        ₹{item.allocatedAmount} Lakhs
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
+                                        ₹{item.releasedAmount} Lakhs
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#0984e3' }}>
+                                        ₹{item.remainingAmount} Lakhs
+                                    </td>
+                                    <td style={{ color: '#555' }}>
+                                        {item.projectName}
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="btn btn-sm"
+                                            onClick={() => handleReleaseClick(item)}
+                                            disabled={item.remainingAmount <= 0}
+                                            style={{
+                                                background: item.remainingAmount <= 0 ? '#ccc' : '#ff9800',
+                                                color: 'white',
+                                                border: 'none',
+                                                padding: '6px 16px',
+                                                borderRadius: '6px',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                                cursor: item.remainingAmount <= 0 ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            {item.remainingAmount <= 0 ? 'Fully Released' : 'Release Funds'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
                         ) : (
                             <tr>
                                 <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
-                                    No fund release records found.
+                                    No approved projects found.
                                 </td>
                             </tr>
                         )}
@@ -354,120 +199,66 @@ const FundReleased = ({ formatCurrency }) => {
 
             {/* Release Modal */}
             <Modal
-                isOpen={isModalOpen}
-                onClose={closeModal}
-                title="Release Funds"
+                isOpen={isReleaseModalOpen}
+                onClose={() => setIsReleaseModalOpen(false)}
+                title="Release Funds to Project"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={closeModal} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <button onClick={() => setIsReleaseModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
                             Cancel
                         </button>
-                        <button onClick={handleReleaseSubmit} className="btn btn-primary" style={{ padding: '8px 14px' }}>
+                        <button onClick={handleConfirmRelease} className="btn btn-primary" style={{ background: '#ff9800', border: 'none', padding: '8px 14px' }}>
                             Confirm Release
                         </button>
                     </div>
                 }
             >
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-                    <div className="form-group">
-                        <label className="form-label">State Name</label>
-                        <select
-                            className="form-control"
-                            value={formData.stateId}
-                            onChange={(e) => setFormData({ ...formData, stateId: e.target.value })}
-                        >
-                            <option value="">-- select state / UT --</option>
-                            {states.map((s) => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                        </select>
-                        {errors.stateId && <div className="form-error">{errors.stateId}</div>}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                    <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#495057' }}>Project Details</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', fontSize: '13px' }}>
+                            <div style={{ color: '#6c757d' }}>State:</div>
+                            <div style={{ fontWeight: 600, textAlign: 'right' }}>{selectedProject?.stateName}</div>
 
-                        {selectedStateData && (
-                            <div style={{ marginTop: 8, padding: 10, background: '#f8f9fa', borderRadius: 6, fontSize: 13 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                    <span>Total Allocated:</span>
-                                    <strong>₹{(selectedStateData.allocated / 10000000).toFixed(2)} Cr</strong>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, color: '#2ecc71' }}>
-                                    <span>Already Released:</span>
-                                    <strong>₹{(selectedStateData.released / 10000000).toFixed(2)} Cr</strong>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #ddd', paddingTop: 4 }}>
-                                    <span>Available Balance:</span>
-                                    <strong style={{ color: selectedStateData.available > 0 ? '#0984e3' : '#d63031' }}>
-                                        ₹{(selectedStateData.available / 10000000).toFixed(2)} Cr
-                                    </strong>
-                                </div>
+                            <div style={{ color: '#6c757d' }}>Component:</div>
+                            <div style={{ fontWeight: 600, textAlign: 'right' }}>{selectedProject?.component}</div>
+
+                            <div style={{ color: '#6c757d' }}>Project:</div>
+                            <div style={{ fontWeight: 600, textAlign: 'right' }}>{selectedProject?.projectName}</div>
+
+                            <div style={{ color: '#6c757d', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #dee2e6' }}>Amount to be Released:</div>
+                            <div style={{ fontWeight: 700, color: '#2ecc71', fontSize: '15px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #dee2e6', textAlign: 'right' }}>
+                                ₹{selectedProject?.minimumAllocation || selectedProject?.allocatedAmount} Lakhs
                             </div>
-                        )}
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Scheme Component</label>
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <label><input type="checkbox" value="Adarsh Gram" onChange={handleComponentChange} /> Adarsh Gram</label>
-                            <label><input type="checkbox" value="GIA" onChange={handleComponentChange} /> GIA</label>
-                            <label><input type="checkbox" value="Hostel" onChange={handleComponentChange} /> Hostel</label>
-                        </div>
-                        {errors.component && <div className="form-error">{errors.component}</div>}
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                        <div className="form-group">
-                            <label className="form-label">Amount to Release (in Cr)</label>
-                            <input
-                                type="number"
-                                inputMode="decimal"
-                                pattern="[0-9]*[.,]?[0-9]*"
-                                className="form-control no-spin"
-                                placeholder="e.g. 0.5"
-                                value={formData.amount}
-                                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                style={{ padding: '10px' }}
-                            />
-                            {errors.amount && <div className="form-error">{errors.amount}</div>}
-                            <div className="form-helper">Enter numeric value (decimals allowed)</div>
-                        </div>
-
-                        <div className="form-group">
-                            <label className="form-label">Release Date</label>
-                            <input
-                                type="date"
-                                className="form-control"
-                                value={formData.date}
-                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                            />
-                            {errors.date && <div className="form-error">{errors.date}</div>}
                         </div>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Release Officer ID / Sanction No</label>
+                        <label className="form-label" style={{ fontWeight: 600 }}>Bank Account Number <span style={{ color: 'red' }}>*</span></label>
                         <input
                             type="text"
                             className="form-control"
-                            placeholder="e.g. OFF1234"
-                            value={formData.officerId}
-                            onChange={(e) => setFormData({ ...formData, officerId: e.target.value })}
+                            placeholder="Enter bank account number"
+                            value={bankAccount}
+                            onChange={(e) => setBankAccount(e.target.value)}
+                            style={{ padding: '10px' }}
                         />
-                        {errors.officerId && <div className="form-error">{errors.officerId}</div>}
+                        <div className="form-helper">Enter the bank account number for fund transfer</div>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Remarks (Optional)</label>
-                        <textarea
-                            className="form-control"
-                            rows="3"
-                            placeholder="Enter any remarks or reference numbers..."
-                            value={formData.remarks}
-                            onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                        />
-                        <div className="form-helper">Add any additional notes or reference information</div>
-                    </div>
-
-                    <div style={{ fontSize: 13, color: '#555' }}>
-                        <strong>Note:</strong> Ensure the amount does not exceed the available balance for the selected state.
+                    <div style={{
+                        background: '#fff3cd',
+                        color: '#856404',
+                        padding: '12px',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        border: '1px solid #ffeeba',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span>⚠️</span>
+                        <span>Note: Please verify the bank account number before confirming the fund release.</span>
                     </div>
                 </div>
             </Modal>

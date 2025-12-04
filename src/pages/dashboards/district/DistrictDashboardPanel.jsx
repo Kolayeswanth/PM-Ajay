@@ -64,7 +64,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
         if (!districtId) return;
         const fetchStats = async () => {
             try {
-                const response = await fetch(`http://localhost:5001/api/dashboard/district-stats/${districtId}`);
+                const response = await fetch(`http://localhost:5001/api/funds/district-stats?districtId=${districtId}`);
                 const result = await response.json();
                 if (result.success) {
                     setStats(result.data);
@@ -210,7 +210,7 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId }) => {
                 />
                 <ModernStatCard
                     icon={IndianRupee}
-                    value={`₹${stats.fundAllocated.toFixed(2)} Cr`}
+                    value={`₹${stats.fundAllocated} Cr`}
                     label="Fund Allocated"
                     color="#2563EB"
                     bgColor="#EFF6FF"

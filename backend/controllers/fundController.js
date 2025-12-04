@@ -327,8 +327,12 @@ exports.releaseFund = async (req, res) => {
             officer_id,
             remarks,
             created_by,
-            state_name
+            state_name,
+            bankAccount
         } = req.body;
+
+        console.log('💰 Release Fund Request Received:');
+        console.log('📦 Full Request Body:', JSON.stringify(req.body, null, 2));
 
         // Determine if this is a State→District release or Ministry→State release
         if (district_id) {
@@ -350,7 +354,7 @@ exports.releaseFund = async (req, res) => {
                         amount_cr: amountCr,
                         release_date: releaseDate,
                         officer_id: officer_id || officerId,
-                        remarks: remarks,
+                        remarks: bankAccount ? `${remarks} | Bank Account: ${bankAccount}` : remarks,
                         created_by: created_by
                     }
                 ])
@@ -450,10 +454,13 @@ exports.releaseFund = async (req, res) => {
 
         } else if (stateName) {
             // MINISTRY → STATE RELEASE (existing logic)
+            console.log('💰 Processing Ministry→State fund release for state:', stateName);
             const amountCr = parseFloat(amount);
             const amountInRupees = Math.round(amountCr * 10000000);
+            console.log(`💵 Amount: ${amountCr} Cr = ${amountInRupees} Rupees`);
 
             // Get State ID
+            console.log('🔍 Looking up state ID for:', stateName);
             const { data: stateData, error: stateError } = await supabase
                 .from('states')
                 .select('id')
@@ -461,44 +468,62 @@ exports.releaseFund = async (req, res) => {
                 .single();
 
             if (stateError || !stateData) {
+                console.error('❌ State not found:', stateName, stateError);
                 return res.status(404).json({ success: false, error: 'State not found' });
             }
 
             const stateId = stateData.id;
+            console.log('✅ State ID found:', stateId);
 
-            // Get latest allocation
-            const { data: allocations, error: fetchError } = await supabase
-                .from('fund_allocations')
-                .select('*')
-                .eq('state_name', stateName)
-                .order('allocation_date', { ascending: false })
-                .limit(1);
+            // Check if this is a project-specific release
+            const isProjectRelease = officerId && officerId.startsWith('PROJ-');
+            console.log('🎯 Is Project Release?', isProjectRelease, 'Officer ID:', officerId);
 
-            if (fetchError || !allocations || allocations.length === 0) {
-                return res.status(404).json({ success: false, error: 'State allocation not found' });
-            }
+            // For project releases, we don't need to check fund_allocations
+            // We'll create the allocation record directly
+            let allocation;
+            let currentReleased = 0;
+            let totalAllocated = 0;
 
-            const allocation = allocations[0];
-            const currentReleased = parseInt(allocation.amount_released) || 0;
-            const totalAllocated = parseInt(allocation.amount_allocated) || 0;
-            const newReleased = currentReleased + amountInRupees;
+            if (!isProjectRelease) {
+                // Get latest allocation for state-level releases
+                console.log('🔍 Checking fund allocations for state:', stateName);
+                const { data: allocations, error: fetchError } = await supabase
+                    .from('fund_allocations')
+                    .select('*')
+                    .eq('state_name', stateName)
+                    .order('allocation_date', { ascending: false })
+                    .limit(1);
 
-            if (newReleased > totalAllocated) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Cannot release funds. Exceeds allocation. Available: ₹${((totalAllocated - currentReleased) / 10000000).toFixed(2)} Cr`
-                });
-            }
+                if (fetchError || !allocations || allocations.length === 0) {
+                    console.error('❌ State allocation not found for:', stateName);
+                    return res.status(404).json({ success: false, error: 'State allocation not found. Please allocate funds to the state first.' });
+                }
 
-            // Update allocation
-            const { error: updateError } = await supabase
-                .from('fund_allocations')
-                .update({ amount_released: newReleased })
-                .eq('id', allocation.id);
+                allocation = allocations[0];
+                currentReleased = parseInt(allocation.amount_released) || 0;
+                totalAllocated = parseInt(allocation.amount_allocated) || 0;
+                const newReleased = currentReleased + amountInRupees;
 
-            if (updateError) {
-                console.error('Supabase update error:', updateError);
-                return res.status(500).json({ success: false, error: updateError.message });
+                if (newReleased > totalAllocated) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Cannot release funds. Exceeds allocation. Available: ₹${((totalAllocated - currentReleased) / 10000000).toFixed(2)} Cr`
+                    });
+                }
+
+                // Update allocation
+                const { error: updateError } = await supabase
+                    .from('fund_allocations')
+                    .update({ amount_released: newReleased })
+                    .eq('id', allocation.id);
+
+                if (updateError) {
+                    console.error('Supabase update error:', updateError);
+                    return res.status(500).json({ success: false, error: updateError.message });
+                }
+            } else {
+                console.log('✅ Skipping fund allocation check for project release');
             }
 
             // Insert into state_fund_releases
@@ -512,7 +537,7 @@ exports.releaseFund = async (req, res) => {
                         amount_cr: amountCr,
                         release_date: date || new Date().toISOString().split('T')[0],
                         sanction_order_no: officerId,
-                        remarks: remarks
+                        remarks: bankAccount ? `${remarks} | Bank Account: ${bankAccount}` : remarks
                     }
                 ])
                 .select();
@@ -523,6 +548,51 @@ exports.releaseFund = async (req, res) => {
             }
 
             console.log('✅ Ministry→State fund release saved successfully');
+
+            // If this is a project-specific release (officerId starts with PROJ-), update the project record
+            if (officerId && officerId.startsWith('PROJ-')) {
+                const projectId = officerId.replace('PROJ-', '');
+                console.log('Updating project released amount for Proposal ID:', projectId);
+
+                // Get current released amount for project from approved_projects
+                const { data: projectData, error: projFetchError } = await supabase
+                    .from('approved_projects')
+                    .select('released_amount')
+                    .eq('proposal_id', projectId)
+                    .single();
+
+                if (!projFetchError && projectData) {
+                    const currentProjectReleased = parseFloat(projectData.released_amount) || 0;
+                    const newProjectReleased = currentProjectReleased + (amountInRupees / 100000); // Convert back to Lakhs
+
+                    // Also update remaining_fund
+                    const { data: fullProjectData } = await supabase
+                        .from('approved_projects')
+                        .select('allocated_amount, released_amount')
+                        .eq('proposal_id', projectId)
+                        .single();
+
+                    const allocatedAmount = parseFloat(fullProjectData?.allocated_amount) || 0;
+                    const newRemainingFund = allocatedAmount - newProjectReleased;
+
+                    const { error: updateError } = await supabase
+                        .from('approved_projects')
+                        .update({
+                            released_amount: newProjectReleased,
+                            remaining_fund: newRemainingFund
+                        })
+                        .eq('proposal_id', projectId);
+
+                    if (updateError) {
+                        console.error('Error updating project amounts:', updateError);
+                    } else {
+                        console.log('✅ Project released amount and remaining fund updated in approved_projects');
+                    }
+                } else {
+                    console.log('⚠️ Could not find project in approved_projects to update released amount');
+                }
+            }
+
 
             // Send WhatsApp notification to State Admin
             try {
@@ -738,19 +808,154 @@ exports.getDistrictStats = async (req, res) => {
             completedProjects
         });
 
+        // 5. Get total released to agencies
+        const { data: agencyReleases, error: agencyReleasesError } = await supabase
+            .from('agency_fund_releases')
+            .select('amount_cr')
+            .eq('district_id', districtId);
+
+        const fundReleased = agencyReleasesError ? 0 : (agencyReleases || []).reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0);
+
         res.json({
             success: true,
             data: {
-                gramPanchayats: gramPanchayats,
-                totalProjects: totalProjects,
-                fundAllocated: fundAllocated,
-                completedProjects: completedProjects,
-                lastReleaseDate: lastRelease
+                gramPanchayats,
+                totalProjects,
+                completedProjects,
+                fundAllocated: (fundAllocated || 0).toFixed(2),
+                fundReleased: (fundReleased || 0).toFixed(2),
+                availableBalance: ((fundAllocated || 0) - (fundReleased || 0)).toFixed(2),
+                lastReleaseDate: lastRelease ? lastRelease.release_date : 'N/A'
             }
         });
 
     } catch (error) {
         console.error('Error fetching district stats:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Release fund to Agency (District -> Agency)
+exports.releaseFundToAgency = async (req, res) => {
+    try {
+        const {
+            districtId,
+            agencyId,
+            component,
+            amount,
+            date,
+            remarks,
+            bankAccount,
+            createdBy,
+            districtName
+        } = req.body;
+
+        const amountCr = parseFloat(amount);
+        const amountInRupees = Math.round(amountCr * 10000000);
+
+        // Check district balance
+        // 1. Get total received
+        const { data: receivedData } = await supabase
+            .from('fund_releases')
+            .select('amount_cr')
+            .eq('district_id', districtId);
+        const totalReceived = receivedData ? receivedData.reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0) : 0;
+
+        // 2. Get total released
+        const { data: releasedData } = await supabase
+            .from('agency_fund_releases')
+            .select('amount_cr')
+            .eq('district_id', districtId);
+        const totalReleased = releasedData ? releasedData.reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0) : 0;
+
+        const available = totalReceived - totalReleased;
+
+        if (amountCr > available) {
+            return res.status(400).json({ success: false, error: `Insufficient balance. Available: ₹${available.toFixed(2)} Cr` });
+        }
+
+        const { data, error } = await supabase
+            .from('agency_fund_releases')
+            .insert([{
+                district_id: districtId,
+                agency_id: agencyId,
+                component: [component],
+                amount_cr: amountCr,
+                amount_rupees: amountInRupees,
+                release_date: date,
+                remarks: remarks,
+                created_by: createdBy
+            }])
+            .select('*, implementing_agencies_assignment(admin_name, agency_name, phone_no, email)');
+
+        if (error) throw error;
+
+        // Send WhatsApp to Agency
+        try {
+            const agency = data[0].implementing_agencies_assignment;
+            if (agency && agency.phone_no) {
+                let formattedPhone = agency.phone_no.replace(/\D/g, '');
+                if (formattedPhone.startsWith('91')) formattedPhone = formattedPhone.substring(2);
+                formattedPhone = `91${formattedPhone}`;
+
+                const watiApiBaseUrl = process.env.WATI_API_URL;
+                const watiApiKey = process.env.WATI_API_KEY;
+                const tenantId = process.env.TENANT_ID;
+                const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
+
+                if (watiApiBaseUrl && watiApiKey && tenantId) {
+                    const messageContent =
+                        `FUND RELEASE NOTIFICATION - ` +
+                        `Dear ${agency.admin_name}, ` +
+                        `The District Administration (${districtName}) has released ₹${amountCr.toFixed(2)} Cr to your agency (${agency.agency_name}). ` +
+                        `Component: ${component}. ` +
+                        `Date: ${date}. ` +
+                        `Please utilize the funds as per guidelines. ` +
+                        `Thank you, PM-AJAY`;
+
+                    const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
+                    const payload = {
+                        template_name: templateName,
+                        broadcast_name: 'Agency Fund Release',
+                        parameters: [{ name: "message_body", value: messageContent }]
+                    };
+
+                    await axios.post(endpoint, payload, {
+                        headers: { 'Authorization': `Bearer ${watiApiKey}`, 'Content-Type': 'application/json' }
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('WhatsApp error:', err);
+        }
+
+        res.json({ success: true, data: data[0] });
+    } catch (error) {
+        console.error('Error releasing to agency:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Get Agency Fund Releases
+exports.getAgencyFundReleases = async (req, res) => {
+    try {
+        const { districtId } = req.query;
+        let query = supabase
+            .from('agency_fund_releases')
+            .select('*, implementing_agencies_assignment(admin_name, agency_name)')
+            .order('created_at', { ascending: false });
+
+        if (districtId) {
+            query = query.eq('district_id', districtId);
+        }
+
+        const { data, error } = await query;
+        if (error) {
+            if (error.code === '42P01') return res.json({ success: true, data: [] });
+            throw error;
+        }
+        res.json({ success: true, data });
+    } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 };
@@ -807,8 +1012,26 @@ exports.fixFundAllocations = async (req, res) => {
         console.log('✅ Fixed fund allocations:', results);
         res.json({ success: true, message: 'Fund allocations fixed', data: results });
 
+        console.log('✅ Fixed fund allocations:', results);
+        res.json({ success: true, message: 'Fund allocations fixed', data: results });
+
     } catch (error) {
         console.error('Error fixing fund allocations:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Get releases TO a specific district (State -> District)
+exports.getReleasesToDistrict = async (req, res) => {
+    try {
+        const { districtId } = req.query;
+        const { data, error } = await supabase
+            .from('fund_releases')
+            .select('*')
+            .eq('district_id', districtId);
+        if (error) throw error;
+        res.json({ success: true, data });
+    } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 };
