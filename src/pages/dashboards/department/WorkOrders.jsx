@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Eye } from 'lucide-react';
 
 const WorkOrders = ({ orders, onUpdateOrder, onViewProgress }) => {
     // Use props 'orders' instead of local state
@@ -165,26 +167,22 @@ const WorkOrders = ({ orders, onUpdateOrder, onViewProgress }) => {
                                     <td>{order.title}</td>
                                     <td>{order.location}</td>
                                     <td>{order.contractor}</td>
-                                    <td>{order.amount}</td>
+                                    <td style={{ fontWeight: '600', color: '#10B981' }}>₹{order.amount}</td>
                                     <td>{order.deadline}</td>
                                     <td>
-                                        <div className="progress" style={{ height: '20px', width: '100px', background: '#e9ecef', borderRadius: '4px', overflow: 'hidden' }}>
-                                            <div
-                                                className="progress-bar"
-                                                role="progressbar"
-                                                style={{
-                                                    width: `${order.progress || 0}%`,
-                                                    background: order.progress === 100 ? '#2ecc71' : '#3498db',
-                                                    height: '100%',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    fontSize: '11px',
-                                                    color: '#fff'
-                                                }}
-                                            >
-                                                {order.progress || 0}%
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ flex: 1, height: '8px', background: '#E5E7EB', borderRadius: '4px', overflow: 'hidden', minWidth: '100px' }}>
+                                                <div
+                                                    style={{
+                                                        width: `${order.progress || 0}%`,
+                                                        height: '100%',
+                                                        background: order.progress === 100 ? '#10B981' : '#FF9933',
+                                                        borderRadius: '4px',
+                                                        transition: 'width 0.3s ease'
+                                                    }}
+                                                ></div>
                                             </div>
+                                            <span style={{ fontSize: '12px', fontWeight: '600', minWidth: '35px', color: '#374151' }}>{order.progress || 0}%</span>
                                         </div>
                                     </td>
                                     <td>
@@ -195,14 +193,19 @@ const WorkOrders = ({ orders, onUpdateOrder, onViewProgress }) => {
                                         )}
                                     </td>
                                     <td>
-                                        <span className={`badge badge-${order.status === 'Completed' ? 'success' : order.status === 'In Progress' ? 'warning' : 'info'}`}>
-                                            {order.status}
-                                        </span>
+                                        <div style={{ whiteSpace: 'nowrap' }}>
+                                            <span className={`badge badge-${order.status === 'Completed' ? 'success' : order.status === 'In Progress' ? 'warning' : 'info'}`}>
+                                                {order.status}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                                            <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(order)}>View</button>
-                                            <button className="btn btn-success btn-sm" onClick={() => openProgressModal(order)} style={{ color: '#fff', backgroundColor: '#28a745', borderColor: '#28a745' }}>Progress</button>
+                                            <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(order)}>
+                                                <Eye size={16} style={{ marginRight: '4px' }} />
+                                                View
+                                            </InteractiveButton>
+                                            <InteractiveButton variant="success" size="sm" onClick={() => openProgressModal(order)}>Progress</InteractiveButton>
                                         </div>
                                     </td>
                                 </tr>
@@ -224,12 +227,12 @@ const WorkOrders = ({ orders, onUpdateOrder, onViewProgress }) => {
                 title="Update Work Order Status"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <InteractiveButton variant="outline" onClick={() => setIsModalOpen(false)}>
                             Cancel
-                        </button>
-                        <button onClick={handleUpdateStatus} className="btn btn-primary" style={{ padding: '8px 14px' }}>
+                        </InteractiveButton>
+                        <InteractiveButton variant="primary" onClick={handleUpdateStatus}>
                             Save Changes
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >
@@ -253,7 +256,7 @@ const WorkOrders = ({ orders, onUpdateOrder, onViewProgress }) => {
                 onClose={() => setIsProgressModalOpen(false)}
                 title="Work Progress Details"
                 footer={
-                    <button onClick={() => setIsProgressModalOpen(false)} className="btn btn-primary">Close</button>
+                    <InteractiveButton variant="primary" onClick={() => setIsProgressModalOpen(false)}>Close</InteractiveButton>
                 }
             >
                 {selectedProgressOrder && (
@@ -266,15 +269,15 @@ const WorkOrders = ({ orders, onUpdateOrder, onViewProgress }) => {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                             <div>
                                 <label style={{ display: 'block', color: '#888', fontSize: '12px' }}>Funds Released</label>
-                                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>₹{selectedProgressOrder.fundsReleased || 0}</div>
+                                <div style={{ fontSize: '16px', fontWeight: '600', color: '#10B981' }}>₹{selectedProgressOrder.fundsReleased || 0}</div>
                             </div>
                             <div>
                                 <label style={{ display: 'block', color: '#888', fontSize: '12px' }}>Funds Used</label>
-                                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>₹{selectedProgressOrder.fundsUsed || 0}</div>
+                                <div style={{ fontSize: '16px', fontWeight: '600', color: '#10B981' }}>₹{selectedProgressOrder.fundsUsed || 0}</div>
                             </div>
                             <div>
                                 <label style={{ display: 'block', color: '#888', fontSize: '12px' }}>Funds Remaining</label>
-                                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>₹{selectedProgressOrder.fundsRemaining || 0}</div>
+                                <div style={{ fontSize: '16px', fontWeight: '600', color: '#10B981' }}>₹{selectedProgressOrder.fundsRemaining || 0}</div>
                             </div>
                             <div>
                                 <label style={{ display: 'block', color: '#888', fontSize: '12px' }}>Progress %</label>

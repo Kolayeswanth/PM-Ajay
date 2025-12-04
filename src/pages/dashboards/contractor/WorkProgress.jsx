@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Camera } from 'lucide-react';
 
 const WorkProgress = ({ works, onUpdateProgress }) => {
     const [selectedWorkId, setSelectedWorkId] = useState('');
@@ -203,19 +205,26 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
     };
 
     return (
-        <div className="dashboard-panel" style={{ padding: 20 }}>
-            <div style={{ marginBottom: 20 }}>
-                <h2 style={{ margin: 0 }}>Update Work Progress</h2>
-                <p style={{ color: '#666', fontSize: '14px', marginTop: '5px' }}>Submit site photos and remarks</p>
-            </div>
-
+        <div className="dashboard-panel" style={{ padding: '2rem' }}>
             {toast && (
-                <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'inline-block', background: '#00B894', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{toast}</div>
+                <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'inline-block', background: 'var(--color-success)', color: '#fff', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)' }}>{toast}</div>
                 </div>
             )}
 
-            <div className="card" style={{ padding: 20, maxWidth: '800px' }}>
+            {/* Single Container Box */}
+            <div className="card" style={{ padding: '2.5rem', maxWidth: '900px', margin: '0 auto', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                {/* Title and Subtitle */}
+                <div style={{ marginBottom: '2rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1F2937', margin: '0 0 0.5rem 0' }}>
+                        Update Work Progress
+                    </h2>
+                    <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: 0 }}>
+                        Submit site photos, financial progress, and remarks for your assigned work orders.
+                    </p>
+                </div>
+
+                {/* Form */}
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label className="form-label">Select Work Order</label>
@@ -314,14 +323,14 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                                 onChange={handlePhotoUpload}
                                 style={{ padding: '8px', flex: 1 }}
                             />
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
+                            <InteractiveButton
+                                variant="secondary"
                                 onClick={handleOpenCamera}
                                 style={{ whiteSpace: 'nowrap' }}
                             >
-                                📷 Take Photo
-                            </button>
+                                <Camera size={18} style={{ marginRight: '8px' }} />
+                                Take Photo
+                            </InteractiveButton>
                         </div>
                         <div className="form-helper">Upload photos or capture from camera.</div>
                         {progressData.photos.length > 0 && (
@@ -380,19 +389,28 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                         />
                     </div>
 
-                    <button
+                    <InteractiveButton
                         type="submit"
-                        className="btn btn-primary"
+                        variant="primary"
                         style={{ marginTop: 10 }}
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? 'Submitting...' : 'Submit Progress Report'}
-                    </button>
+                    </InteractiveButton>
                 </form>
+            </div>
+
+            {/* Second Container Box - Submission History */}
+            <div className="card" style={{ padding: '2.5rem', maxWidth: '1200px', margin: '2rem auto 0', boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
+                {/* Title */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1F2937', margin: 0 }}>
+                        Latest Submission Status
+                    </h2>
+                </div>
 
                 {/* Submission History / Status */}
-                <div style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-                    <h3 style={{ fontSize: '16px', marginBottom: '15px' }}>Latest Submission Status</h3>
+                <div>
                     {(() => {
                         const worksWithUpdates = works.filter(w => w.lastUpdated);
 
@@ -430,9 +448,9 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                                         <div style={{ fontSize: '12px', color: '#666' }}>Updated: {work.lastUpdated}</div>
                                         <div style={{ marginTop: '8px', fontSize: '13px', color: '#444', background: '#fff', padding: '8px', borderRadius: '4px', border: '1px solid #eee' }}>
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-                                                <div><strong>Released:</strong> ₹{work.fundsReleased?.toLocaleString('en-IN') || 0}</div>
-                                                <div><strong>Used:</strong> ₹{work.fundsUsed?.toLocaleString('en-IN') || 0}</div>
-                                                <div style={{ gridColumn: 'span 2' }}><strong>Remaining:</strong> ₹{work.fundsRemaining?.toLocaleString('en-IN') || 0}</div>
+                                                <div><strong>Released:</strong> <strong style={{ color: '#2563EB' }}>₹{work.fundsReleased?.toLocaleString('en-IN') || 0}</strong></div>
+                                                <div><strong>Used:</strong> <strong style={{ color: '#F59E0B' }}>₹{work.fundsUsed?.toLocaleString('en-IN') || 0}</strong></div>
+                                                <div style={{ gridColumn: 'span 2' }}><strong>Remaining:</strong> <strong style={{ color: '#10B981' }}>₹{work.fundsRemaining?.toLocaleString('en-IN') || 0}</strong></div>
                                             </div>
                                             {work.remarks && (
                                                 <div style={{ marginTop: '6px', borderTop: '1px dashed #ddd', paddingTop: '4px', fontStyle: 'italic', color: '#666' }}>
@@ -442,26 +460,17 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '5px',
-                                            fontSize: '13px',
-                                            fontWeight: '500',
-                                            color: work.viewedByAgency ? '#27ae60' : '#f39c12'
-                                        }}>
-                                            {work.viewedByAgency ? (
-                                                <>
-                                                    <span>👁️ Viewed by Agency</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span>📤 Sent (Pending Review)</span>
-                                                </>
-                                            )}
-                                        </div>
+                                        {work.viewedByAgency ? (
+                                            <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}>
+                                                Viewed by Agency
+                                            </span>
+                                        ) : (
+                                            <span className="badge badge-warning" style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}>
+                                                Pending Review
+                                            </span>
+                                        )}
                                         {work.viewedByAgency && work.viewedAt && (
-                                            <div style={{ fontSize: '11px', color: '#999' }}>
+                                            <div style={{ fontSize: '11px', color: '#999', marginTop: '0.25rem' }}>
                                                 {new Date(work.viewedAt).toLocaleDateString()}
                                             </div>
                                         )}
@@ -515,20 +524,19 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
                         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
+                            <InteractiveButton
+                                variant="primary"
                                 onClick={handleCapturePhoto}
                             >
-                                📸 Capture
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
+                                <Camera size={18} style={{ marginRight: '8px' }} />
+                                Capture
+                            </InteractiveButton>
+                            <InteractiveButton
+                                variant="secondary"
                                 onClick={handleCloseCamera}
                             >
                                 Cancel
-                            </button>
+                            </InteractiveButton>
                         </div>
                     </div>
                 </div>

@@ -219,9 +219,28 @@ const DistrictHelp = () => {
                                 </div>
                             </div>
 
-                            <InteractiveButton variant="primary" type="submit" style={{ width: '100%', marginTop: 10 }}>
-                                Submit Support Ticket
-                            </InteractiveButton>
+                            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 10, justifyContent: 'flex-end' }}>
+                                <InteractiveButton
+                                    variant="outline"
+                                    type="button"
+                                    onClick={() => {
+                                        setFormData({
+                                            subject: '',
+                                            category: 'Technical Issue',
+                                            priority: 'Medium',
+                                            message: '',
+                                            email: '',
+                                            phone: ''
+                                        });
+                                        setErrors({});
+                                    }}
+                                >
+                                    Cancel
+                                </InteractiveButton>
+                                <InteractiveButton variant="primary" type="submit">
+                                    Submit Support Ticket
+                                </InteractiveButton>
+                            </div>
                         </form>
                     </div>
                 </div>

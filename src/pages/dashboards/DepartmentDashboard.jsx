@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
+import DashboardHeader from '../../components/DashboardHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import DepartmentDashboardPanel from './department/DepartmentDashboardPanel';
 import WorkOrders from './department/WorkOrders';
@@ -13,15 +14,32 @@ import ManageExecutingAgencies from './department/ManageExecutingAgencies';
 import AssignProjects from './department/AssignProjects';
 import AgencyProjects from './department/AgencyProjects';
 import { mockProjects } from '../../data/mockData';
+import {
+    LayoutDashboard,
+    Folder,
+    Users,
+    ClipboardList,
+    Activity,
+    Upload,
+    FileBarChart,
+    Bell,
+    HelpCircle,
+    LogOut
+} from 'lucide-react';
 
 const DepartmentDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const navigate = useNavigate();
     const { logout, user } = useAuth();
 
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
 
     // --- Lifted State ---
 
@@ -124,16 +142,16 @@ const DepartmentDashboard = () => {
     };
 
     const sidebarMenu = [
-        { icon: '📊', label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
-        { icon: '📂', label: 'Projects', action: () => setActiveTab('projects'), active: activeTab === 'projects' },
-        { icon: '👥', label: 'Manage Executing Agency', action: () => setActiveTab('executing-agencies'), active: activeTab === 'executing-agencies' },
-        { icon: '✍️', label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
-        { icon: '📋', label: 'Work Progress', action: () => setActiveTab('work-orders'), active: activeTab === 'work-orders' },
-        { icon: '📤', label: 'DPR Upload', action: () => setActiveTab('dpr-upload'), active: activeTab === 'dpr-upload' },
-        { icon: '📊', label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
-        { icon: '🔔', label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
-        { icon: '❓', label: 'Help', action: () => setActiveTab('help'), active: activeTab === 'help' },
-        { icon: '🚪', label: 'Logout', action: () => { logout(); navigate('/login'); } }
+        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <Folder size={20} />, label: 'Projects', action: () => setActiveTab('projects'), active: activeTab === 'projects' },
+        { icon: <Users size={20} />, label: 'Manage Executing Agency', action: () => setActiveTab('executing-agencies'), active: activeTab === 'executing-agencies' },
+        { icon: <ClipboardList size={20} />, label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
+        { icon: <Activity size={20} />, label: 'Work Progress', action: () => setActiveTab('work-orders'), active: activeTab === 'work-orders' },
+        { icon: <Upload size={20} />, label: 'DPR Upload', action: () => setActiveTab('dpr-upload'), active: activeTab === 'dpr-upload' },
+        { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
+        { icon: <Bell size={20} />, label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
+        { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
 
     const formatCurrency = (amount) => {
@@ -181,6 +199,7 @@ const DepartmentDashboard = () => {
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'projects': 'Projects',
             'executing-agencies': 'Manage Executing Agencies',
             'assign-projects': 'Assign Projects',
             'work-orders': 'Work Progress',
@@ -193,23 +212,28 @@ const DepartmentDashboard = () => {
     };
 
     return (
-        <div className="dashboard-layout">
-            <DashboardSidebar menuItems={sidebarMenu} />
+        <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+            <DashboardHeader
+                toggleSidebar={toggleSidebar}
+                breadcrumb={getBreadcrumb()}
+                showNotificationBell={false}
+            />
+            <DashboardSidebar menuItems={sidebarMenu} user={user} isOpen={isSidebarOpen} />
 
             <main className="dashboard-main">
-                <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>{getBreadcrumb()}</h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <NotificationBell />
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: '500', color: '#374151' }}>{user?.name || 'Department Admin'}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>{user?.role?.replace('_', ' ').toUpperCase()}</div>
-                        </div>
+                <div className="dashboard-header">
+                    <div className="dashboard-title-section">
+                        <h3 style={{ margin: 0 }}>
+                            {user?.email?.toLowerCase().includes('nod') ? 'NOD Dashboard' :
+                                user?.email?.toLowerCase().includes('ngo') ? 'NGO Dashboard' :
+                                    'Department Dashboard'}
+                        </h3>
+                    </div>
+                    <div className="dashboard-actions">
+                        <NotificationBell userRole="department" />
                     </div>
                 </div>
-                <div className="dashboard-content" style={{ padding: '2rem' }}>
-                    {renderContent()}
-                </div>
+                {renderContent()}
             </main>
         </div>
     );

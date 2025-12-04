@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
-import { Search, Filter, Download, Eye } from 'lucide-react';
+import { Search, Filter, Download, Eye, FileSpreadsheet } from 'lucide-react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const MonitorProgressMinistry = () => {
     const [projects, setProjects] = useState([]);
@@ -234,10 +235,10 @@ const MonitorProgressMinistry = () => {
         <div className="dashboard-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 className="section-title">All Projects Overview</h2>
-                <button className="btn btn-primary" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <InteractiveButton variant="secondary" size="md">
                     <Download size={18} />
                     Export All Data
-                </button>
+                </InteractiveButton>
             </div>
 
             {/* Filters */}
@@ -410,14 +411,14 @@ const MonitorProgressMinistry = () => {
                                             </span>
                                         </td>
                                         <td style={{ padding: '16px' }}>
-                                            <button
-                                                className="btn-icon"
-                                                title="View Details"
+                                            <InteractiveButton
+                                                variant="info"
+                                                size="sm"
                                                 onClick={() => handleViewDetails(project)}
-                                                style={{ padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6B7280' }}
                                             >
-                                                <Eye size={18} />
-                                            </button>
+                                                <Eye size={16} />
+                                                View
+                                            </InteractiveButton>
                                         </td>
                                     </tr>
                                 ))

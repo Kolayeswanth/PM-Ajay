@@ -59,7 +59,7 @@ const InteractiveButton = ({
         secondary: {
             normal: '#202076ff',
             hover: '#02025eff',
-            ring: '#202076ff'
+            ring: '#9191f2ff'
         },
         outline: {
             normal: '#FFFFFF',
@@ -67,6 +67,14 @@ const InteractiveButton = ({
             ring: 'rgba(255, 153, 0, 0.3)',
             border: '#FF9900',
             textColor: '#FF9900'
+        },
+        inactive: {
+            bg: '#6B7280',
+            hover: '#4B5563',
+            active: '#374151',
+            ring: 'rgba(107, 114, 128, 0.3)',
+            border: '#6B7280',
+            textColor: '#FFFFFF'
         }
     };
 

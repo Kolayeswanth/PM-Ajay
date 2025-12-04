@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth, ROLES } from '../contexts/AuthContext';
 
@@ -6,6 +6,7 @@ const Header = () => {
     const { user, logout, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -102,7 +103,7 @@ const Header = () => {
                         </div>
 
                         <div className="header-logos">
-                            <img src="/logos/swachh.png" alt="PM-AJAY" className="logo-emblem" />
+                            <img src="logos/logo-amrit.png" alt="PM-AJAY" className="logo-emblem" />
                         </div>
                     </div>
                 </div>
@@ -112,25 +113,45 @@ const Header = () => {
             {!shouldHideNavBar && (
                 <div className="header-nav">
                     <div className="container-fluid">
-                        <nav>
+                        {/* Hamburger Menu Button */}
+                        <button
+                            className="hamburger-menu"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-label="Toggle navigation menu"
+                            aria-expanded={mobileMenuOpen}
+                        >
+                            <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`}></span>
+                            <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`}></span>
+                            <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`}></span>
+                        </button>
+
+                        <nav className={`nav-container ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
                             <ul className="nav-menu">
                                 {getNavLinks().map((link, index) => (
                                     <li key={link.path} className="nav-item">
-                                        <Link to={link.path} className="nav-link">
+                                        <Link
+                                            to={link.path}
+                                            className="nav-link"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
                                             {link.label}
                                         </Link>
                                     </li>
                                 ))}
 
                                 {isAuthenticated ? (
-                                    <li className="nav-item" style={{ marginLeft: 'auto' }}>
+                                    <li className="nav-item nav-user-info">
                                         <span className="nav-link" style={{ cursor: 'default' }}>
                                             {user?.name} ({getRoleName(user?.role)})
                                         </span>
                                     </li>
                                 ) : (
-                                    <li className="nav-item" style={{ marginLeft: 'auto' }}>
-                                        <Link to="/login" className="nav-link">
+                                    <li className="nav-item nav-login">
+                                        <Link
+                                            to="/login"
+                                            className="nav-link"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
                                             Login
                                         </Link>
                                     </li>

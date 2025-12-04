@@ -1,5 +1,6 @@
 import React from 'react';
-import StatCard from '../../../components/StatCard';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Construction, Settings, Wallet, CheckCircle, Camera, Receipt, AlertCircle, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { t } from '../../../utils/translations';
 
@@ -16,43 +17,37 @@ const ContractorDashboardPanel = ({ formatCurrency, stats, recentWorks, onNaviga
         return badges[status] || 'badge-info';
     };
 
-    const translateStatus = (status) => {
-        const statusMap = {
-            'In Progress': t('inProgress', language),
-            'Completed': t('completed', language),
-            'Not Started': t('notStarted', language),
-            'Delayed': t('delayed', language),
-            'Pending': t('pending', language)
-        };
-        return statusMap[status] || status;
-    };
-
     return (
         <>
             {/* Contractor KPIs */}
-            <div className="kpi-row">
-                <StatCard
-                    icon="🏗️"
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '1.5rem',
+                marginBottom: '2rem'
+            }}>
+                <ModernStatCard
+                    icon={<Construction size={24} strokeWidth={1.5} />}
                     value={stats.totalWorks}
-                    label={t('assignedWorks', language)}
+                    label="Assigned Works"
                     color="var(--color-primary)"
                 />
-                <StatCard
-                    icon="⚙️"
+                <ModernStatCard
+                    icon={<Settings size={24} strokeWidth={1.5} />}
                     value={stats.ongoing}
-                    label={t('worksInProgress', language)}
+                    label="Works In Progress"
                     color="var(--color-warning)"
                 />
-                <StatCard
-                    icon="💰"
+                <ModernStatCard
+                    icon={<Wallet size={24} strokeWidth={1.5} />}
                     value={formatCurrency(stats.pendingPayments)}
-                    label={t('pendingPayments', language)}
+                    label="Pending Payments"
                     color="var(--color-error)"
                 />
-                <StatCard
-                    icon="✅"
+                <ModernStatCard
+                    icon={<CheckCircle size={24} strokeWidth={1.5} />}
                     value={stats.completed}
-                    label={t('completedWorks', language)}
+                    label="Completed Works"
                     color="var(--color-success)"
                 />
             </div>
@@ -60,66 +55,59 @@ const ContractorDashboardPanel = ({ formatCurrency, stats, recentWorks, onNaviga
             {/* Recent Assigned Works */}
             <div className="dashboard-section">
                 <div className="section-header">
-                    <h2 className="section-title">{t('recentAssignedWorks', language)}</h2>
-                    <button className="btn btn-primary btn-sm" onClick={() => onNavigate('assigned-works')}>
-                        {t('viewAllWorks', language)}
-                    </button>
+                    <h2 className="section-title">Recent Assigned Works</h2>
+                    <button className="btn btn-primary btn-sm" onClick={() => onNavigate('assigned-works')}>View All Works</button>
                 </div>
 
-                <div className="card">
+                <div className="card" style={{ borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                     {recentWorks && recentWorks.length > 0 ? (
                         recentWorks.map((work, index) => (
                             <div key={index} style={{
                                 padding: 'var(--space-4)',
                                 border: '1px solid var(--border-light)',
-                                borderRadius: 'var(--radius-md)',
+                                borderRadius: '12px',
                                 marginBottom: 'var(--space-3)',
                                 display: 'flex',
                                 justifyContent: 'space-between',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                backgroundColor: '#fff'
                             }}>
                                 <div>
-                                    <h4 style={{ margin: 0, marginBottom: 'var(--space-2)' }}>{work.title}</h4>
+                                    <h4 style={{ margin: 0, marginBottom: 'var(--space-2)', fontSize: '1rem', fontWeight: 600 }}>{work.title}</h4>
                                     <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                                         {t('location', language)}: {work.location} • ID: WO-{work.id}
                                     </p>
                                 </div>
                                 <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                                    <span className={`badge ${getStatusBadge(work.status)}`}>
-                                        {translateStatus(work.status)}
-                                    </span>
-                                    <button className="btn btn-outline btn-sm" onClick={() => onNavigate('work-progress')}>
-                                        {t('updateProgress', language)}
-                                    </button>
+                                    <span className={`badge ${getStatusBadge(work.status)}`}>{work.status}</span>
+                                    <button className="btn btn-outline btn-sm" onClick={() => onNavigate('work-progress')}>Update Progress</button>
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
-                            {t('noAssignedWorks', language)}
-                        </div>
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>No assigned works found.</div>
                     )}
                 </div>
             </div>
 
             {/* Quick Actions */}
             <div className="dashboard-section">
-                <h2 className="section-title">{t('quickActions', language)}</h2>
+                <h2 className="section-title">Quick Actions</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                     <div className="card action-card" onClick={() => onNavigate('work-progress')} style={{ cursor: 'pointer', textAlign: 'center', padding: '30px' }}>
                         <div style={{ fontSize: '30px', marginBottom: '10px' }}>📸</div>
-                        <h3>{t('uploadSitePhotos', language)}</h3>
-                        <p style={{ color: '#666', fontSize: '14px' }}>{t('updatePhysicalProgress', language)}</p>
+                        <h3>Upload Site Photos</h3>
+                        <p style={{ color: '#666', fontSize: '14px' }}>Update physical progress with images</p>
                     </div>
                     <div className="card action-card" onClick={() => onNavigate('payment-status')} style={{ cursor: 'pointer', textAlign: 'center', padding: '30px' }}>
                         <div style={{ fontSize: '30px', marginBottom: '10px' }}>🧾</div>
-                        <h3>{t('checkPayments', language)}</h3>
-                        <p style={{ color: '#666', fontSize: '14px' }}>{t('viewBillStatus', language)}</p>
+                        <h3>Check Payments</h3>
+                        <p style={{ color: '#666', fontSize: '14px' }}>View bill status and history</p>
                     </div>
                     <div className="card action-card" onClick={() => onNavigate('help')} style={{ cursor: 'pointer', textAlign: 'center', padding: '30px' }}>
                         <div style={{ fontSize: '30px', marginBottom: '10px' }}>🆘</div>
-                        <h3>{t('raiseIssue', language)}</h3>
-                        <p style={{ color: '#666', fontSize: '14px' }}>{t('contactDepartment', language)}</p>
+                        <h3>Raise Issue</h3>
+                        <p style={{ color: '#666', fontSize: '14px' }}>Contact department for support</p>
                     </div>
                 </div>
             </div>

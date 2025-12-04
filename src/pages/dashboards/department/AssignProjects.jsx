@@ -268,131 +268,138 @@ const AssignProjects = () => {
 
     return (
         <div className="dashboard-panel" style={{ padding: 20 }}>
-            <h2 style={{ marginBottom: 20 }}>Assign Projects to Executing Agencies</h2>
-            <p style={{ marginBottom: 20, color: '#666' }}>
-                Assign projects that have been allocated to your implementing agency to executing agencies for execution.
-            </p>
+            <div className="card" style={{ padding: 20, borderRadius: '12px' }}>
+                <div style={{ marginBottom: 20 }}>
+                    <h2 style={{ margin: 0 }}>Assign Projects to Executing Agencies</h2>
+                    <p style={{ color: '#666', fontSize: '14px', marginTop: '5px' }}>
+                        Assign projects that have been allocated to your implementing agency to executing agencies for execution.
+                    </p>
+                </div>
 
-            <div className="card" style={{ padding: 20, maxWidth: 600 }}>
-                {loading ? (
-                    <p>Loading...</p>
-                ) : (
-                    <>
-                        <div className="form-group" style={{ marginBottom: 15 }}>
-                            <label className="form-label">Select Project</label>
-                            <select
-                                className="form-control"
-                                value={selectedProject}
-                                onChange={(e) => setSelectedProject(e.target.value)}
-                            >
-                                <option value="">-- Select Project --</option>
-                                {projects.length > 0 ? (
-                                    projects.map(p => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.title} (₹{p.amount?.toLocaleString('en-IN') || '0'})
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option disabled>No unassigned projects available</option>
+                {/* Assignment Form */}
+                <div style={{ padding: 20, marginBottom: 30, backgroundColor: '#Ffffff', borderRadius: '8px', border: '1px solid #E5E7EB', maxWidth: '50%' }}>
+                    {loading ? (
+                        <p>Loading...</p>
+                    ) : (
+                        <>
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Select Project</label>
+                                <select
+                                    className="form-control"
+                                    value={selectedProject}
+                                    onChange={(e) => setSelectedProject(e.target.value)}
+                                >
+                                    <option value="">-- Select Project --</option>
+                                    {projects.length > 0 ? (
+                                        projects.map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.title} (₹{p.amount?.toLocaleString('en-IN') || '0'})
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No unassigned projects available</option>
+                                    )}
+                                </select>
+                                {projects.length === 0 && !loading && (
+                                    <small style={{ color: '#666', marginTop: 5, display: 'block' }}>
+                                        All projects have been assigned to executing agencies or no projects are allocated to your agency yet.
+                                    </small>
                                 )}
-                            </select>
-                            {projects.length === 0 && !loading && (
-                                <small style={{ color: '#666', marginTop: 5, display: 'block' }}>
-                                    All projects have been assigned to executing agencies or no projects are allocated to your agency yet.
-                                </small>
-                            )}
-                        </div>
+                            </div>
 
-                        <div className="form-group" style={{ marginBottom: 15 }}>
-                            <label className="form-label">Select Executing Agency</label>
-                            <select
-                                className="form-control"
-                                value={selectedAgency}
-                                onChange={(e) => setSelectedAgency(e.target.value)}
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Select Executing Agency</label>
+                                <select
+                                    className="form-control"
+                                    value={selectedAgency}
+                                    onChange={(e) => setSelectedAgency(e.target.value)}
+                                >
+                                    <option value="">-- Select Agency --</option>
+                                    {agencies.length > 0 ? (
+                                        agencies.map(a => (
+                                            <option key={a.id} value={a.id}>
+                                                {a.agency_name} - {a.district_name || 'N/A'}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No executing agencies available</option>
+                                    )}
+                                </select>
+                            </div>
+
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleAssign}
+                                disabled={!selectedProject || !selectedAgency || assigning}
                             >
-                                <option value="">-- Select Agency --</option>
-                                {agencies.length > 0 ? (
-                                    agencies.map(a => (
-                                        <option key={a.id} value={a.id}>
-                                            {a.agency_name} - {a.district_name || 'N/A'}
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option disabled>No executing agencies available</option>
-                                )}
-                            </select>
-                        </div>
+                                {assigning ? 'Assigning...' : 'Assign Project'}
+                            </button>
+                        </>
+                    )}
+                </div>
 
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleAssign}
-                            disabled={!selectedProject || !selectedAgency || assigning}
-                        >
-                            {assigning ? 'Assigning...' : 'Assign Project'}
-                        </button>
-                    </>
-                )}
-            </div>
-
-            {/* Assigned Projects History */}
-            <div className="dashboard-section" style={{ marginTop: 40 }}>
-                <h3 style={{ marginBottom: 20 }}>Assigned Projects History</h3>
-                <div className="table-wrapper">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Project Title</th>
-                                <th>Executing Agency</th>
-                                <th>Location</th>
-                                <th>Amount</th>
-                                <th>Deadline</th>
-                                <th>Status</th>
-                                <th>Assigned On</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {assignedProjects.length > 0 ? (
-                                assignedProjects.map((project) => (
-                                    <tr key={project.id}>
-                                        <td>
-                                            <div style={{ fontWeight: 'bold' }}>
-                                                {project.title || 'N/A'}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {project.executing_agencies?.agency_name || 'Unknown'}
-                                        </td>
-                                        <td>{project.location || 'N/A'}</td>
-                                        <td style={{ fontWeight: '500' }}>
-                                            ₹{project.amount?.toLocaleString('en-IN') || '0'}
-                                        </td>
-                                        <td>
-                                            {project.deadline
-                                                ? new Date(project.deadline).toLocaleDateString('en-IN')
-                                                : 'N/A'}
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${project.status === 'Completed' ? 'badge-success' :
-                                                project.status === 'In Progress' || project.status === 'Work in Progress' ? 'badge-warning' :
-                                                    'badge-primary'
-                                                }`}>
-                                                {project.status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {new Date(project.created_at).toLocaleDateString('en-IN')}
-                                        </td>
+                {/* Assigned Projects History */}
+                <div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: 15 }}>Assigned Projects History</h3>
+                    <div className="card" style={{ borderRadius: '12px' }}>
+                        <div className="table-wrapper">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Project Title</th>
+                                        <th>Executing Agency</th>
+                                        <th>Location</th>
+                                        <th>Amount</th>
+                                        <th>Deadline</th>
+                                        <th>Status</th>
+                                        <th>Assigned On</th>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="7" style={{ textAlign: 'center', padding: 20 }}>
-                                        No projects assigned to executing agencies yet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    {assignedProjects.length > 0 ? (
+                                        assignedProjects.map((project) => (
+                                            <tr key={project.id}>
+                                                <td>
+                                                    <div style={{ fontWeight: 'bold' }}>
+                                                        {project.title || 'N/A'}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {project.executing_agencies?.agency_name || 'Unknown'}
+                                                </td>
+                                                <td>{project.location || 'N/A'}</td>
+                                                <td style={{ fontWeight: '600', color: '#10B981' }}>
+                                                    ₹{project.amount?.toLocaleString('en-IN') || '0'}
+                                                </td>
+                                                <td>
+                                                    {project.deadline
+                                                        ? new Date(project.deadline).toLocaleDateString('en-IN')
+                                                        : 'N/A'}
+                                                </td>
+                                                <td>
+                                                    <span className={`badge ${project.status === 'Completed' ? 'badge-success' :
+                                                        project.status === 'In Progress' || project.status === 'Work in Progress' ? 'badge-warning' :
+                                                            'badge-primary'
+                                                        }`}>
+                                                        {project.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {new Date(project.created_at).toLocaleDateString('en-IN')}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="7" style={{ textAlign: 'center', padding: 20, color: '#666' }}>
+                                                No projects assigned to executing agencies yet.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
