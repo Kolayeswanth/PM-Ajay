@@ -69,7 +69,7 @@ const DistrictMap = ({ state = 'Maharashtra', district = null, highlightedDistri
             'Chhattisgarh': 'Chhattisgarh',
             'Haryana': 'Haryana',
             'Punjab': 'Punjab',
-            'Delhi': 'NCT of Delhi',
+            'Delhi': 'Delhi', // Changed from 'NCT of Delhi' to 'Delhi'
             'Goa': 'Goa',
             'Himachal Pradesh': 'Himachal Pradesh',
             'Jammu and Kashmir': 'Jammu and Kashmir',
@@ -79,10 +79,109 @@ const DistrictMap = ({ state = 'Maharashtra', district = null, highlightedDistri
             'Mizoram': 'Mizoram',
             'Nagaland': 'Nagaland',
             'Sikkim': 'Sikkim',
-            'Tripura': 'Tripura',
-            'Arunachal Pradesh': 'Arunachal Pradesh'
         };
         return mapping[modernStateName] || modernStateName;
+    };
+
+    const normalizeDistrictName = (districtName) => {
+        const mapping = {
+            // Karnataka
+            'Bengaluru Urban': 'Bangalore Urban',
+            'Bengaluru Rural': 'Bangalore Rural',
+            'Belagavi': 'Belgaum',
+            'Kalaburagi': 'Gulbarga',
+            'Shivamogga': 'Shimoga',
+            'Ballari': 'Bellary',
+            'Vijayapura': 'Bijapur',
+            'Chikkamagaluru': 'Chikmagalur',
+            'Dakshina Kannada': 'Dakshina Kannada',
+            'Uttara Kannada': 'Uttara Kannada',
+            'Mysuru': 'Mysore',
+            'Tumakuru': 'Tumkur',
+
+            // Odisha (Orissa)
+            'Boudh': 'Baudh',
+            'Debagarh': 'Deogarh',
+            'Jajapur': 'Jajpur',
+            'Kendujhar': 'Keonjhar',
+            'Subarnapur': 'Sonepur',
+
+            // Uttar Pradesh
+            'Kanpur Nagar': 'Kanpur',
+            'Sant Ravidas Nagar': 'Bhadohi',
+            'Gautam Buddha Nagar': 'Gautam Budh Nagar',
+            'Prayagraj': 'Allahabad',
+            'Sambhal': 'Bhim Nagar',
+
+            // Tamil Nadu
+            'Kallakurichi': 'Viluppuram', // New district carved from Viluppuram
+            'Chengalpattu': 'Kanchipuram',
+            'Tenkasi': 'Tirunelveli',
+            'Ranipet': 'Vellore',
+            'Tirupathur': 'Vellore',
+
+            // Maharashtra
+            'Mumbai': 'Greater Bombay',
+            'Ahmednagar': 'Ahmadnagar',
+            'Beed': 'Bid',
+
+            // Gujarat
+            'Ahmedabad': 'Ahmadabad',
+            'Mahesana': 'Mehsana',
+            'Panchmahal': 'Panch Mahals',
+            'Sabarkantha': 'Sabar Kantha',
+            'Dang': 'The Dangs',
+
+            // Madhya Pradesh
+            'Alirajpur': 'Jhabua', // New district
+            'Agar Malwa': 'Shajapur', // New district
+
+            // Chhattisgarh
+            'Balod': 'Durg',
+            'Balrampur': 'Surguja',
+            'Bemetara': 'Durg',
+            'Gariaband': 'Raipur',
+
+            // Rajasthan
+            'Pratapgarh': 'Chittaurgarh', // New district
+
+            // West Bengal
+            'North 24 Parganas': 'Twenty Four Parganas North',
+            'South 24 Parganas': 'Twenty Four Parganas South',
+            'Paschim Bardhaman': 'Barddhaman',
+            'Purba Bardhaman': 'Barddhaman',
+            'Jhargram': 'Paschim Medinipur',
+            'Kalimpong': 'Darjiling',
+
+            // Andhra Pradesh
+            'YSR': 'Kadapa',
+            'Sri Potti Sriramulu Nellore': 'Nellore',
+
+            // Telangana (all districts are new, carved from AP)
+            'Hyderabad': 'Hyderabad',
+            'Ranga Reddy': 'Rangareddi',
+            'Medchal Malkajgiri': 'Ranga Reddy',
+
+            // Bihar
+            'Arwal': 'Jahanabad', // New district
+            'Kaimur': 'Rohtas',
+            'Sheikhpura': 'Munger',
+
+            // Jharkhand
+            'Ramgarh': 'Hazaribagh', // New district
+            'Khunti': 'Ranchi',
+            'Latehar': 'Palamau',
+
+            // Uttarakhand
+            'Dehradun': 'Dehra Dun',
+
+            // Assam
+            'Kamrup Metropolitan': 'Kamrup',
+            'Baksa': 'Barpeta',
+            'Chirang': 'Bongaigaon',
+            'Udalguri': 'Darrang'
+        };
+        return mapping[districtName] || districtName;
     };
 
     // Filter GeoJSON for the selected state
@@ -90,30 +189,29 @@ const DistrictMap = ({ state = 'Maharashtra', district = null, highlightedDistri
         if (!indiaDistrictsGeoJSON) return null;
 
         const targetGeoJSONName = getGeoJSONStateName(state);
-        console.log('DistrictMap: Looking for state:', state, '-> GeoJSON name:', targetGeoJSONName);
+        console.log(`🗺️ DistrictMap: State "${state}" mapped to GeoJSON name "${targetGeoJSONName}"`);
 
         let features = indiaDistrictsGeoJSON.features.filter(feature =>
             feature.properties.NAME_1 === targetGeoJSONName
         );
 
+        console.log(`🗺️ Found ${features.length} districts for state "${targetGeoJSONName}"`);
+
         if (district) {
-            console.log('DistrictMap: Filtering for district:', district);
+            const targetDistrictName = normalizeDistrictName(district);
+            console.log(`DistrictMap: Mapping "${district}" -> "${targetDistrictName}"`);
+
             features = features.filter(feature =>
-                (feature.properties.NAME_2 || feature.properties.name) === district
+                (feature.properties.NAME_2 || feature.properties.name) === targetDistrictName
             );
+
+            console.log(`🗺️ After filtering for district "${targetDistrictName}": ${features.length} features`);
         }
 
         const filtered = {
             ...indiaDistrictsGeoJSON,
             features: features
         };
-
-        console.log('DistrictMap: Found', filtered.features.length, 'districts for', targetGeoJSONName);
-        if (filtered.features.length === 0) {
-            console.warn('⚠️ No districts found! Available states in GeoJSON:',
-                [...new Set(indiaDistrictsGeoJSON.features.map(f => f.properties.NAME_1))].sort()
-            );
-        }
 
         return filtered;
     }, [state, district]);
@@ -177,20 +275,56 @@ const DistrictMap = ({ state = 'Maharashtra', district = null, highlightedDistri
         });
 
         if (district) {
+            const fundUtilized = district.fundAllocated * (district.progress / 100);
+            const fundRemaining = district.fundAllocated - fundUtilized;
+
             layer.bindPopup(`
-        <div style="font-family: var(--font-primary); padding: 8px;">
-          <h3 style="margin: 0 0 8px 0; color: var(--color-navy); font-size: 16px;">
+        <div style="font-family: var(--font-primary); padding: 12px; min-width: 280px;">
+          <h3 style="margin: 0 0 12px 0; color: var(--color-navy); font-size: 16px; font-weight: 600;">
             ${districtName} District
           </h3>
-          <p style="margin: 4px 0; font-size: 14px;">
-            <strong>Projects:</strong> ${district.projects}
-          </p>
-          <p style="margin: 4px 0; font-size: 14px;">
-            <strong>Progress:</strong> ${district.progress}%
-          </p>
-          <p style="margin: 4px 0; font-size: 14px;">
-            <strong>Fund Allocated:</strong> ₹${(district.fundAllocated / 10000000).toFixed(2)} Cr
-          </p>
+          
+          <div style="margin-bottom: 8px;">
+            <p style="margin: 4px 0; font-size: 13px;">
+              <strong>Total Projects:</strong> ${district.projects}
+            </p>
+            <p style="margin: 4px 0; font-size: 13px;">
+              <strong>Completed Projects:</strong> ${Math.floor(district.projects * (district.progress / 100))}
+            </p>
+          </div>
+          
+          <div style="margin: 12px 0; padding: 10px; background: #F9FAFB; border-radius: 6px;">
+            <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #374151;">Fund Utilization</p>
+            
+            <div style="margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: #6B7280;">Progress</span>
+                <span style="font-size: 12px; font-weight: 600; color: #7C3AED;">${district.progress}%</span>
+              </div>
+              <div style="width: 100%; height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden;">
+                <div style="width: ${district.progress}%; height: 100%; background: linear-gradient(90deg, #7C3AED, #A78BFA); transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px;">
+              <div>
+                <span style="color: #6B7280;">Allocated:</span>
+                <span style="font-weight: 600; color: #374151; margin-left: 4px;">₹${(district.fundAllocated / 10000000).toFixed(2)} Cr</span>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px;">
+              <div>
+                <span style="color: #6B7280;">Utilized:</span>
+                <span style="font-weight: 600; color: #7C3AED; margin-left: 4px;">₹${(fundUtilized / 10000000).toFixed(2)} Cr</span>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px;">
+              <div>
+                <span style="color: #6B7280;">Remaining:</span>
+                <span style="font-weight: 600; color: #9CA3AF; margin-left: 4px;">₹${(fundRemaining / 10000000).toFixed(2)} Cr</span>
+              </div>
+            </div>
+          </div>
         </div>
       `);
         } else {
