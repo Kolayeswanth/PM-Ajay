@@ -134,7 +134,7 @@ const DistrictDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} />;
+                return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} stateId={stateId} />;
             case 'create-proposal':
                 return <CreateProposal districtId={districtId} />;
             case 'assign-projects':
@@ -154,7 +154,7 @@ const DistrictDashboard = () => {
             case 'help':
                 return <DistrictHelp />;
             default:
-                return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} />;
+                return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} stateId={stateId} />;
         }
     };
 

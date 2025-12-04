@@ -159,19 +159,43 @@ const generateNationalData = () => {
 
 
 
-const generateDistrictData = (stateName, districtName) => {
-    // Sample district data for Maharashtra districts
-    const maharashtraDistricts = {
-        'Pune': { villages: 25, vdps: 18, adarshGram: 12, fundUtilization: { utilized: 62, total: 100 } },
-        'Mumbai': { villages: 0, vdps: 0, adarshGram: 0, fundUtilization: { utilized: 0, total: 100 } },
-        'Nagpur': { villages: 32, vdps: 24, adarshGram: 15, fundUtilization: { utilized: 68, total: 100 } },
-        'Nashik': { villages: 28, vdps: 20, adarshGram: 14, fundUtilization: { utilized: 58, total: 100 } },
-        'Thane': { villages: 18, vdps: 12, adarshGram: 8, fundUtilization: { utilized: 55, total: 100 } }
+const fetchDistrictData = async (stateName, districtName) => {
+    // Generate mock data similar to State Dashboard
+    console.log('📊 Generating mock data for:', districtName, 'in', stateName);
+
+    // Sample district data for common districts
+    const mockDistrictData = {
+        'Maharashtra': {
+            'Pune': { villages: 25, vdps: 18, adarshGram: 12, fundUtilization: { utilized: 62, total: 100 } },
+            'Mumbai': { villages: 0, vdps: 0, adarshGram: 0, fundUtilization: { utilized: 0, total: 100 } },
+            'Nagpur': { villages: 32, vdps: 24, adarshGram: 15, fundUtilization: { utilized: 68, total: 100 } },
+            'Nashik': { villages: 28, vdps: 20, adarshGram: 14, fundUtilization: { utilized: 58, total: 100 } },
+            'Thane': { villages: 18, vdps: 12, adarshGram: 8, fundUtilization: { utilized: 55, total: 100 } }
+        },
+        'Bihar': {
+            'Muzaffarpur': { villages: 35, vdps: 28, adarshGram: 20, fundUtilization: { utilized: 72, total: 100 } },
+            'Patna': { villages: 30, vdps: 25, adarshGram: 18, fundUtilization: { utilized: 65, total: 100 } },
+            'Gaya': { villages: 28, vdps: 22, adarshGram: 16, fundUtilization: { utilized: 60, total: 100 } }
+        },
+        'Gujarat': {
+            'Ahmedabad': { villages: 30, vdps: 24, adarshGram: 18, fundUtilization: { utilized: 70, total: 100 } },
+            'Surat': { villages: 25, vdps: 20, adarshGram: 15, fundUtilization: { utilized: 65, total: 100 } },
+            'Vadodara': { villages: 22, vdps: 18, adarshGram: 13, fundUtilization: { utilized: 62, total: 100 } }
+        }
     };
 
-    const districtInfo = (stateName === 'Maharashtra' && maharashtraDistricts[districtName])
-        ? maharashtraDistricts[districtName]
-        : { villages: Math.floor(Math.random() * 30) + 10, vdps: Math.floor(Math.random() * 20) + 5, fundUtilization: { utilized: Math.floor(Math.random() * 40) + 40, total: 100 } };
+    // Get district-specific data or generate random
+    const stateDistricts = mockDistrictData[stateName];
+    const districtInfo = stateDistricts?.[districtName]
+        ? stateDistricts[districtName]
+        : {
+            villages: Math.floor(Math.random() * 30) + 10,
+            vdps: Math.floor(Math.random() * 20) + 5,
+            fundUtilization: {
+                utilized: Math.floor(Math.random() * 40) + 40,
+                total: 100
+            }
+        };
 
     return {
         name: districtName,
@@ -186,7 +210,12 @@ const generateDistrictData = (stateName, districtName) => {
             ]
         },
         components: {
-            'Adarsh Gram': { progress: Math.floor((districtInfo.vdps / districtInfo.villages) * 100) || 50, color: '#7C3AED' },
+            'Adarsh Gram': {
+                progress: districtInfo.vdps && districtInfo.villages
+                    ? Math.floor((districtInfo.vdps / districtInfo.villages) * 100)
+                    : Math.floor(Math.random() * 30) + 60,
+                color: '#7C3AED'
+            },
             'GIA': { progress: Math.floor(Math.random() * 30) + 40, color: '#EC4899' },
             'Hostel': { progress: Math.floor(Math.random() * 30) + 20, color: '#F59E0B' }
         }
@@ -254,7 +283,7 @@ const PieChart = ({ data, size = 180 }) => {
         return () => clearTimeout(timer);
     }, [data]);
 
-    const percentage = (data.utilized / data.total) * 100;
+    const percentage = data.total > 0 ? (data.utilized / data.total) * 100 : 0;
     const radius = size / 2;
     const strokeWidth = 30;
     const normalizedRadius = radius - strokeWidth / 2;
@@ -311,21 +340,27 @@ const Home = () => {
         const fetchDistrictAdminInfo = async () => {
             if (user?.id) {
                 try {
-                    // Get user role
+                    // Get user profile including role, district_id, and state_id
                     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
                     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-                    const roleResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${user.id}&select=role`, {
+                    const profileResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${user.id}&select=role,district_id,state_id`, {
                         headers: {
                             'apikey': supabaseKey,
                             'Authorization': `Bearer ${supabaseKey}`
                         }
                     });
-                    const roleData = await roleResponse.json();
+                    const profileData = await profileResponse.json();
+
+                    console.log('Profile data:', profileData);
 
                     // If user is a district admin, fetch their district info
-                    if (roleData[0]?.role === 'district_admin') {
-                        const districtResponse = await fetch(`${supabaseUrl}/rest/v1/districts?id=eq.${user.id}&select=name,state_id`, {
+                    if (profileData[0]?.role === 'district_admin' && profileData[0]?.district_id) {
+                        const districtId = profileData[0].district_id;
+                        const stateId = profileData[0].state_id;
+
+                        // Fetch district name
+                        const districtResponse = await fetch(`${supabaseUrl}/rest/v1/districts?id=eq.${districtId}&select=name`, {
                             headers: {
                                 'apikey': supabaseKey,
                                 'Authorization': `Bearer ${supabaseKey}`
@@ -333,22 +368,29 @@ const Home = () => {
                         });
                         const districtData = await districtResponse.json();
 
+                        console.log('District data:', districtData);
+
                         if (districtData && districtData.length > 0) {
                             const districtName = districtData[0].name;
 
-                            // Fetch state name
-                            const stateResponse = await fetch(`${supabaseUrl}/rest/v1/states?id=eq.${districtData[0].state_id}&select=name`, {
-                                headers: {
-                                    'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${supabaseKey}`
-                                }
-                            });
-                            const stateData = await stateResponse.json();
+                            // Fetch state name if state_id is available
+                            if (stateId) {
+                                const stateResponse = await fetch(`${supabaseUrl}/rest/v1/states?id=eq.${stateId}&select=name`, {
+                                    headers: {
+                                        'apikey': supabaseKey,
+                                        'Authorization': `Bearer ${supabaseKey}`
+                                    }
+                                });
+                                const stateData = await stateResponse.json();
 
-                            if (stateData && stateData.length > 0) {
-                                const stateName = stateData[0].name;
-                                setSelectedState(stateName);
-                                setSelectedDistrict(districtName);
+                                console.log('State data:', stateData);
+
+                                if (stateData && stateData.length > 0) {
+                                    const stateName = stateData[0].name;
+                                    console.log('Setting state and district:', stateName, districtName);
+                                    setSelectedState(stateName);
+                                    setSelectedDistrict(districtName);
+                                }
                             }
                         }
                     }
@@ -362,14 +404,19 @@ const Home = () => {
     }, [user?.id]);
 
     useEffect(() => {
-        if (selectedDistrict && selectedState) {
-            setStateData(generateDistrictData(selectedState, selectedDistrict));
-        } else if (selectedState) {
-            setStateData(generateStateData(selectedState));
-        } else {
-            setStateData(generateNationalData());
-            setSelectedDistrict(null);
-        }
+        const loadData = async () => {
+            if (selectedDistrict && selectedState) {
+                const data = await fetchDistrictData(selectedState, selectedDistrict);
+                setStateData(data);
+            } else if (selectedState) {
+                setStateData(generateStateData(selectedState));
+            } else {
+                setStateData(generateNationalData());
+                setSelectedDistrict(null);
+            }
+        };
+
+        loadData();
     }, [selectedState, selectedDistrict]);
 
     const handleStateSelect = (stateName) => {
