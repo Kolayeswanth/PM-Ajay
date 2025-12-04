@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Bell } from 'lucide-react';
+import { Bell, Inbox } from 'lucide-react';
 
 
 
@@ -12,10 +12,22 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
-    const fetchNotifications = async () => {
-        if (!userRole) return;
+    const getNotificationRole = (role) => {
+        switch (role) {
+            case 'centre_admin': return 'ministry';
+            case 'state_admin': return 'state';
+            case 'district_admin': return 'district';
+            case 'department_admin': return 'department';
+            default: return role;
+        }
+    };
 
-        console.log('🔔 Fetching notifications for:', { userRole, stateName, districtName });
+    const effectiveRole = getNotificationRole(userRole);
+
+    const fetchNotifications = async () => {
+        if (!effectiveRole) return;
+
+        console.log('🔔 Fetching notifications for:', { effectiveRole, stateName, districtName });
 
         try {
             setLoading(true);
@@ -26,15 +38,15 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
                 .limit(20);
 
             // Filter by user role
-            query = query.eq('user_role', userRole);
+            query = query.eq('user_role', effectiveRole);
 
             // If state admin, filter by state
-            if (userRole === 'state' && stateName) {
+            if (effectiveRole === 'state' && stateName) {
                 query = query.eq('state_name', stateName);
             }
 
             // If district admin, filter by district
-            if (userRole === 'district' && districtName) {
+            if (effectiveRole === 'district' && districtName) {
                 query = query.eq('district_name', districtName);
             }
 
@@ -163,6 +175,9 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
                         </div>
                     ) : notifications.length === 0 ? (
                         <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                            <div style={{ marginBottom: 'var(--space-2)', display: 'flex', justifyContent: 'center' }}>
+                                <Inbox size={40} strokeWidth={1} />
+                            </div>
                             No notifications
                         </div>
                     ) : (

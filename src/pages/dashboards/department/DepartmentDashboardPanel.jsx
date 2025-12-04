@@ -1,5 +1,6 @@
 import React from 'react';
-import StatCard from '../../../components/StatCard';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Construction, Settings, Wallet, FileText, ArrowRight, Upload, Download } from 'lucide-react';
 
 const DepartmentDashboardPanel = ({ formatCurrency, stats, recentOrders, projects, onNavigate }) => {
 
@@ -17,71 +18,116 @@ const DepartmentDashboardPanel = ({ formatCurrency, stats, recentOrders, project
         return badges[status] || 'badge-info';
     };
 
+    // ModernStatCard component matching the premium style
+    const ModernStatCard = ({ icon, value, label, description, iconBg, iconColor }) => (
+        <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+            cursor: 'default',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column'
+        }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+            }}
+        >
+            {/* Icon */}
+            <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                backgroundColor: iconBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '1.25rem'
+            }}>
+                <div style={{ color: iconColor, display: 'flex' }}>
+                    {icon}
+                </div>
+            </div>
+
+            {/* Value */}
+            <div style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#111827',
+                marginBottom: '0.25rem',
+                lineHeight: '1.2'
+            }}>
+                {value}
+            </div>
+
+            {/* Label */}
+            <div style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#4B5563',
+                marginBottom: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+            }}>
+                {label}
+            </div>
+
+            {/* Description */}
+            <p style={{
+                fontSize: '0.875rem',
+                color: '#6B7280',
+                lineHeight: '1.6',
+                margin: 0
+            }}>
+                {description}
+            </p>
+        </div>
+    );
+
     return (
         <>
             {/* Department KPIs */}
-            <div className="kpi-row">
-                <StatCard
-                    icon="🏗️"
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '1.5rem',
+                marginBottom: '2rem'
+            }}>
+                <ModernStatCard
+                    icon={<Construction size={24} strokeWidth={1.5} />}
                     value={stats.totalWorks}
                     label="Total Works Assigned"
-                    color="var(--color-primary)"
+                    iconBg="#DBEAFE"
+                    iconColor="#2563EB"
                 />
-                <StatCard
-                    icon="⚙️"
+                <ModernStatCard
+                    icon={<Settings size={24} strokeWidth={1.5} />}
                     value={stats.ongoing}
                     label="Ongoing Works"
-                    color="var(--color-warning)"
+                    iconBg="#FEF3C7"
+                    iconColor="#F59E0B"
                 />
-                <StatCard
-                    icon="💰"
+                <ModernStatCard
+                    icon={<Wallet size={24} strokeWidth={1.5} />}
                     value={formatCurrency(stats.fundsUtilized)}
                     label="Funds Utilized"
-                    color="var(--color-success)"
+                    iconBg="#D1FAE5"
+                    iconColor="#10B981"
                 />
-                <StatCard
-                    icon="📄"
+                <ModernStatCard
+                    icon={<FileText size={24} strokeWidth={1.5} />}
                     value={stats.pendingDPR}
                     label="Pending DPRs"
-                    color="var(--color-error)"
+                    iconBg="#FEE2E2"
+                    iconColor="#EF4444"
                 />
-            </div>
-
-            {/* Recent Work Orders */}
-            <div className="dashboard-section">
-                <div className="section-header">
-                    <h2 className="section-title">Recent Work Orders</h2>
-                    <button className="btn btn-primary btn-sm" onClick={() => onNavigate('work-orders')}>View All Orders</button>
-                </div>
-
-                <div className="card">
-                    {recentOrders && recentOrders.length > 0 ? (
-                        recentOrders.map((order, index) => (
-                            <div key={index} style={{
-                                padding: 'var(--space-4)',
-                                border: '1px solid var(--border-light)',
-                                borderRadius: 'var(--radius-md)',
-                                marginBottom: 'var(--space-3)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                            }}>
-                                <div>
-                                    <h4 style={{ margin: 0, marginBottom: 'var(--space-2)' }}>{order.title}</h4>
-                                    <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                                        Location: {order.location} • ID: WO-{order.id}
-                                    </p>
-                                </div>
-                                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                                    <span className={`badge ${getStatusBadge(order.status)}`}>{order.status}</span>
-                                    <button className="btn btn-outline btn-sm" onClick={() => onNavigate('work-orders')}>Update Progress</button>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>No recent work orders.</div>
-                    )}
-                </div>
             </div>
 
             {/* Project Progress Table */}
@@ -89,8 +135,22 @@ const DepartmentDashboardPanel = ({ formatCurrency, stats, recentOrders, project
                 <div className="section-header">
                     <h2 className="section-title">Project Execution Status</h2>
                     <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('dpr-upload')}>📄 Upload DPR</button>
-                        <button className="btn btn-outline btn-sm" onClick={() => onNavigate('reports')}>📊 Export Status</button>
+                        <InteractiveButton
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onNavigate('dpr-upload')}
+                        >
+                            <Upload size={16} style={{ marginRight: 'var(--space-1)' }} />
+                            Upload DPR
+                        </InteractiveButton>
+                        <InteractiveButton
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onNavigate('reports')}
+                        >
+                            <Upload size={16} style={{ marginRight: 'var(--space-1)' }} />
+                            Export Status
+                        </InteractiveButton>
                     </div>
                 </div>
 
@@ -126,19 +186,25 @@ const DepartmentDashboardPanel = ({ formatCurrency, stats, recentOrders, project
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                            <div className="progress-bar" style={{ flex: 1, height: '6px', minWidth: '80px' }}>
-                                                <div className="progress-fill" style={{ width: `${project.progress}%` }}></div>
+                                            <div style={{ flex: 1, height: '6px', minWidth: '80px', backgroundColor: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${project.progress}%`, height: '100%', backgroundColor: '#FF9933', borderRadius: '4px', transition: 'width 0.3s ease' }}></div>
                                             </div>
                                             <span style={{ fontSize: 'var(--text-sm)' }}>{project.progress}%</span>
                                         </div>
                                     </td>
                                     <td>
-                                        <div style={{ fontSize: 'var(--text-sm)' }}>
+                                        <div style={{ fontSize: 'var(--text-sm)', fontWeight: '600', color: '#10B981' }}>
                                             {formatCurrency((project.amount || 0) * (project.progress / 100))} / {formatCurrency(project.amount || 0)}
                                         </div>
                                     </td>
                                     <td>
-                                        <button className="btn btn-primary btn-sm" onClick={() => onNavigate('work-orders')}>Update</button>
+                                        <InteractiveButton
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={() => onNavigate('work-orders')}
+                                        >
+                                            Update
+                                        </InteractiveButton>
                                     </td>
                                 </tr>
                             ))}

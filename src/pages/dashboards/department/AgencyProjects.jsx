@@ -297,7 +297,7 @@ const AgencyProjects = () => {
                                         </span>
                                     </td>
                                     <td>{project.location || 'N/A'}</td>
-                                    <td style={{ fontWeight: '500' }}>₹{project.amount?.toLocaleString('en-IN') || '0'}</td>
+                                    <td style={{ fontWeight: '600', color: '#10B981' }}>₹{project.amount?.toLocaleString('en-IN') || '0'}</td>
                                     <td>{project.deadline ? new Date(project.deadline).toLocaleDateString('en-IN') : 'N/A'}</td>
                                     <td>
                                         <span className={`badge ${project.status === 'Completed' ? 'badge-success' :

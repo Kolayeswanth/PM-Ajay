@@ -283,7 +283,7 @@ const ManageExecutingAgencies = () => {
                                     <td>{agency.work_assigned || '-'}</td>
                                     <td>
                                         <span className={`badge ${agency.status === 'Active' ? 'badge-success' : 'badge-secondary'}`}>
-                                            {agency.status || 'Active'}
+                                            {agency.status || 'Inactive'}
                                         </span>
                                     </td>
                                     <td>

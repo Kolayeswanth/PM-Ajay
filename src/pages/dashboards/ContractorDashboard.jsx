@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../../components/NotificationBell';
 import DashboardSidebar from '../../components/DashboardSidebar';
+import DashboardHeader from '../../components/DashboardHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
@@ -11,9 +12,20 @@ import AssignedWorks from './contractor/AssignedWorks';
 import WorkProgress from './contractor/WorkProgress';
 import PaymentStatus from './contractor/PaymentStatus';
 import ContractorHelp from './contractor/ContractorHelp';
+import ExecutingAgencyNotifications from './contractor/ExecutingAgencyNotifications';
+import {
+    LayoutDashboard,
+    ClipboardList,
+    LineChart,
+    Wallet,
+    Bell,
+    HelpCircle,
+    LogOut
+} from 'lucide-react';
 
 const ContractorDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const navigate = useNavigate();
     const { logout, user } = useAuth();
     const { language } = useLanguage();
@@ -21,6 +33,10 @@ const ContractorDashboard = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
 
     // --- Lifted State ---
     const [works, setWorks] = useState([]);
@@ -169,12 +185,13 @@ const ContractorDashboard = () => {
     };
 
     const sidebarMenu = [
-        { icon: '📊', label: t('dashboard', language), action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
-        { icon: '📋', label: t('assignedWorks', language), action: () => setActiveTab('assigned-works'), active: activeTab === 'assigned-works' },
-        { icon: '📈', label: t('updateProgress', language), action: () => setActiveTab('work-progress'), active: activeTab === 'work-progress' },
-        { icon: '💰', label: t('paymentStatus', language), action: () => setActiveTab('payment-status'), active: activeTab === 'payment-status' },
-        { icon: '❓', label: t('help', language), action: () => setActiveTab('help'), active: activeTab === 'help' },
-        { icon: '🚪', label: t('logout', language), action: () => { logout(); navigate('/login'); } }
+        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <ClipboardList size={20} />, label: 'Assigned Works', action: () => setActiveTab('assigned-works'), active: activeTab === 'assigned-works' },
+        { icon: <LineChart size={20} />, label: 'Update Progress', action: () => setActiveTab('work-progress'), active: activeTab === 'work-progress' },
+        { icon: <Wallet size={20} />, label: 'Payment Status', action: () => setActiveTab('payment-status'), active: activeTab === 'payment-status' },
+        { icon: <Bell size={20} />, label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
+        { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
 
     const formatCurrency = (amount) => {
@@ -196,6 +213,8 @@ const ContractorDashboard = () => {
                 return <WorkProgress works={works} onUpdateProgress={handleUpdateProgress} />;
             case 'payment-status':
                 return <PaymentStatus />;
+            case 'notifications':
+                return <ExecutingAgencyNotifications />;
             case 'help':
                 return <ContractorHelp />;
             default:
@@ -205,29 +224,30 @@ const ContractorDashboard = () => {
 
     const getBreadcrumb = () => {
         const labels = {
-            'dashboard': t('dashboard', language),
-            'assigned-works': t('assignedWorks', language),
-            'work-progress': t('updateProgress', language),
-            'payment-status': t('paymentStatus', language),
-            'help': t('help', language)
+            'dashboard': 'Dashboard',
+            'assigned-works': 'Assigned Works',
+            'work-progress': 'Update Progress',
+            'payment-status': 'Payment Status',
+            'help': 'Help'
         };
         return `${t('home', language)} > ${labels[activeTab] || t('dashboard', language)}`;
     };
 
     return (
-        <div className="dashboard-layout">
-            <DashboardSidebar menuItems={sidebarMenu} />
+        <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+            <DashboardHeader
+                toggleSidebar={toggleSidebar}
+                breadcrumb={getBreadcrumb()}
+                showNotificationBell={false}
+            />
+            <DashboardSidebar menuItems={sidebarMenu} user={user} isOpen={isSidebarOpen} />
 
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
-                        <h1>{user?.role === 'executing_agency' ? `${user?.full_name || user?.user_metadata?.full_name || 'Executing Agency'} Dashboard` : 'Contractor Dashboard'}</h1>
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
-                            {getBreadcrumb()}
-                        </p>
+                        <h3 style={{ margin: 0 }}>{user?.role === 'executing_agency' ? `${user?.full_name || user?.user_metadata?.full_name || 'Executing Agency'} Dashboard` : 'Contractor Dashboard'}</h3>
                     </div>
-                    <div className="dashboard-actions" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <LanguageSwitcher />
+                    <div className="dashboard-actions">
                         <NotificationBell />
                     </div>
                 </div>

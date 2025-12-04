@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Eye, CheckCheck } from 'lucide-react';
 
 const DepartmentNotifications = () => {
     const [notifications, setNotifications] = useState([
@@ -142,54 +144,62 @@ const DepartmentNotifications = () => {
                 </div>
             )}
 
-            <div className="table-wrapper">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>From</th>
-                            <th>Date</th>
-                            <th>Priority</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredNotifications.length > 0 ? (
-                            filteredNotifications.map(notif => (
-                                <tr key={notif.id} style={{ backgroundColor: notif.status === 'Unread' ? '#f0f8ff' : 'transparent' }}>
-                                    <td style={{ fontWeight: notif.status === 'Unread' ? 700 : 400 }}>{notif.title}</td>
-                                    <td>{notif.from}</td>
-                                    <td>{notif.date}</td>
-                                    <td>
-                                        <span className={`badge badge-${notif.priority === 'High' ? 'error' : notif.priority === 'Medium' ? 'warning' : 'info'}`}>
-                                            {notif.priority}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`badge badge-${notif.status === 'Unread' ? 'warning' : 'success'}`}>
-                                            {notif.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                                            <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(notif)}>View</button>
-                                            {notif.status === 'Unread' && (
-                                                <button className="btn btn-primary btn-sm" onClick={() => handleMarkAsRead(notif.id)}>Mark Read</button>
-                                            )}
-                                        </div>
+            <div className="card" style={{ borderRadius: '12px' }}>
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>From</th>
+                                <th>Date</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredNotifications.length > 0 ? (
+                                filteredNotifications.map(notif => (
+                                    <tr key={notif.id} style={{ backgroundColor: notif.status === 'Unread' ? '#f0f8ff' : 'transparent' }}>
+                                        <td style={{ fontWeight: notif.status === 'Unread' ? 700 : 400 }}>{notif.title}</td>
+                                        <td>{notif.from}</td>
+                                        <td>{notif.date}</td>
+                                        <td>
+                                            <span className={`badge badge-${notif.priority === 'High' ? 'danger' : notif.priority === 'Medium' ? 'warning' : 'info'}`}>
+                                                {notif.priority}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge badge-${notif.status === 'Unread' ? 'warning' : 'success'}`}>
+                                                {notif.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                                                <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(notif)}>
+                                                    <Eye size={16} style={{ marginRight: '4px' }} />
+                                                    View
+                                                </InteractiveButton>
+                                                {notif.status === 'Unread' && (
+                                                    <InteractiveButton variant="success" size="sm" onClick={() => handleMarkAsRead(notif.id)}>
+                                                        <CheckCheck size={16} style={{ marginRight: '4px' }} />
+                                                        Unread
+                                                    </InteractiveButton>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        No notifications found.
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
-                                    No notifications found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
