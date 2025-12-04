@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import StatCard from '../../../components/StatCard';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Download } from 'lucide-react';
 
 const StateReports = () => {
     const [reportType, setReportType] = useState('Financial');
@@ -13,29 +14,37 @@ const StateReports = () => {
     // Sample data for different report types
     const reportData = {
         'Financial': {
-            totalReceived: '₹500 Cr',
-            totalReleased: '₹420 Cr',
-            totalUtilized: '₹350 Cr',
-            balance: '₹150 Cr',
-            districts: [
-                { name: 'Pune', received: '₹50 Cr', utilized: '₹42 Cr', balance: '₹8 Cr' },
-                { name: 'Mumbai City', received: '₹60 Cr', utilized: '₹55 Cr', balance: '₹5 Cr' },
-                { name: 'Nagpur', received: '₹45 Cr', utilized: '₹38 Cr', balance: '₹7 Cr' },
+            title: 'State Financial Report - Maharashtra',
+            summary: { totalReceived: '₹500 Cr', totalReleased: '₹420 Cr', totalUtilized: '₹350 Cr', balance: '₹150 Cr' },
+            details: [
+                { name: 'Pune', received: '50.00', released: '42.00', utilized: '38.00', balance: '8.00' },
+                { name: 'Mumbai City', received: '60.00', released: '55.00', utilized: '50.00', balance: '5.00' },
+                { name: 'Nagpur', received: '45.00', released: '38.00', utilized: '35.00', balance: '7.00' },
+                { name: 'Nashik', received: '40.00', released: '35.00', utilized: '30.00', balance: '5.00' },
+                { name: 'Aurangabad', received: '35.00', released: '30.00', utilized: '28.00', balance: '2.00' },
             ]
         },
         'Progress': {
-            totalProjects: 125,
-            completed: 45,
-            ongoing: 65,
-            pending: 15,
-            completionRate: '36%'
+            title: 'State Project Progress Report - Maharashtra',
+            summary: { totalProjects: 125, completed: 45, ongoing: 65, delayed: 15 },
+            details: [
+                { name: 'Pune', total: 25, completed: 10, ongoing: 12, delayed: 3 },
+                { name: 'Mumbai City', total: 30, completed: 15, ongoing: 12, delayed: 3 },
+                { name: 'Nagpur', total: 20, completed: 8, ongoing: 10, delayed: 2 },
+                { name: 'Nashik', total: 18, completed: 5, ongoing: 10, delayed: 3 },
+                { name: 'Aurangabad', total: 15, completed: 5, ongoing: 8, delayed: 2 },
+            ]
         },
         'UCs': {
-            totalUCs: 85,
-            submitted: 72,
-            verified: 60,
-            pending: 25,
-            verificationRate: '83%'
+            title: 'UC Submission Status Report - Maharashtra',
+            summary: { totalRequired: 85, submitted: 72, verified: 60, pending: 13 },
+            details: [
+                { name: 'Pune', required: 15, submitted: 14, pending: 1, status: 'Good' },
+                { name: 'Mumbai City', required: 20, submitted: 18, pending: 2, status: 'Good' },
+                { name: 'Nagpur', required: 12, submitted: 10, pending: 2, status: 'Average' },
+                { name: 'Nashik', required: 10, submitted: 8, pending: 2, status: 'Average' },
+                { name: 'Aurangabad', required: 8, submitted: 8, pending: 0, status: 'Excellent' },
+            ]
         }
     };
 
@@ -53,21 +62,13 @@ const StateReports = () => {
                 reportContent = `
                     <div class="section">
                         <div class="section-title">Financial Summary - Maharashtra</div>
-                        <div class="info-row">
-                            <div class="info-label">Total Funds Received:</div>
-                            <div class="info-value"><strong>${data.totalReceived}</strong></div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Total Released to Districts:</div>
-                            <div class="info-value">${data.totalReleased}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Total Utilized:</div>
-                            <div class="info-value">${data.totalUtilized}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Balance Available:</div>
-                            <div class="info-value" style="color: green;"><strong>${data.balance}</strong></div>
+                        <div class="summary-box">
+                            ${Object.entries(data.summary).map(([key, value]) => `
+                                <div class="summary-item">
+                                    <div class="summary-label">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                    <div class="summary-value">${value}</div>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
                     
@@ -77,18 +78,20 @@ const StateReports = () => {
                             <thead>
                                 <tr>
                                     <th>District</th>
-                                    <th>Received</th>
-                                    <th>Utilized</th>
-                                    <th>Balance</th>
+                                    <th>Received (Cr)</th>
+                                    <th>Released (Cr)</th>
+                                    <th>Utilized (Cr)</th>
+                                    <th>Balance (Cr)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.districts.map(district => `
+                                ${data.details.map(row => `
                                     <tr>
-                                        <td>${district.name}</td>
-                                        <td>${district.received}</td>
-                                        <td>${district.utilized}</td>
-                                        <td>${district.balance}</td>
+                                        <td>${row.name}</td>
+                                        <td>₹${row.received}</td>
+                                        <td>₹${row.released}</td>
+                                        <td>₹${row.utilized}</td>
+                                        <td>₹${row.balance}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -99,52 +102,80 @@ const StateReports = () => {
                 reportContent = `
                     <div class="section">
                         <div class="section-title">Project Progress - Maharashtra</div>
-                        <div class="info-row">
-                            <div class="info-label">Total Projects:</div>
-                            <div class="info-value"><strong>${data.totalProjects}</strong></div>
+                        <div class="summary-box">
+                            ${Object.entries(data.summary).map(([key, value]) => `
+                                <div class="summary-item">
+                                    <div class="summary-label">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                    <div class="summary-value">${value}</div>
+                                </div>
+                            `).join('')}
                         </div>
-                        <div class="info-row">
-                            <div class="info-label">Completed:</div>
-                            <div class="info-value" style="color: green;">${data.completed}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Ongoing:</div>
-                            <div class="info-value" style="color: orange;">${data.ongoing}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Pending:</div>
-                            <div class="info-value" style="color: red;">${data.pending}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Completion Rate:</div>
-                            <div class="info-value"><strong>${data.completionRate}</strong></div>
-                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">District-wise Progress Breakdown</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>District</th>
+                                    <th>Total Projects</th>
+                                    <th>Completed</th>
+                                    <th>Ongoing</th>
+                                    <th>Delayed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.details.map(row => `
+                                    <tr>
+                                        <td>${row.name}</td>
+                                        <td>${row.total}</td>
+                                        <td>${row.completed}</td>
+                                        <td>${row.ongoing}</td>
+                                        <td style="color: ${row.delayed > 0 ? 'red' : 'green'}">${row.delayed}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 `;
             } else if (reportType === 'UCs') {
                 reportContent = `
                     <div class="section">
                         <div class="section-title">Utilization Certificates Status - Maharashtra</div>
-                        <div class="info-row">
-                            <div class="info-label">Total UCs Required:</div>
-                            <div class="info-value">${data.totalUCs}</div>
+                        <div class="summary-box">
+                            ${Object.entries(data.summary).map(([key, value]) => `
+                                <div class="summary-item">
+                                    <div class="summary-label">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                    <div class="summary-value">${value}</div>
+                                </div>
+                            `).join('')}
                         </div>
-                        <div class="info-row">
-                            <div class="info-label">Submitted:</div>
-                            <div class="info-value" style="color: blue;">${data.submitted}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Verified:</div>
-                            <div class="info-value" style="color: green;">${data.verified}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Pending Verification:</div>
-                            <div class="info-value" style="color: orange;">${data.pending}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Verification Rate:</div>
-                            <div class="info-value"><strong>${data.verificationRate}</strong></div>
-                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">District-wise UC Status</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>District</th>
+                                    <th>Required</th>
+                                    <th>Submitted</th>
+                                    <th>Pending</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.details.map(row => `
+                                    <tr>
+                                        <td>${row.name}</td>
+                                        <td>${row.required}</td>
+                                        <td>${row.submitted}</td>
+                                        <td>${row.pending}</td>
+                                        <td>${row.status}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 `;
             }
@@ -238,7 +269,10 @@ const StateReports = () => {
                                 padding: 20px;
                             }
                         }
-                    </style>
+                        .summary-box { display: flex; justify-content: space-between; background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #e9ecef; }
+                        .summary-item { text-align: center; }
+                        .summary-label { font-size: 14px; color: #666; margin-bottom: 5px; }
+                        .summary-value { font-size: 20px; font-weight: bold; color: #2c3e50; }
                 </head>
                 <body>
                     <div class="header">
@@ -287,7 +321,7 @@ const StateReports = () => {
                         <option value="Progress">Progress Reports</option>
                         <option value="UCs">UC Status Reports</option>
                     </select>
-                    <button className="btn btn-primary btn-sm" onClick={handleExportPDF}>📥 Export Report</button>
+                    <InteractiveButton variant="secondary" size="sm" onClick={handleExportPDF}><Download size={16} /> Export Report</InteractiveButton>
                 </div>
             </div>
 
@@ -297,29 +331,108 @@ const StateReports = () => {
                 </div>
             )}
 
-            <div className="dashboard-section">
-                <div className="kpi-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                    <StatCard
-                        icon="📊"
-                        value="8"
-                        label="Reports Available"
-                        color="var(--color-primary)"
-                    />
-                    <StatCard
-                        icon="📥"
-                        value="24"
-                        label="Downloads this month"
-                        color="var(--color-secondary)"
-                    />
-                </div>
-            </div>
+            <div className="card" style={{ padding: 20 }}>
+                <h3 style={{ marginTop: 0, marginBottom: 20, borderBottom: '1px solid #eee', paddingBottom: 10 }}>
+                    {reportData[reportType].title}
+                </h3>
 
-            <div className="dashboard-section">
-                <h3 className="section-title">{reportType} Report Overview</h3>
-                <div className="card" style={{ padding: 'var(--space-4)', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border-light)' }}>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Detailed charts and data tables for <strong>{reportType}</strong> will be displayed here.
-                    </p>
+                {/* Summary Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 30 }}>
+                    {Object.entries(reportData[reportType].summary).map(([key, value], index) => {
+                        const colors = [
+                            { bg: '#EEF2FF', text: '#4F46E5', label: '#6366F1' },
+                            { bg: '#FEF3C7', text: '#D97706', label: '#F59E0B' },
+                            { bg: '#ECFDF5', text: '#059669', label: '#10B981' },
+                            { bg: '#EFF6FF', text: '#2563EB', label: '#3B82F6' }
+                        ];
+                        const color = colors[index] || colors[0];
+
+                        return (
+                            <div key={key} style={{
+                                padding: 20,
+                                backgroundColor: color.bg,
+                                borderRadius: 12,
+                                textAlign: 'center',
+                                border: `1px solid ${color.bg}`,
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+                            }}>
+                                <div style={{ fontSize: '13px', color: color.label, marginBottom: 8, textTransform: 'capitalize', fontWeight: '600', letterSpacing: '0.05em' }}>
+                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                </div>
+                                <div style={{ fontSize: '32px', fontWeight: '800', color: color.text }}>{value}</div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Data Table */}
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
+                            {reportType === 'Financial' && (
+                                <tr>
+                                    <th>District</th>
+                                    <th>Received (Cr)</th>
+                                    <th>Released (Cr)</th>
+                                    <th>Utilized (Cr)</th>
+                                    <th>Balance (Cr)</th>
+                                </tr>
+                            )}
+                            {reportType === 'Progress' && (
+                                <tr>
+                                    <th>District</th>
+                                    <th>Total Projects</th>
+                                    <th>Completed</th>
+                                    <th>Ongoing</th>
+                                    <th>Delayed</th>
+                                </tr>
+                            )}
+                            {reportType === 'UCs' && (
+                                <tr>
+                                    <th>District</th>
+                                    <th>Required</th>
+                                    <th>Submitted</th>
+                                    <th>Pending</th>
+                                    <th>Status</th>
+                                </tr>
+                            )}
+                        </thead>
+                        <tbody>
+                            {reportData[reportType].details.map((row, index) => (
+                                <tr key={index}>
+                                    <td><strong>{row.name}</strong></td>
+                                    {reportType === 'Financial' && (
+                                        <>
+                                            <td>₹{row.received}</td>
+                                            <td>₹{row.released}</td>
+                                            <td>₹{row.utilized}</td>
+                                            <td>₹{row.balance}</td>
+                                        </>
+                                    )}
+                                    {reportType === 'Progress' && (
+                                        <>
+                                            <td>{row.total}</td>
+                                            <td>{row.completed}</td>
+                                            <td>{row.ongoing}</td>
+                                            <td style={{ color: row.delayed > 0 ? 'red' : 'inherit', fontWeight: row.delayed > 0 ? 'bold' : 'normal' }}>{row.delayed}</td>
+                                        </>
+                                    )}
+                                    {reportType === 'UCs' && (
+                                        <>
+                                            <td>{row.required}</td>
+                                            <td>{row.submitted}</td>
+                                            <td>{row.pending}</td>
+                                            <td>
+                                                <span className={`badge badge-${row.status === 'Excellent' || row.status === 'Good' ? 'success' : row.status === 'Average' ? 'warning' : 'error'}`}>
+                                                    {row.status}
+                                                </span>
+                                            </td>
+                                        </>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

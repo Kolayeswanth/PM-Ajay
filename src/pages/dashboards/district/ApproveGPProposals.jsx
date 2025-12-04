@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const ApproveGPProposals = () => {
     const [proposals, setProposals] = useState([
@@ -146,23 +147,23 @@ const ApproveGPProposals = () => {
                     <tbody>
                         {filteredProposals.length > 0 ? (
                             filteredProposals.map(proposal => (
-                                <tr key={proposal.id}>
+                                <tr key={proposal.id} style={{ backgroundColor: proposal.status.toLowerCase().includes('rejected') ? '#ffebee' : 'inherit' }}>
                                     <td>{proposal.gp}</td>
                                     <td>{proposal.title}</td>
                                     <td>{proposal.date}</td>
                                     <td>₹{proposal.budget}</td>
                                     <td>
-                                        <span className={`badge badge-${proposal.status === 'Approved' ? 'success' : proposal.status === 'Rejected' ? 'error' : 'warning'}`}>
+                                        <span className={`badge badge-${proposal.status.toLowerCase().includes('approved') ? 'success' : proposal.status.toLowerCase().includes('rejected') ? 'error' : 'warning'}`}>
                                             {proposal.status}
                                         </span>
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                                            <button className="btn btn-secondary btn-sm" onClick={() => handleViewPDF(proposal)}>View</button>
+                                            <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(proposal)}>View</InteractiveButton>
                                             {proposal.status === 'Pending' && (
                                                 <>
-                                                    <button className="btn btn-primary btn-sm" onClick={() => handleApproveClick(proposal)}>Approve</button>
-                                                    <button className="btn btn-outline btn-sm" onClick={() => handleRejectClick(proposal)}>Reject</button>
+                                                    <InteractiveButton variant="success" size="sm" onClick={() => handleApproveClick(proposal)}>Approve</InteractiveButton>
+                                                    <InteractiveButton variant="danger" size="sm" onClick={() => handleRejectClick(proposal)}>Reject</InteractiveButton>
                                                 </>
                                             )}
                                         </div>
@@ -187,7 +188,7 @@ const ApproveGPProposals = () => {
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button onClick={() => setIsApproveModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>Cancel</button>
-                        <button onClick={confirmApprove} className="btn btn-primary" style={{ padding: '8px 14px' }}>Confirm Approve</button>
+                        <InteractiveButton variant="primary" onClick={confirmApprove} style={{ padding: '8px 14px' }}>Confirm Approve</InteractiveButton>
                     </div>
                 }
             >
@@ -201,7 +202,7 @@ const ApproveGPProposals = () => {
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button onClick={() => setIsRejectModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>Cancel</button>
-                        <button onClick={confirmReject} className="btn btn-error" style={{ padding: '8px 14px' }}>Reject Proposal</button>
+                        <InteractiveButton variant="danger" onClick={confirmReject} style={{ padding: '8px 14px' }}>Reject Proposal</InteractiveButton>
                     </div>
                 }
             >

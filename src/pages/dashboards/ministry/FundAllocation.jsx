@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
-import { states as initialStates } from '../../../data/mockData';
 
 /**
- * FundAllocation with Backend Integration
- * - Fetches fund states from backend API
+ * FundAllocation - Ministry Allocates Funds ONLY for Ministry-Approved Proposals
+ * - Fetches ministry-approved proposals first
+ * - Shows states with approved projects and their total cost
+ * - Allows fund allocation only for states with approved proposals
  * - Persists allocation to backend API
  * - Sends WhatsApp notification via backend
  */
@@ -21,38 +22,81 @@ const FundAllocation = ({ formatCurrency }) => {
         allocatorRole: ''
     });
     const [fundStates, setFundStates] = useState([]);
+    const [approvedProposals, setApprovedProposals] = useState([]);
+    const [statesWithApprovals, setStatesWithApprovals] = useState([]);
     const [errors, setErrors] = useState({});
     const [toast, setToast] = useState(null);
     const [isNotifying, setIsNotifying] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     // Backend API Base URL
     const API_BASE_URL = 'http://localhost:5001/api';
 
-    // Fetch Fund Allocations from Supabase via Backend
+    // Fetch Minister-Approved Proposals and Fund Allocations
     useEffect(() => {
-        const fetchAllocations = async () => {
+        const fetchData = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/funds`);
-                const data = await response.json();
-                setFundStates(data || []);
+                setLoading(true);
+
+                // Fetch approved proposals
+                const proposalsResponse = await fetch(`${API_BASE_URL}/proposals/ministry`);
+                const proposalsData = await proposalsResponse.json();
+
+                if (proposalsData.success && proposalsData.data) {
+                    const approvedOnly = proposalsData.data.filter(p => p.status === 'APPROVED_BY_MINISTRY');
+                    setApprovedProposals(approvedOnly);
+
+                    // Group proposals by state
+                    const stateMap = {};
+                    approvedOnly.forEach(proposal => {
+                        const stateName = proposal.state_name;
+                        if (!stateMap[stateName]) {
+                            stateMap[stateName] = {
+                                name: stateName,
+                                totalProjects: 0,
+                                totalCost: 0,
+                                projects: []
+                            };
+                        }
+                        stateMap[stateName].totalProjects += 1;
+                        stateMap[stateName].totalCost += parseFloat(proposal.estimated_cost) || 0;
+                        stateMap[stateName].projects.push({
+                            id: proposal.id,
+                            name: proposal.project_name,
+                            district: proposal.district_name,
+                            component: proposal.component,
+                            cost: proposal.estimated_cost
+                        });
+                    });
+
+                    setStatesWithApprovals(Object.values(stateMap));
+                }
+
+                // Fetch existing fund allocations
+                const fundsResponse = await fetch(`${API_BASE_URL}/funds`);
+                const fundsData = await fundsResponse.json();
+                setFundStates(fundsData || []);
+
             } catch (error) {
-                console.error('Error fetching allocations:', error);
-                setFundStates(initialStates || []); // Fallback to mock data
+                console.error('Error fetching data:', error);
+                showToast('⚠️ Error loading data');
+            } finally {
+                setLoading(false);
             }
         };
-        fetchAllocations();
+        fetchData();
     }, []);
 
-    // small helper to show transient messages
+    // Helper to show toast messages
     const showToast = (message) => {
         setToast(message);
         setTimeout(() => setToast(null), 4000);
     };
 
     // Open Add Allocation modal
-    const openAddAllocation = () => {
+    const openAddAllocation = (stateName = '') => {
         setAllocationData({
-            stateName: '',
+            stateName: stateName,
             component: [],
             amount: '',
             date: new Date().toISOString().slice(0, 10),
@@ -77,15 +121,13 @@ const FundAllocation = ({ formatCurrency }) => {
         });
     };
 
-    // Enhanced validation including allocator fields
+    // Validation
     const validate = () => {
         const errs = {};
-        if (!allocationData.stateName) errs.stateName = 'Please select a state/UT.';
+        if (!allocationData.stateName) errs.stateName = 'Please select a state.';
         const amountCr = parseFloat(allocationData.amount);
         if (isNaN(amountCr) || amountCr <= 0) errs.amount = 'Enter a valid amount (> 0).';
         if (!allocationData.officerId.trim()) errs.officerId = 'Enter Allocation Officer ID.';
-
-        // Validate allocator information
         if (!allocationData.allocatorName.trim()) errs.allocatorName = 'Enter allocator name.';
         if (!allocationData.allocatorRole.trim()) errs.allocatorRole = 'Enter allocator role.';
 
@@ -93,17 +135,16 @@ const FundAllocation = ({ formatCurrency }) => {
         return Object.keys(errs).length === 0;
     };
 
-    // Perform allocation (No WhatsApp Notification)
+    // Perform allocation
     const handleAllocate = async () => {
         if (!validate()) return;
 
         setIsNotifying(true);
 
         const amountCr = parseFloat(allocationData.amount);
-        const amountInRupees = Math.round(amountCr * 10000000); // 1 Cr = 10,000,000
+        const amountInRupees = Math.round(amountCr * 10000000);
 
         try {
-            // Prepare allocation data
             const allocationPayload = {
                 stateName: allocationData.stateName,
                 component: allocationData.component,
@@ -114,7 +155,6 @@ const FundAllocation = ({ formatCurrency }) => {
                 allocatorRole: allocationData.allocatorRole
             };
 
-            // Step 1: Save to Supabase via Backend
             const saveResponse = await fetch(`${API_BASE_URL}/funds/allocate`, {
                 method: 'POST',
                 headers: {
@@ -131,12 +171,11 @@ const FundAllocation = ({ formatCurrency }) => {
 
             setIsNotifying(false);
 
-            // Step 2: Refresh table data from Supabase
+            // Refresh fund allocations
             const response = await fetch(`${API_BASE_URL}/funds`);
             const data = await response.json();
             setFundStates(data || []);
 
-            // Success popup
             const successMessage =
                 `✅ FUND ALLOCATION SAVED!\n\n` +
                 `📊 Allocation Details:\n` +
@@ -146,7 +185,7 @@ const FundAllocation = ({ formatCurrency }) => {
                 `💾 Database: SAVED TO SUPABASE ✅`;
 
             alert(successMessage);
-            showToast(`✅ Allocation saved successfully!`);
+            showToast(`✅ Fund allocated to ${allocationData.stateName}!`);
             closeModal();
 
         } catch (error) {
@@ -156,62 +195,31 @@ const FundAllocation = ({ formatCurrency }) => {
         }
     };
 
-    // Helper: find selected state's current allocation (if any)
-    const selectedState = allocationData.stateName
+    // Get allocation info for a state
+    const getStateAllocation = (stateName) => {
+        return fundStates.find((s) => s.name === stateName);
+    };
+
+    // Helper: find selected state's approval info
+    const selectedStateApprovals = allocationData.stateName
+        ? statesWithApprovals.find((s) => s.name === allocationData.stateName)
+        : null;
+
+    const selectedStateAllocation = allocationData.stateName
         ? fundStates.find((s) => s.name === allocationData.stateName)
         : null;
 
-    // Full list of States + Union Territories of India (current)
-    const INDIA_STATES_AND_UT = [
-        "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
-        "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-        "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
-        "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-        // Union Territories
-        "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-        "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
-    ];
+    if (loading) {
+        return <div style={{ padding: 20, textAlign: 'center' }}>Loading approved proposals...</div>;
+    }
 
     return (
         <div className="fund-allocation-page" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h2 style={{ margin: 0 }}>State-wise Fund Allocation</h2>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <button
-                        className="btn"
-                        onClick={openAddAllocation}
-                        style={{
-                            backgroundColor: 'var(--color-saffron)',
-                            color: 'white',
-                            border: '2px solid var(--color-saffron)',
-                            transition: 'all 0.3s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#d97706';
-                            e.currentTarget.style.borderColor = '#d97706';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'var(--color-saffron)';
-                            e.currentTarget.style.borderColor = 'var(--color-saffron)';
-                        }}
-                        onFocus={(e) => {
-                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 153, 0, 0.3)';
-                        }}
-                        onBlur={(e) => {
-                            e.currentTarget.style.boxShadow = 'none';
-                        }}
-                        onMouseDown={(e) => {
-                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 153, 0, 0.3)';
-                        }}
-                        onMouseUp={(e) => {
-                            if (!e.currentTarget.matches(':focus')) {
-                                e.currentTarget.style.boxShadow = 'none';
-                            }
-                        }}
-                    >
-                        + Add Allocation
-                    </button>
-                </div>
+            <div style={{ marginBottom: 20 }}>
+                <h2 style={{ margin: 0 }}>Fund Allocation for Approved Projects</h2>
+                <p style={{ fontSize: 14, color: '#666', marginTop: 8 }}>
+                    ℹ️ Allocate funds only for states with Ministry-approved proposals
+                </p>
             </div>
 
             {toast && (
@@ -220,44 +228,112 @@ const FundAllocation = ({ formatCurrency }) => {
                 </div>
             )}
 
-            <div className="table-wrapper" style={{ marginBottom: 16 }}>
-                <table className="table" style={{ minWidth: 800 }}>
-                    <thead>
-                        <tr>
-                            <th>State/UT</th>
-                            <th>Scheme Component</th>
-                            <th style={{ textAlign: 'right' }}>Total Allocated</th>
-                            <th>Allocator Name</th>
-                            <th>Role</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {fundStates.map((s) => (
-                            <tr key={s.name}>
-                                <td style={{ padding: '12px 16px' }}>
-                                    <div style={{ fontWeight: 700 }}>{s.name}</div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>{s.code}</div>
-                                </td>
-                                <td style={{ padding: '12px 16px' }}>{Array.isArray(s.component) ? s.component.join(', ') : s.component || '-'}</td>
-                                <td style={{ padding: '12px 16px', textAlign: 'right' }}>{formatCurrency ? formatCurrency(s.fundAllocated || 0) : s.fundAllocated || 0}</td>
-                                <td style={{ padding: '12px 16px' }}>{s.lastAllocation?.allocatorName || '-'}</td>
-                                <td style={{ padding: '12px 16px' }}>{s.lastAllocation?.allocatorRole || '-'}</td>
-                            </tr>
-                        ))}
-                        {fundStates.length === 0 && (
-                            <tr>
-                                <td colSpan={5} style={{ padding: 20, textAlign: 'center' }}>No states available</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+            {/* States with Approved Proposals */}
+            <div style={{ marginBottom: 32 }}>
+                <h3 style={{ fontSize: 18, marginBottom: 16 }}>States with Ministry-Approved Projects</h3>
+
+                {statesWithApprovals.length === 0 ? (
+                    <div style={{ padding: 40, textAlign: 'center', backgroundColor: '#f9f9f9', borderRadius: 8 }}>
+                        <p style={{ fontSize: 16, color: '#666' }}>❌ No Ministry-approved proposals found.</p>
+                        <p style={{ fontSize: 14, color: '#999' }}>Please approve proposals in the "Project Approval" section first.</p>
+                    </div>
+                ) : (
+                    <div className="table-wrapper">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>State</th>
+                                    <th style={{ textAlign: 'center' }}>Approved Projects</th>
+                                    <th style={{ textAlign: 'right' }}>Total Project Cost (Lakhs)</th>
+                                    <th style={{ textAlign: 'right' }}>Fund Allocated</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {statesWithApprovals.map((state) => {
+                                    const allocation = getStateAllocation(state.name);
+                                    return (
+                                        <tr key={state.name}>
+                                            <td>
+                                                <div style={{ fontWeight: 700 }}>{state.name}</div>
+                                                <div style={{ fontSize: 12, color: '#666' }}>
+                                                    {state.projects.map(p => p.district).join(', ')}
+                                                </div>
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <span className="badge badge-success">{state.totalProjects}</span>
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                                                ₹{state.totalCost.toFixed(2)}
+                                            </td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                {allocation ? (
+                                                    <span style={{ color: '#00B894', fontWeight: 600 }}>
+                                                        {formatCurrency ? formatCurrency(allocation.fundAllocated) : `₹${allocation.fundAllocated}`}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ color: '#999' }}>Not Allocated</span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="btn btn-primary btn-sm"
+                                                    onClick={() => openAddAllocation(state.name)}
+                                                >
+                                                    {allocation ? '+ Top-up' : 'Allocate Funds'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
 
-            {/* Add Allocation Modal */}
+            {/* All Fund Allocations */}
+            <div>
+                <h3 style={{ fontSize: 18, marginBottom: 16 }}>All Fund Allocations</h3>
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>State/UT</th>
+                                <th>Scheme Component</th>
+                                <th style={{ textAlign: 'right' }}>Total Allocated</th>
+                                <th>Allocator Name</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {fundStates.map((s) => (
+                                <tr key={s.name}>
+                                    <td>
+                                        <div style={{ fontWeight: 700 }}>{s.name}</div>
+                                        <div style={{ fontSize: 12, color: '#666' }}>{s.code}</div>
+                                    </td>
+                                    <td>{Array.isArray(s.component) ? s.component.join(', ') : s.component || '-'}</td>
+                                    <td style={{ textAlign: 'right' }}>{formatCurrency ? formatCurrency(s.fundAllocated || 0) : s.fundAllocated || 0}</td>
+                                    <td>{s.lastAllocation?.allocatorName || '-'}</td>
+                                    <td>{s.lastAllocation?.allocatorRole || '-'}</td>
+                                </tr>
+                            ))}
+                            {fundStates.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} style={{ padding: 20, textAlign: 'center' }}>No fund allocations yet</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Allocation Modal */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={closeModal}
-                title="Add Allocation"
+                title={`Allocate Funds - ${allocationData.stateName}`}
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button onClick={closeModal} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
@@ -269,12 +345,39 @@ const FundAllocation = ({ formatCurrency }) => {
                             style={{ padding: '8px 14px' }}
                             disabled={isNotifying}
                         >
-                            {isNotifying ? 'Saving...' : 'Allocate Fund'}
+                            {isNotifying ? 'Allocating...' : 'Allocate Fund'}
                         </button>
                     </div>
                 }
             >
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+                    {/* Show approved projects for this state */}
+                    {selectedStateApprovals && (
+                        <div style={{ padding: 12, backgroundColor: '#f0f8ff', borderRadius: 8, marginBottom: 16 }}>
+                            <h4 style={{ margin: '0 0 12px 0', fontSize: 14, color: '#333' }}>
+                                ✅ Approved Projects for {selectedStateApprovals.name}
+                            </h4>
+                            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
+                                {selectedStateApprovals.projects.map(project => (
+                                    <li key={project.id} style={{ marginBottom: 6 }}>
+                                        <strong>{project.name}</strong> - {project.district}
+                                        <span style={{ color: '#666' }}> (₹{project.cost} Lakhs - {project.component})</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>
+                                Total Project Cost: ₹{selectedStateApprovals.totalCost.toFixed(2)} Lakhs
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedStateAllocation && selectedStateAllocation.fundAllocated > 0 && (
+                        <div style={{ padding: 12, backgroundColor: '#fffbf0', borderRadius: 8, marginBottom: 16, border: '1px solid #ffc107' }}>
+                            ⚠️ This state already has {formatCurrency ? formatCurrency(selectedStateAllocation.fundAllocated) : selectedStateAllocation.fundAllocated} allocated.
+                            <br />Submitting will add to the existing allocation.
+                        </div>
+                    )}
+
                     <div className="form-group">
                         <label className="form-label">State Name</label>
                         <select
@@ -282,17 +385,14 @@ const FundAllocation = ({ formatCurrency }) => {
                             value={allocationData.stateName}
                             onChange={(e) => setAllocationData({ ...allocationData, stateName: e.target.value })}
                         >
-                            <option value="">-- select state / UT --</option>
-                            {INDIA_STATES_AND_UT.map((name) => (
-                                <option key={name} value={name}>{name}</option>
+                            <option value="">-- Select state with approved projects --</option>
+                            {statesWithApprovals.map((state) => (
+                                <option key={state.name} value={state.name}>
+                                    {state.name} ({state.totalProjects} projects)
+                                </option>
                             ))}
                         </select>
                         {errors.stateName && <div className="form-error">{errors.stateName}</div>}
-                        {selectedState && selectedState.fundAllocated > 0 && (
-                            <div className="form-helper" style={{ marginTop: 8 }}>
-                                Note: this state already has {formatCurrency ? formatCurrency(selectedState.fundAllocated) : selectedState.fundAllocated}. Submitting will top-up the allocation.
-                            </div>
-                        )}
                     </div>
 
                     <div className="form-group">
@@ -310,7 +410,6 @@ const FundAllocation = ({ formatCurrency }) => {
                             <input
                                 type="number"
                                 inputMode="decimal"
-                                pattern="[0-9]*[.,]?[0-9]*"
                                 className="form-control no-spin"
                                 placeholder="e.g. 1.5"
                                 value={allocationData.amount}

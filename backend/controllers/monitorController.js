@@ -72,32 +72,55 @@ exports.getNationalOverview = async (req, res) => {
 exports.getStateProgress = async (req, res) => {
     try {
         const { stateName } = req.params;
+        console.log('📍 Fetching state progress for:', stateName);
 
         if (!stateName) {
             return res.status(400).json({ success: false, error: 'State name is required' });
         }
 
-        // Get state ID
-        const { data: stateData, error: stateError } = await supabase
+        // Get state ID - try exact match first, then case-insensitive
+        let { data: stateData, error: stateError } = await supabase
             .from('states')
-            .select('id')
+            .select('id, name')
             .eq('name', stateName)
-            .single();
+            .maybeSingle();
 
-        if (stateError || !stateData) {
-            return res.status(404).json({ success: false, error: 'State not found' });
+        // If not found, try case-insensitive search
+        if (!stateData) {
+            const { data: allStates } = await supabase
+                .from('states')
+                .select('id, name');
+
+            stateData = allStates?.find(s =>
+                s.name.toLowerCase() === stateName.toLowerCase()
+            );
         }
+
+        if (!stateData) {
+            console.log('❌ State not found in database:', stateName);
+            return res.status(404).json({
+                success: false,
+                error: `State '${stateName}' not found in database`
+            });
+        }
+
+        console.log('✅ Found state:', stateData.name, 'ID:', stateData.id);
 
         // Get fund allocations for this state
         const { data: fundData, error: fundError } = await supabase
             .from('fund_allocations')
             .select('amount_allocated, amount_released, component')
-            .eq('state_name', stateName);
+            .eq('state_name', stateData.name);
 
-        if (fundError) throw fundError;
+        if (fundError) {
+            console.error('❌ Fund allocation error:', fundError);
+            throw fundError;
+        }
 
-        const totalAllocated = fundData.reduce((sum, item) => sum + (item.amount_allocated || 0), 0);
-        const totalReleased = fundData.reduce((sum, item) => sum + (item.amount_released || 0), 0);
+        console.log('💰 Found fund allocations:', fundData?.length || 0);
+
+        const totalAllocated = fundData?.reduce((sum, item) => sum + (item.amount_allocated || 0), 0) || 0;
+        const totalReleased = fundData?.reduce((sum, item) => sum + (item.amount_released || 0), 0) || 0;
 
         // Get districts in this state
         const { data: districts, error: districtError } = await supabase
@@ -105,17 +128,32 @@ exports.getStateProgress = async (req, res) => {
             .select('id')
             .eq('state_id', stateData.id);
 
-        if (districtError) throw districtError;
+        if (districtError) {
+            console.error('❌ District error:', districtError);
+            throw districtError;
+        }
 
-        const districtIds = districts.map(d => d.id);
+        console.log('🏘️ Found districts:', districts?.length || 0);
+
+        const districtIds = districts?.map(d => d.id) || [];
 
         // Get proposals for these districts
-        const { data: proposals, error: proposalError } = await supabase
-            .from('district_proposals')
-            .select('status, component, created_at')
-            .in('district_id', districtIds);
+        let proposals = [];
+        if (districtIds.length > 0) {
+            const { data: proposalData, error: proposalError } = await supabase
+                .from('district_proposals')
+                .select('status, component, created_at')
+                .in('district_id', districtIds);
 
-        if (proposalError) throw proposalError;
+            if (proposalError) {
+                console.error('❌ Proposal error:', proposalError);
+                throw proposalError;
+            }
+
+            proposals = proposalData || [];
+        }
+
+        console.log('📋 Found proposals:', proposals.length);
 
         // Calculate component-wise progress
         const components = {
@@ -132,12 +170,14 @@ exports.getStateProgress = async (req, res) => {
             components[comp].progress = compProposals.length > 0
                 ? Math.round((completed / compProposals.length) * 100)
                 : 0;
+
+            console.log(`📊 ${comp}: ${compProposals.length} total, ${completed} completed, ${components[comp].progress}%`);
         });
 
-        res.json({
+        const responseData = {
             success: true,
             data: {
-                name: stateName,
+                name: stateData.name,
                 fundUtilization: {
                     utilized: Math.round(totalReleased / 10000000), // Crores
                     total: Math.round(totalAllocated / 10000000)
@@ -148,10 +188,13 @@ exports.getStateProgress = async (req, res) => {
                     p.status === 'APPROVED_BY_MINISTRY' || p.status === 'COMPLETED'
                 ).length
             }
-        });
+        };
+
+        console.log('✅ Returning state data:', JSON.stringify(responseData.data, null, 2));
+        res.json(responseData);
 
     } catch (error) {
-        console.error('Error fetching state progress:', error);
+        console.error('❌ Error fetching state progress:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };

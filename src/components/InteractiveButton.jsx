@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 /**
  * Interactive button component with hover and active ring states
@@ -22,6 +22,8 @@ const InteractiveButton = ({
     size = 'md',
     ...props
 }) => {
+    const buttonRef = useRef(null);
+
     // Color configurations for each variant
     const variants = {
         primary: {
@@ -55,9 +57,9 @@ const InteractiveButton = ({
             ring: 'rgba(245, 158, 11, 0.3)'
         },
         secondary: {
-            normal: '#6B7280',
-            hover: '#4B5563',
-            ring: 'rgba(107, 114, 128, 0.3)'
+            normal: '#202076ff',
+            hover: '#02025eff',
+            ring: '#202076ff'
         },
         outline: {
             normal: '#FFFFFF',
@@ -104,6 +106,21 @@ const InteractiveButton = ({
         ...style
     };
 
+    // Handle clicks outside the button to remove active state
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (buttonRef.current && !buttonRef.current.contains(event.target)) {
+                buttonRef.current.style.boxShadow = 'none';
+                buttonRef.current.style.transform = 'scale(1)';
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     const handleMouseEnter = (e) => {
         if (!disabled) {
             e.currentTarget.style.backgroundColor = colorConfig.hover;
@@ -149,6 +166,7 @@ const InteractiveButton = ({
 
     return (
         <button
+            ref={buttonRef}
             className={`interactive-btn ${className}`}
             onClick={disabled ? undefined : onClick}
             style={baseStyle}

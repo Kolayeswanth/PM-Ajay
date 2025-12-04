@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Download, Upload } from 'lucide-react';
 
 const UploadUC = () => {
     const [ucs, setUcs] = useState([
@@ -155,9 +157,13 @@ const UploadUC = () => {
                     </div>
                 </div>
 
-                <button className="btn btn-primary" onClick={handleUpload} disabled={!formData.district || !formData.file}>
-                    Submit UC to Ministry
-                </button>
+                <InteractiveButton
+                    variant="primary"
+                    onClick={handleUpload}
+                    disabled={!formData.district || !formData.file}
+                >
+                    <Upload size={18} /> Submit UC to Ministry
+                </InteractiveButton>
             </div>
 
             <div className="section-header">
@@ -181,7 +187,15 @@ const UploadUC = () => {
                                 <td>{uc.year}</td>
                                 <td>{uc.date}</td>
                                 <td><span className="badge badge-success">{uc.status}</span></td>
-                                <td><button className="btn btn-secondary btn-sm" onClick={() => handleDownloadPDF(uc)}>Download</button></td>
+                                <td>
+                                    <InteractiveButton
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => handleDownloadPDF(uc)}
+                                    >
+                                        <Download size={16} /> Download
+                                    </InteractiveButton>
+                                </td>
                             </tr>
                         ))}
                     </tbody>

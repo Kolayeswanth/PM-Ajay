@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import IndiaMap from '../../../components/maps/IndiaMap';
 import DistrictMap from '../../../components/maps/DistrictMap';
+import MonitorProgressMinistry from './MonitorProgressMinistry';
 
 const THEME = {
     primary: '#7C3AED',
@@ -553,25 +554,106 @@ const MonitorProgress = () => {
     const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [selectedComponent, setSelectedComponent] = useState('All Components');
     const [stateData, setStateData] = useState(null);
-    const [nationalOverview, setNationalOverview] = useState(
-        generateNationalOverview('All Components'),
-    );
+    const [nationalOverview, setNationalOverview] = useState({
+        utilization: 0,
+        completed: 0,
+        beneficiaries: '0'
+    });
+    const [loading, setLoading] = useState(false);
 
+    // Fetch national overview from API
     useEffect(() => {
-        if (selectedDistrict) {
-            // Generate district-specific data when a district is selected
-            setStateData(generateDistrictData(selectedState, selectedDistrict));
-        } else if (selectedState) {
-            setStateData(generateStateData(selectedState));
-        } else {
-            setStateData(null);
-            setSelectedDistrict(null);
-        }
-    }, [selectedState, selectedDistrict]);
+        const fetchNationalOverview = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(
+                    `http://localhost:5001/api/monitor/national-overview?component=${selectedComponent}`
+                );
+                const result = await response.json();
 
-    useEffect(() => {
-        setNationalOverview(generateNationalOverview(selectedComponent));
+                if (result.success) {
+                    setNationalOverview(result.data);
+                } else {
+                    // Fallback to mock data if API fails
+                    setNationalOverview(generateNationalOverview(selectedComponent));
+                }
+            } catch (error) {
+                console.error('Error fetching national overview:', error);
+                // Fallback to mock data
+                setNationalOverview(generateNationalOverview(selectedComponent));
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchNationalOverview();
     }, [selectedComponent]);
+
+    // Fetch state data from API
+    useEffect(() => {
+        const fetchStateData = async () => {
+            if (!selectedState) {
+                setStateData(null);
+                setSelectedDistrict(null);
+                return;
+            }
+
+            if (selectedDistrict) {
+                setStateData(generateDistrictData(selectedState, selectedDistrict));
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const response = await fetch(
+                    `http://localhost:5001/api/monitor/state/${selectedState}`
+                );
+                const result = await response.json();
+
+                if (result.success) {
+                    // Transform API data to match expected format
+                    const transformedData = {
+                        name: result.data.name,
+                        fundUtilization: result.data.fundUtilization,
+                        components: result.data.components,
+                        projectTrends: {
+                            months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                            datasets: [
+                                {
+                                    label: 'Completed',
+                                    values: [10, 20, 30, 40, 50, result.data.completedProposals || 0],
+                                    color: THEME.completed
+                                },
+                                {
+                                    label: 'Pending',
+                                    values: [30, 35, 40, 35, 30, (result.data.totalProposals - result.data.completedProposals) || 0],
+                                    color: THEME.pending
+                                },
+                                {
+                                    label: 'Not Started',
+                                    values: [60, 45, 30, 25, 20, 15],
+                                    color: THEME.notStarted
+                                },
+                            ],
+                        }
+                    };
+                    setStateData(transformedData);
+                } else {
+                    // Fallback to mock data
+                    setStateData(generateStateData(selectedState));
+                }
+            } catch (error) {
+                console.error('Error fetching state data:', error);
+                // Fallback to mock data
+                setStateData(generateStateData(selectedState));
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStateData();
+        fetchStateData();
+    }, [selectedState, selectedDistrict]);
 
     const handleComponentChange = (e) => {
         setSelectedComponent(e.target.value);
@@ -1144,6 +1226,9 @@ const MonitorProgress = () => {
                     </div>
                 </div>
             </div>
+
+            {/* All Projects List */}
+            <MonitorProgressMinistry />
         </div>
     );
 };

@@ -92,6 +92,8 @@ const AnnualPlansApproval = () => {
         setIsRejectModalOpen(false);
     };
 
+
+
     const handleViewPDF = (plan) => {
         // If there's a document URL, open it
         if (plan.documents && plan.documents.length > 0) {
@@ -163,10 +165,21 @@ const AnnualPlansApproval = () => {
                     <select
                         className="form-select"
                         style={{
-                            width: '180px',
+                            width: '200px',
                             padding: '10px 16px',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            backgroundColor: '#fff',
                             fontSize: '14px',
-                            borderRadius: '4px'
+                            color: '#4a5568',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                            appearance: 'none', // Remove default arrow to style it better if we had a wrapper, but for now this cleans it up
+                            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a0aec0'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e")`,
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'right 12px center',
+                            backgroundSize: '16px'
                         }}
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -203,7 +216,7 @@ const AnnualPlansApproval = () => {
                             <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>Loading proposals...</td></tr>
                         ) : filteredPlans.length > 0 ? (
                             filteredPlans.map(plan => (
-                                <tr key={plan.id} style={{ background: 'white', borderBottom: '1px solid #eee' }}>
+                                <tr key={plan.id} style={{ background: plan.status.toLowerCase().includes('rejected') ? '#ffebee' : 'white', borderBottom: '1px solid #eee' }}>
                                     <td style={{ padding: '15px' }}>
                                         <div style={{ fontWeight: 'bold', color: '#000', fontSize: '14px' }}>{plan.state_name}</div>
                                         <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>{plan.district_name}</div>
@@ -220,7 +233,7 @@ const AnnualPlansApproval = () => {
                                             textTransform: 'uppercase',
                                             display: 'inline-block'
                                         }}>
-                                            {plan.component}
+                                            {plan.component.replace(/ /g, '\u00A0')}
                                         </span>
                                     </td>
                                     <td style={{ padding: '15px', fontWeight: 'bold', color: '#333' }}>₹{plan.estimated_cost}</td>
@@ -243,62 +256,17 @@ const AnnualPlansApproval = () => {
                                     </td>
                                     <td style={{ padding: '15px' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button
-                                                className="btn-icon"
-                                                onClick={() => handleViewPDF(plan)}
-                                                title="View Details"
-                                                style={{
-                                                    padding: '8px',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid #e0e0e0',
-                                                    background: 'white',
-                                                    cursor: 'pointer',
-                                                    color: '#2196f3',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center'
-                                                }}
-                                            >
-                                                <Eye size={18} />
-                                            </button>
+                                            <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(plan)}>
+                                                <Eye size={16} style={{ marginRight: '5px' }} /> View
+                                            </InteractiveButton>
                                             {plan.status === 'APPROVED_BY_STATE' && (
                                                 <>
-                                                    <button
-                                                        className="btn-icon"
-                                                        onClick={() => handleApproveClick(plan)}
-                                                        title="Approve"
-                                                        style={{
-                                                            padding: '8px',
-                                                            borderRadius: '8px',
-                                                            border: '1px solid #e0e0e0',
-                                                            background: 'white',
-                                                            cursor: 'pointer',
-                                                            color: '#4caf50',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center'
-                                                        }}
-                                                    >
-                                                        <Check size={18} />
-                                                    </button>
-                                                    <button
-                                                        className="btn-icon"
-                                                        onClick={() => handleRejectClick(plan)}
-                                                        title="Reject"
-                                                        style={{
-                                                            padding: '8px',
-                                                            borderRadius: '8px',
-                                                            border: '1px solid #e0e0e0',
-                                                            background: 'white',
-                                                            cursor: 'pointer',
-                                                            color: '#f44336',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center'
-                                                        }}
-                                                    >
-                                                        <X size={18} />
-                                                    </button>
+                                                    <InteractiveButton variant="success" size="sm" onClick={() => handleApproveClick(plan)}>
+                                                        <Check size={16} style={{ marginRight: '5px' }} /> Approve
+                                                    </InteractiveButton>
+                                                    <InteractiveButton variant="danger" size="sm" onClick={() => handleRejectClick(plan)}>
+                                                        <X size={16} style={{ marginRight: '5px' }} /> Reject
+                                                    </InteractiveButton>
                                                 </>
                                             )}
                                         </div>

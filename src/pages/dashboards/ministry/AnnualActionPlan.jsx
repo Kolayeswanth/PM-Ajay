@@ -50,8 +50,17 @@ const AnnualActionPlan = () => {
         fetchData();
     }, []);
 
+    // Get unique states from data for the dropdown
+    const availableStates = [...new Set(data.map(item => item.state))].sort();
+
+    // Filter data based on selected state
+    const filteredData = data.filter(item => {
+        if (!filters.state || filters.state === 'All States') return true;
+        return item.state.toLowerCase() === filters.state.toLowerCase();
+    });
+
     return (
-        <div className="dashboard-panel" style={{ padding: '20px', fontFamily: "'Inter', sans-serif" }}>
+        <div className="dashboard-panel" style={{ padding: '20px', fontFamily: "'Inter', sans-serif", maxWidth: '1200px', margin: '0 auto' }}>
             <div className="section-header" style={{ marginBottom: '25px' }}>
                 <h2 className="section-title" style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>Annual Plan Approvals</h2>
             </div>
@@ -160,9 +169,10 @@ const AnnualActionPlan = () => {
                             onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
                             onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
                         >
-                            <option>KARNATAKA</option>
-                            <option>MAHARASHTRA</option>
-                            <option>UTTAR PRADESH</option>
+                            <option>All States</option>
+                            {availableStates.map(state => (
+                                <option key={state} value={state}>{state}</option>
+                            ))}
                         </select>
                         <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -171,26 +181,13 @@ const AnnualActionPlan = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto', marginTop: 'auto' }}>
-                    <button className="btn" style={{
-                        background: '#10b981',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 20px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
-                        cursor: 'pointer',
-                        transition: 'transform 0.1s'
-                    }}
-                        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    <InteractiveButton
+                        variant="info"
+                        size="sm"
+                        onClick={() => { }}
                     >
-                        <Eye size={18} /> View
-                    </button>
+                        <Eye size={16} style={{ marginRight: '5px' }} /> View
+                    </InteractiveButton>
                 </div>
             </div>
 
@@ -229,11 +226,11 @@ const AnnualActionPlan = () => {
                             <tr>
                                 <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>Loading...</td>
                             </tr>
-                        ) : data.length === 0 ? (
+                        ) : filteredData.length === 0 ? (
                             <tr>
-                                <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>No approved projects found.</td>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>No approved projects found for the selected criteria.</td>
                             </tr>
-                        ) : data.map((item, index) => (
+                        ) : filteredData.map((item, index) => (
                             <tr key={item.id || index} style={{ borderBottom: '1px solid #e2e8f0' }}>
                                 <td style={{ padding: '20px', textAlign: 'center', verticalAlign: 'top', color: '#64748b', fontWeight: '500' }}>{index + 1}</td>
                                 <td style={{ padding: '20px', verticalAlign: 'top', fontWeight: '700', color: '#1e293b' }}>{item.state}</td>
@@ -260,11 +257,11 @@ const AnnualActionPlan = () => {
                             </tr>
                         ))}
                         {/* Total Row */}
-                        {!loading && (
+                        {!loading && filteredData.length > 0 && (
                             <tr style={{ background: '#f8fafc', fontWeight: 'bold' }}>
                                 <td colSpan="3" style={{ textAlign: 'right', padding: '20px', color: '#1e293b', fontSize: '16px' }}>Total</td>
                                 <td style={{ textAlign: 'right', padding: '20px', color: '#1e293b', fontSize: '16px' }}>
-                                    {data.reduce((sum, item) => sum + parseFloat((item.totalFunds || '0').toString().replace(/,/g, '')), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    {filteredData.reduce((sum, item) => sum + parseFloat((item.totalFunds || '0').toString().replace(/,/g, '')), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </td>
                                 <td></td>
                             </tr>

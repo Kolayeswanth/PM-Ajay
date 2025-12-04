@@ -1,10 +1,11 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth, ROLES } from '../contexts/AuthContext';
 
 const Header = () => {
     const { user, logout, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = () => {
         logout();
@@ -62,6 +63,9 @@ const Header = () => {
         return [...commonLinks, ...(roleSpecificLinks[user?.role] || [])];
     };
 
+    // Hide green navigation bar for district users on dashboard page
+    const shouldHideNavBar = location.pathname === '/dashboard' && user?.role === ROLES.DISTRICT;
+
     return (
         <header className="header">
             {/* Top Bar */}
@@ -104,43 +108,38 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* Navigation */}
-            <div className="header-nav">
-                <div className="container-fluid">
-                    <nav>
-                        <ul className="nav-menu">
-                            {getNavLinks().map((link, index) => (
-                                <li key={link.path} className="nav-item">
-                                    <Link to={link.path} className="nav-link">
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
+            {/* Navigation - Hide for district users on dashboard */}
+            {!shouldHideNavBar && (
+                <div className="header-nav">
+                    <div className="container-fluid">
+                        <nav>
+                            <ul className="nav-menu">
+                                {getNavLinks().map((link, index) => (
+                                    <li key={link.path} className="nav-item">
+                                        <Link to={link.path} className="nav-link">
+                                            {link.label}
+                                        </Link>
+                                    </li>
+                                ))}
 
-                            {isAuthenticated ? (
-                                <>
+                                {isAuthenticated ? (
                                     <li className="nav-item" style={{ marginLeft: 'auto' }}>
                                         <span className="nav-link" style={{ cursor: 'default' }}>
                                             {user?.name} ({getRoleName(user?.role)})
                                         </span>
                                     </li>
-                                    <li className="nav-item">
-                                        <button onClick={handleLogout} className="nav-link logout-link">
-                                            Logout
-                                        </button>
+                                ) : (
+                                    <li className="nav-item" style={{ marginLeft: 'auto' }}>
+                                        <Link to="/login" className="nav-link">
+                                            Login
+                                        </Link>
                                     </li>
-                                </>
-                            ) : (
-                                <li className="nav-item" style={{ marginLeft: 'auto' }}>
-                                    <Link to="/login" className="nav-link">
-                                        Login
-                                    </Link>
-                                </li>
-                            )}
-                        </ul>
-                    </nav>
+                                )}
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
-            </div>
+            )}
         </header>
     );
 };

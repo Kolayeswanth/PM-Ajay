@@ -314,7 +314,7 @@ const AssignProjects = () => {
                                 {agencies.length > 0 ? (
                                     agencies.map(a => (
                                         <option key={a.id} value={a.id}>
-                                            {a.agency_name}
+                                            {a.agency_name} - {a.district_name || 'N/A'}
                                         </option>
                                     ))
                                 ) : (

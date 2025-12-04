@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import StatCard from '../../../components/StatCard';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Download } from 'lucide-react';
 
 const ReportsAnalytics = () => {
     const [reportType, setReportType] = useState('Fund Utilization');
@@ -362,14 +364,10 @@ const ReportsAnalytics = () => {
                     <option value="UCs submitted">UCs submitted</option>
                     <option value="State-wise Comparison">State-wise Comparison</option>
                 </select>
-                <button className="btn btn-primary btn-sm" onClick={handleExportPDF}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
+                <InteractiveButton variant="secondary" size="sm" onClick={handleExportPDF}>
+                    <Download size={16} style={{ marginRight: '5px' }} />
                     Export Report
-                </button>
+                </InteractiveButton>
             </div>
 
             {toast && (
