@@ -766,7 +766,7 @@ const StateDashboardPanel = ({ formatCurrency, stateName }) => {
                                             </span>
                                         </td>
                                         <td>
-                                            <span className={`badge ${district.ucUploaded ? 'badge-success' : 'badge-warning'}`}>
+                                            <span className={`badge ${district.ucUploaded ? 'badge-success' : 'badge-error'}`}>
                                                 {district.ucUploaded ? 'YES' : 'NO'}
                                             </span>
                                         </td>

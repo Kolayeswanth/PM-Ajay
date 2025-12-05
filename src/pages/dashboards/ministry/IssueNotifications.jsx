@@ -298,7 +298,7 @@ const IssueNotifications = () => {
                 title="Create New Notification"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <InteractiveButton variant="secondary" onClick={() => { setIsModalOpen(false); setErrors({}); }}>
+                        <InteractiveButton variant="outline" onClick={() => { setIsModalOpen(false); setErrors({}); }}>
                             Cancel
                         </InteractiveButton>
                         <InteractiveButton variant="primary" onClick={handleCreate}>

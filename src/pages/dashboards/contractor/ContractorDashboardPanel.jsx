@@ -23,33 +23,172 @@ const ContractorDashboardPanel = ({ formatCurrency, stats, recentWorks, onNaviga
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '1.5rem',
-                marginBottom: '2rem'
+                gap: '24px',
+                marginBottom: '32px'
             }}>
-                <ModernStatCard
-                    icon={<Construction size={24} strokeWidth={1.5} />}
-                    value={stats.totalWorks}
-                    label="Assigned Works"
-                    color="var(--color-primary)"
-                />
-                <ModernStatCard
-                    icon={<Settings size={24} strokeWidth={1.5} />}
-                    value={stats.ongoing}
-                    label="Works In Progress"
-                    color="var(--color-warning)"
-                />
-                <ModernStatCard
-                    icon={<Wallet size={24} strokeWidth={1.5} />}
-                    value={formatCurrency(stats.pendingPayments)}
-                    label="Pending Payments"
-                    color="var(--color-error)"
-                />
-                <ModernStatCard
-                    icon={<CheckCircle size={24} strokeWidth={1.5} />}
-                    value={stats.completed}
-                    label="Completed Works"
-                    color="var(--color-success)"
-                />
+                {/* Card 1: Assigned Works */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEF3C7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#FF9933'
+                    }}>
+                        <Construction size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {stats.totalWorks}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Assigned Works
+                    </div>
+                </div>
+
+                {/* Card 2: Works In Progress */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEF3C7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#F59E0B'
+                    }}>
+                        <Settings size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {stats.ongoing}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Works In Progress
+                    </div>
+                </div>
+
+                {/* Card 3: Pending Payments */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEE2E2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#EF4444'
+                    }}>
+                        <Wallet size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {formatCurrency(stats.pendingPayments)}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Pending Payments
+                    </div>
+                </div>
+
+                {/* Card 4: Completed Works */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#D1FAE5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#10B981'
+                    }}>
+                        <CheckCircle size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {stats.completed}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Completed Works
+                    </div>
+                </div>
             </div>
 
             {/* Recent Assigned Works */}

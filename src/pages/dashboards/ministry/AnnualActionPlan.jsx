@@ -180,15 +180,7 @@ const AnnualActionPlan = () => {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto', marginTop: 'auto' }}>
-                    <InteractiveButton
-                        variant="info"
-                        size="sm"
-                        onClick={() => { }}
-                    >
-                        <Eye size={16} style={{ marginRight: '5px' }} /> View
-                    </InteractiveButton>
-                </div>
+
             </div>
 
             {/* Table Section */}

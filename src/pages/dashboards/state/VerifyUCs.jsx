@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { Clock, CheckCircle, XCircle } from 'lucide-react';
 
 const VerifyUCs = () => {
     const { user } = useAuth();
@@ -288,18 +289,127 @@ const VerifyUCs = () => {
             )}
 
             {/* Summary Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-                <div className="stat-card" style={{ backgroundColor: '#FFF3CD', borderLeft: '4px solid #FFC107' }}>
-                    <div className="stat-value" style={{ color: '#F59E0B' }}>{pendingCount}</div>
-                    <div className="stat-label">Pending Verification</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                {/* Card 1: Verified */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#D1FAE5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#059669'
+                    }}>
+                        <CheckCircle size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {verifiedCount}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Verified
+                    </div>
                 </div>
-                <div className="stat-card" style={{ backgroundColor: '#D1FAE5', borderLeft: '4px solid #10B981' }}>
-                    <div className="stat-value" style={{ color: '#059669' }}>{verifiedCount}</div>
-                    <div className="stat-label">Verified</div>
+
+                {/* Card 2: Pending Verification */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEF3C7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#D97706'
+                    }}>
+                        <Clock size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {pendingCount}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Pending Verification
+                    </div>
                 </div>
-                <div className="stat-card" style={{ backgroundColor: '#FEE2E2', borderLeft: '4px solid #EF4444' }}>
-                    <div className="stat-value" style={{ color: '#DC2626' }}>{rejectedCount}</div>
-                    <div className="stat-label">Rejected</div>
+                {/* Card 3: Rejected */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEE2E2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#DC2626'
+                    }}>
+                        <XCircle size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {rejectedCount}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Rejected
+                    </div>
                 </div>
             </div>
 

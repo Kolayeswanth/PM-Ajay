@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 /**
  * FundAllocation - Ministry Allocates Funds ONLY for Ministry-Approved Proposals
@@ -230,7 +231,7 @@ const FundAllocation = ({ formatCurrency }) => {
 
             {/* States with Approved Proposals */}
             <div style={{ marginBottom: 32 }}>
-                <h3 style={{ fontSize: 18, marginBottom: 16 }}>States with Ministry-Approved Projects</h3>
+                <h3 style={{ fontSize: 18, marginBottom: 16 }}>States With Ministry-Approved Projects</h3>
 
                 {statesWithApprovals.length === 0 ? (
                     <div style={{ padding: 40, textAlign: 'center', backgroundColor: '#f9f9f9', borderRadius: 8 }}>
@@ -261,7 +262,7 @@ const FundAllocation = ({ formatCurrency }) => {
                                                 </div>
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
-                                                <span className="badge badge-success">{state.totalProjects}</span>
+                                                <span className="badge badge-info">{state.totalProjects}</span>
                                             </td>
                                             <td style={{ textAlign: 'right', fontWeight: 600 }}>
                                                 ₹{state.totalCost.toFixed(2)}
@@ -276,12 +277,13 @@ const FundAllocation = ({ formatCurrency }) => {
                                                 )}
                                             </td>
                                             <td>
-                                                <button
-                                                    className="btn btn-primary btn-sm"
+                                                <InteractiveButton
+                                                    variant="primary"
+                                                    size="sm"
                                                     onClick={() => openAddAllocation(state.name)}
                                                 >
                                                     {allocation ? '+ Top-up' : 'Allocate Funds'}
-                                                </button>
+                                                </InteractiveButton>
                                             </td>
                                         </tr>
                                     );
@@ -314,7 +316,7 @@ const FundAllocation = ({ formatCurrency }) => {
                                         <div style={{ fontSize: 12, color: '#666' }}>{s.code}</div>
                                     </td>
                                     <td>{Array.isArray(s.component) ? s.component.join(', ') : s.component || '-'}</td>
-                                    <td style={{ textAlign: 'right' }}>{formatCurrency ? formatCurrency(s.fundAllocated || 0) : s.fundAllocated || 0}</td>
+                                    <td style={{ textAlign: 'right', color: '#00B894', fontWeight: 600 }}>{formatCurrency ? formatCurrency(s.fundAllocated || 0) : s.fundAllocated || 0}</td>
                                     <td>{s.lastAllocation?.allocatorName || '-'}</td>
                                     <td>{s.lastAllocation?.allocatorRole || '-'}</td>
                                 </tr>
@@ -336,17 +338,16 @@ const FundAllocation = ({ formatCurrency }) => {
                 title={`Allocate Funds - ${allocationData.stateName}`}
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={closeModal} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <InteractiveButton onClick={closeModal} variant="outline">
                             Cancel
-                        </button>
-                        <button
+                        </InteractiveButton>
+                        <InteractiveButton
                             onClick={handleAllocate}
-                            className="btn btn-primary"
-                            style={{ padding: '8px 14px' }}
+                            variant="primary"
                             disabled={isNotifying}
                         >
                             {isNotifying ? 'Allocating...' : 'Allocate Fund'}
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >
