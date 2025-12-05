@@ -330,7 +330,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px dashed #eee' }}>
                             <span style={{ color: '#7f8c8d', fontSize: 13 }}>Available:</span>
-                            <span style={{ fontWeight: 'bold', color: (stats.received - stats.released) > 0 ? '#27ae60' : '#95a5a6' }}>
+                            <span style={{ fontWeight: 'bold', color: (stats.received - stats.released) < 0 ? '#EF4444' : '#00B894' }}>
                                 ₹{(stats.received - stats.released).toFixed(2)} Cr
                             </span>
                         </div>
