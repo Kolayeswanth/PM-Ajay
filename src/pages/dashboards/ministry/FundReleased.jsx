@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 import { useAuth } from '../../../contexts/AuthContext';
 
 const FundReleased = ({ formatCurrency }) => {
@@ -177,39 +178,30 @@ const FundReleased = ({ formatCurrency }) => {
                                             {item.component}
                                         </span>
                                     </td>
-                                    <td style={{ textAlign: 'right', color: '#555' }}>
+                                    <td style={{ textAlign: 'right', color: '#555', fontWeight: 600 }}>
                                         ₹{item.estimatedCost} Lakhs
                                     </td>
                                     <td style={{ textAlign: 'right', fontWeight: 600, color: '#2c3e50' }}>
                                         ₹{item.allocatedAmount} Lakhs
                                     </td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
+                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#00B894' }}>
                                         ₹{item.releasedAmount} Lakhs
                                     </td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#0984e3' }}>
+                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#EF4444' }}>
                                         ₹{item.remainingAmount} Lakhs
                                     </td>
                                     <td style={{ color: '#555' }}>
                                         {item.projectName}
                                     </td>
-                                    <td>
-                                        <button
-                                            className="btn btn-sm"
+                                    <td style={{ whiteSpace: 'nowrap' }}>
+                                        <InteractiveButton
+                                            variant="primary"
+                                            size="sm"
                                             onClick={() => handleReleaseClick(item)}
                                             disabled={item.remainingAmount <= 0}
-                                            style={{
-                                                background: item.remainingAmount <= 0 ? '#ccc' : '#ff9800',
-                                                color: 'white',
-                                                border: 'none',
-                                                padding: '6px 16px',
-                                                borderRadius: '6px',
-                                                fontSize: '13px',
-                                                fontWeight: '600',
-                                                cursor: item.remainingAmount <= 0 ? 'not-allowed' : 'pointer'
-                                            }}
                                         >
                                             {item.remainingAmount <= 0 ? 'Fully Released' : 'Release Funds'}
-                                        </button>
+                                        </InteractiveButton>
                                     </td>
                                 </tr>
                             ))
@@ -231,12 +223,12 @@ const FundReleased = ({ formatCurrency }) => {
                 title="Release Funds to Project"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => setIsReleaseModalOpen(false)} style={{ background: 'transparent', border: '2px solid #ddd', color: '#333', padding: '8px 14px', borderRadius: 8 }}>
+                        <InteractiveButton onClick={() => setIsReleaseModalOpen(false)} variant="outline">
                             Cancel
-                        </button>
-                        <button onClick={handleConfirmRelease} className="btn btn-primary" style={{ background: '#ff9800', border: 'none', padding: '8px 14px' }}>
+                        </InteractiveButton>
+                        <InteractiveButton onClick={handleConfirmRelease} variant="primary">
                             Confirm Release
-                        </button>
+                        </InteractiveButton>
                     </div>
                 }
             >

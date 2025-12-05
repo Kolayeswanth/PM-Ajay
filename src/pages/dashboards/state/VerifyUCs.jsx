@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { Clock, CheckCircle, XCircle, Eye, Check, X } from 'lucide-react';
 
 const VerifyUCs = () => {
     const { user } = useAuth();
@@ -261,11 +263,11 @@ const VerifyUCs = () => {
 
     const getStatusBadge = (status) => {
         const badges = {
-            'Pending Verification': 'badge-warning',
-            'Verified': 'badge-success',
-            'Rejected': 'badge-danger'
+            'Pending Verification': { class: 'badge-warning', bg: '#FEF3C7', color: '#D97706' },
+            'Verified': { class: 'badge-success', bg: '#D1FAE5', color: '#059669' },
+            'Rejected': { class: 'badge-danger', bg: '#FEE2E2', color: '#DC2626' }
         };
-        return badges[status] || 'badge-secondary';
+        return badges[status] || { class: 'badge-secondary', bg: '#E5E7EB', color: '#6B7280' };
     };
 
     const pendingCount = ucs.filter(uc => uc.status === 'Pending Verification').length;
@@ -288,18 +290,127 @@ const VerifyUCs = () => {
             )}
 
             {/* Summary Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-                <div className="stat-card" style={{ backgroundColor: '#FFF3CD', borderLeft: '4px solid #FFC107' }}>
-                    <div className="stat-value" style={{ color: '#F59E0B' }}>{pendingCount}</div>
-                    <div className="stat-label">Pending Verification</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                {/* Card 1: Verified */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#D1FAE5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#059669'
+                    }}>
+                        <CheckCircle size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {verifiedCount}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Verified
+                    </div>
                 </div>
-                <div className="stat-card" style={{ backgroundColor: '#D1FAE5', borderLeft: '4px solid #10B981' }}>
-                    <div className="stat-value" style={{ color: '#059669' }}>{verifiedCount}</div>
-                    <div className="stat-label">Verified</div>
+
+                {/* Card 2: Pending Verification */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEF3C7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#D97706'
+                    }}>
+                        <Clock size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {pendingCount}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Pending Verification
+                    </div>
                 </div>
-                <div className="stat-card" style={{ backgroundColor: '#FEE2E2', borderLeft: '4px solid #EF4444' }}>
-                    <div className="stat-value" style={{ color: '#DC2626' }}>{rejectedCount}</div>
-                    <div className="stat-label">Rejected</div>
+                {/* Card 3: Rejected */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEE2E2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#DC2626'
+                    }}>
+                        <XCircle size={24} />
+                    </div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {rejectedCount}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Rejected
+                    </div>
                 </div>
             </div>
 
@@ -332,7 +443,12 @@ const VerifyUCs = () => {
                         </thead>
                         <tbody>
                             {ucs.map(uc => (
-                                <tr key={uc.id}>
+                                <tr
+                                    key={uc.id}
+                                    style={{
+                                        backgroundColor: uc.status === 'Rejected' ? '#FEF2F2' : 'transparent'
+                                    }}
+                                >
                                     <td><strong>{uc.district}</strong></td>
                                     <td>{uc.year}</td>
                                     <td>{uc.submittedDate}</td>
@@ -347,26 +463,37 @@ const VerifyUCs = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <span className={`badge ${getStatusBadge(uc.status)}`}>
+                                        <span
+                                            className={`badge ${getStatusBadge(uc.status).class}`}
+                                            style={{
+                                                backgroundColor: getStatusBadge(uc.status).bg,
+                                                color: getStatusBadge(uc.status).color,
+                                                padding: '4px 12px',
+                                                borderRadius: '12px',
+                                                fontSize: '13px',
+                                                fontWeight: '600'
+                                            }}
+                                        >
                                             {uc.status}
                                         </span>
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button
-                                                className="btn btn-secondary btn-sm"
+                                            <InteractiveButton
+                                                variant="info"
+                                                size="sm"
                                                 onClick={() => handleViewDocument(uc)}
-                                                title="View UC Document"
                                             >
-                                                👁️ View
-                                            </button>
+                                                <Eye size={16} /> View
+                                            </InteractiveButton>
                                             {uc.status === 'Pending Verification' && (
-                                                <button
-                                                    className="btn btn-primary btn-sm"
+                                                <InteractiveButton
+                                                    variant="primary"
+                                                    size="sm"
                                                     onClick={() => handleVerify(uc)}
                                                 >
-                                                    ✓ Verify
-                                                </button>
+                                                    <Check size={16} /> Verify
+                                                </InteractiveButton>
                                             )}
                                         </div>
                                     </td>
@@ -380,15 +507,34 @@ const VerifyUCs = () => {
             {/* Verification Modal */}
             {showModal && selectedUC && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-                        <div className="modal-header">
-                            <h3>Verify Utilization Certificate</h3>
-                            <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1100px', minHeight: '700px' }}>
+                        <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <br></br>
+                            <h4 style={{ margin: 0 }}>Verify Utilization Certificate</h4>
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowModal(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '4px',
+                                    transition: 'background-color 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                                <X size={20} color="#6B7280" />
+                            </button>
                         </div>
-                        <div className="modal-body">
-                            <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#F3F4F6', borderRadius: '8px' }}>
-                                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px' }}>UC Details</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
+                        <div className="modal-body" style={{ paddingTop: '32px', paddingBottom: '32px' }}>
+                            <div style={{ marginBottom: '32px', padding: '24px', backgroundColor: '#F3F4F6', borderRadius: '12px' }}>
+                                <h4 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#111827' }}>UC Details</h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', fontSize: '15px' }}>
                                     <div><strong>District:</strong> {selectedUC.district}</div>
                                     <div><strong>Year:</strong> {selectedUC.year}</div>
                                     <div><strong>Fund Released:</strong> {formatCurrency(selectedUC.fundReleased)}</div>
@@ -398,12 +544,13 @@ const VerifyUCs = () => {
                                 </div>
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label required">Verification Decision</label>
+                            <div className="form-group" style={{ marginBottom: '28px' }}>
+                                <label className="form-label required" style={{ fontSize: '15px', marginBottom: '10px', display: 'block' }}>Verification Decision</label>
                                 <select
                                     className="form-control"
                                     value={verificationData.status}
                                     onChange={(e) => setVerificationData({ ...verificationData, status: e.target.value })}
+                                    style={{ fontSize: '15px', padding: '12px' }}
                                 >
                                     <option value="">-- Select Decision --</option>
                                     <option value="Verified">✓ Approve & Verify</option>
@@ -411,40 +558,44 @@ const VerifyUCs = () => {
                                 </select>
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Remarks / Comments</label>
+                            <div className="form-group" style={{ marginBottom: '28px' }}>
+                                <label className="form-label" style={{ fontSize: '15px', marginBottom: '10px', display: 'block' }}>Remarks / Comments</label>
                                 <textarea
                                     className="form-control"
-                                    rows="4"
+                                    rows="6"
                                     placeholder="Enter verification remarks, observations, or reasons for rejection..."
                                     value={verificationData.remarks}
                                     onChange={(e) => setVerificationData({ ...verificationData, remarks: e.target.value })}
+                                    style={{ fontSize: '15px', padding: '12px', resize: 'vertical' }}
                                 />
                             </div>
 
                             {verificationData.status === 'Verified' && (
-                                <div style={{ padding: '12px', backgroundColor: '#D1FAE5', borderRadius: '6px', fontSize: '14px', color: '#059669' }}>
+                                <div style={{ padding: '16px', backgroundColor: '#D1FAE5', borderRadius: '8px', fontSize: '15px', color: '#059669', marginBottom: '24px' }}>
                                     ✓ Verifying this UC will allow the district to request additional funds.
                                 </div>
                             )}
 
                             {verificationData.status === 'Rejected' && (
-                                <div style={{ padding: '12px', backgroundColor: '#FEE2E2', borderRadius: '6px', fontSize: '14px', color: '#DC2626' }}>
+                                <div style={{ padding: '16px', backgroundColor: '#FEE2E2', borderRadius: '8px', fontSize: '15px', color: '#DC2626', marginBottom: '24px' }}>
                                     ⚠️ Rejecting this UC will require the district to resubmit with corrections.
                                 </div>
                             )}
                         </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                        <div className="modal-footer" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                            <InteractiveButton
+                                variant="outline"
+                                onClick={() => setShowModal(false)}
+                            >
                                 Cancel
-                            </button>
-                            <button
-                                className="btn btn-primary"
+                            </InteractiveButton>
+                            <InteractiveButton
+                                variant="primary"
                                 onClick={handleSubmitVerification}
                                 disabled={!verificationData.status}
                             >
                                 Submit Verification
-                            </button>
+                            </InteractiveButton>
                         </div>
                     </div>
                 </div>

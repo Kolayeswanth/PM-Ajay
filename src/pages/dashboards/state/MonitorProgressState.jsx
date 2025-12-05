@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Search, Filter, Download, Eye } from 'lucide-react';
 import Modal from '../../../components/Modal';
+import InteractiveButton from '../../../components/InteractiveButton';
 
 const MonitorProgressState = ({ stateName, stateId }) => {
     const [projects, setProjects] = useState([]);
@@ -213,14 +214,52 @@ const MonitorProgressState = ({ stateName, stateId }) => {
         }).format(amount);
     };
 
+    const handleExport = () => {
+        if (!filteredProjects.length) {
+            alert('No projects to export');
+            return;
+        }
+
+        const headers = ['Project Title', 'District', 'Location', 'Implementing Agency', 'Executing Agency', 'Amount', 'Funds Released', 'Status'];
+        const csvContent = [
+            headers.join(','),
+            ...filteredProjects.map(p => [
+                `"${p.title?.replace(/"/g, '""') || ''}"`,
+                `"${p.implementing_agencies?.district_name || ''}"`,
+                `"${p.location?.replace(/"/g, '""') || ''}"`,
+                `"${p.implementing_agencies?.agency_name || ''}"`,
+                `"${p.executing_agencies?.agency_name || ''}"`,
+                p.amount || 0,
+                p.funds_released || 0,
+                `"${p.status || ''}"`
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `monitor_progress_report_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
     return (
         <div className="dashboard-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 className="section-title">Monitor Progress - {stateName}</h2>
-                <button className="btn btn-primary" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <InteractiveButton
+                    variant="secondary"
+                    onClick={handleExport}
+                    style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+                >
                     <Download size={18} />
                     Export Report
-                </button>
+                </InteractiveButton>
             </div>
 
             {/* Filters */}
@@ -301,13 +340,13 @@ const MonitorProgressState = ({ stateName, stateId }) => {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                            <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Project Title</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>District / Location</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Agencies</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Financials</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Status</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Actions</th>
+                            <tr style={{ backgroundColor: '#202076ff', color: '#FFFFFF', borderBottom: '1px solid #E5E7EB' }}>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Project Title</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>District / Location</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Agencies</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Financials</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Status</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -336,17 +375,19 @@ const MonitorProgressState = ({ stateName, stateId }) => {
                                         </td>
                                         <td style={{ padding: '16px' }}>
                                             <div style={{ fontSize: '13px' }}>
-                                                <span style={{ color: '#6B7280' }}>IA: </span>
+                                                <span style={{ color: '#000080', fontWeight: '600' }}>IA: </span>
                                                 <span style={{ fontWeight: '500' }}>{project.implementing_agencies?.agency_name || 'Unassigned'}</span>
                                             </div>
                                             <div style={{ fontSize: '13px', marginTop: '4px' }}>
-                                                <span style={{ color: '#6B7280' }}>EA: </span>
+                                                <span style={{ color: '#000080', fontWeight: '600' }}>EA: </span>
                                                 <span style={{ fontWeight: '500' }}>{project.executing_agencies?.agency_name || 'Unassigned'}</span>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px' }}>
                                             <div style={{ fontWeight: '500', color: '#111827' }}>{formatCurrency(project.amount)}</div>
-                                            <div style={{ fontSize: '12px', color: '#6B7280' }}>Released: {formatCurrency(project.funds_released || 0)}</div>
+                                            <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                                                Released: <span style={{ color: '#10B981', fontWeight: '600' }}>{formatCurrency(project.funds_released || 0)}</span>
+                                            </div>
                                         </td>
                                         <td style={{ padding: '16px' }}>
                                             <span style={{
@@ -363,14 +404,15 @@ const MonitorProgressState = ({ stateName, stateId }) => {
                                             </span>
                                         </td>
                                         <td style={{ padding: '16px' }}>
-                                            <button
-                                                className="btn-icon"
-                                                title="View Details"
-                                                onClick={() => handleViewDetails(project)}
-                                                style={{ padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6B7280' }}
-                                            >
-                                                <Eye size={18} />
-                                            </button>
+                                            <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                                                <InteractiveButton
+                                                    variant="info"
+                                                    size="sm"
+                                                    onClick={() => handleViewDetails(project)}
+                                                >
+                                                    <Eye size={16} style={{ marginRight: '5px' }} /> View
+                                                </InteractiveButton>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -418,7 +460,7 @@ const MonitorProgressState = ({ stateName, stateId }) => {
                         }}>
                             <div>
                                 <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Funds Released</div>
-                                <div style={{ fontSize: '16px', fontWeight: '600', color: '#111827' }}>
+                                <div style={{ fontSize: '16px', fontWeight: '600', color: '#10B981' }}>
                                     {formatCurrency(selectedProject.funds_released || 0)}
                                 </div>
                             </div>

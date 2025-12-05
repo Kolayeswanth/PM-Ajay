@@ -96,7 +96,7 @@ const FundsReceivedFromMinistry = ({ formatCurrency }) => {
             </div>
 
             {/* Table */}
-            <div className="table-wrapper">
+            <div className="table-wrapper" style={{ overflowX: 'auto' }}>
                 <table className="table">
                     <thead>
                         <tr>
@@ -137,11 +137,9 @@ const FundsReceivedFromMinistry = ({ formatCurrency }) => {
                                     </td>
                                     <td style={{
                                         color: '#666',
-                                        maxWidth: 200,
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }} title={item.remarks}>
+                                        minWidth: '300px',
+                                        whiteSpace: 'nowrap'
+                                    }}>
                                         {item.remarks || '-'}
                                     </td>
                                 </tr>

@@ -188,32 +188,127 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId, stateId }) => {
     return (
         <>
             {/* District KPIs */}
-            <div className="kpi-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706', fontSize: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                {/* Card 1: Total Projects */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FEF3C7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#D97706'
+                    }}>
                         <FileText size={24} />
                     </div>
-                    <div>
-                        <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)', lineHeight: 1 }}>{stats.totalProjects}</div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Projects</div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {stats.totalProjects}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Total Projects
                     </div>
                 </div>
-                <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', fontSize: '1.5rem' }}>
+
+                {/* Card 2: Fund Allocated */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#EFF6FF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#2563EB'
+                    }}>
                         <IndianRupee size={24} />
                     </div>
-                    <div>
-                        <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)', lineHeight: 1 }}>₹{stats.fundAllocated} Cr</div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fund Allocated</div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        ₹{stats.fundAllocated} Cr
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Fund Allocated
                     </div>
                 </div>
-                <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669', fontSize: '1.5rem' }}>
+
+                {/* Card 3: Completed Projects */}
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    border: '1px solid #F3F4F6'
+                }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#ECFDF5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '24px',
+                        color: '#059669'
+                    }}>
                         <CheckCircle2 size={24} />
                     </div>
-                    <div>
-                        <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)', lineHeight: 1 }}>{stats.completedProjects}</div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Completed</div>
+                    <div style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        lineHeight: '1.2',
+                        marginBottom: '4px'
+                    }}>
+                        {stats.completedProjects}
+                    </div>
+                    <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Completed
                     </div>
                 </div>
             </div>

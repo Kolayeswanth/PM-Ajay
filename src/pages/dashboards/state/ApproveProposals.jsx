@@ -261,7 +261,7 @@ const ApproveProposals = () => {
                         </div>
                         <div class="info-row">
                             <div class="info-label">Budget Requested:</div>
-                            <div class="info-value">₹${proposal.budget}</div>
+                            <div class="info-value" style="color: #10B981 !important; font-weight: bold;">₹${proposal.budget}</div>
                         </div>
                         <div class="info-row">
                             <div class="info-label">Status:</div>
@@ -357,9 +357,9 @@ const ApproveProposals = () => {
                                     <td>{proposal.district}</td>
                                     <td>{proposal.title}</td>
                                     <td>{proposal.date}</td>
-                                    <td>₹{proposal.budget}</td>
+                                    <td style={{ color: '#10B981', fontWeight: 'bold' }}>₹{proposal.budget}</td>
                                     <td>
-                                        <span className={`badge badge-${proposal.status === 'Approved' ? 'warning' : proposal.status.toLowerCase().includes('approved') ? 'success' : proposal.status.toLowerCase().includes('rejected') ? 'error' : 'warning'}`}>
+                                        <span className={`badge badge-${proposal.status === 'Approved' ? 'warning' : proposal.status.toLowerCase().includes('approved') ? 'success' : proposal.status.toLowerCase().includes('rejected') ? 'error' : 'warning'} `}>
                                             {proposal.status}
                                         </span>
                                     </td>

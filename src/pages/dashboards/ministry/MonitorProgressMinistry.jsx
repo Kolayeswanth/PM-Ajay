@@ -267,13 +267,13 @@ const MonitorProgressMinistry = ({ selectedState = null, selectedDistrict = null
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                            <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Project Title</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Location</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Agencies</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Financials</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Status</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Actions</th>
+                            <tr style={{ backgroundColor: '#202076ff', borderBottom: '1px solid #E5E7EB' }}>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Project Title</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Location</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Agencies</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Financials</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Status</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#FFFFFF', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -307,43 +307,34 @@ const MonitorProgressMinistry = ({ selectedState = null, selectedDistrict = null
                                         </td>
                                         <td style={{ padding: '16px' }}>
                                             <div style={{ fontSize: '13px' }}>
-                                                <span style={{ color: '#6B7280' }}>IA: </span>
+                                                <span style={{ color: '#202076ff', fontWeight: '700' }}>IA: </span>
                                                 <span style={{ fontWeight: '500' }}>{project.implementing_agencies?.agency_name || 'Unassigned'}</span>
                                             </div>
                                             <div style={{ fontSize: '13px', marginTop: '4px' }}>
-                                                <span style={{ color: '#6B7280' }}>EA: </span>
+                                                <span style={{ color: '#202076ff', fontWeight: '700' }}>EA: </span>
                                                 <span style={{ fontWeight: '500' }}>{project.executing_agencies?.agency_name || 'Unassigned'}</span>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px' }}>
-                                            <div style={{ fontSize: '13px', marginBottom: '4px' }}>
-                                                <span style={{ color: '#6B7280' }}>Allocated: </span>
-                                                <span style={{ fontWeight: '500', color: '#111827' }}>{formatCurrency(project.amount)}</span>
-                                            </div>
-                                            <div style={{ fontSize: '13px' }}>
-                                                <span style={{ color: '#6B7280' }}>Released: </span>
-                                                <span style={{ fontWeight: '500', color: '#10B981' }}>{formatCurrency(project.funds_released || 0)}</span>
+                                            <div style={{ fontWeight: '500', color: '#111827' }}>{formatCurrency(project.amount)}</div>
+                                            <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                                                <strong>Released:</strong> <span style={{ color: '#00B894', fontWeight: '700', fontSize: '14px' }}>{formatCurrency(project.funds_released || 0)}</span>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px' }}>
-                                            <div style={{ marginBottom: '6px' }}>
-                                                <span style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    padding: '4px 12px',
-                                                    borderRadius: '9999px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '500',
-                                                    backgroundColor: `${getStatusColor(project.status)}20`,
-                                                    color: getStatusColor(project.status)
-                                                }}>
-                                                    {project.status || 'Pending'}
-                                                </span>
-                                            </div>
-                                            <div style={{ fontSize: '13px', color: '#6B7280' }}>
-                                                <span>Progress: </span>
-                                                <span style={{ fontWeight: '600', color: '#111827' }}>{project.physical_progress || 0}%</span>
-                                            </div>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                padding: '4px 12px',
+                                                borderRadius: '9999px',
+                                                fontSize: '12px',
+                                                fontWeight: '500',
+                                                backgroundColor: `${getStatusColor(project.status)}20`,
+                                                color: getStatusColor(project.status),
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                {project.status || 'Pending'}
+                                            </span>
                                         </td>
                                         <td style={{ padding: '16px' }}>
                                             <InteractiveButton
@@ -369,20 +360,12 @@ const MonitorProgressMinistry = ({ selectedState = null, selectedDistrict = null
                 onClose={closeModal}
                 title="Work Progress Details"
                 footer={
-                    <button
+                    <InteractiveButton
+                        variant="outline"
                         onClick={closeModal}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#F59E0B',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontWeight: '500'
-                        }}
                     >
                         Close
-                    </button>
+                    </InteractiveButton>
                 }
             >
                 {selectedProject && (
