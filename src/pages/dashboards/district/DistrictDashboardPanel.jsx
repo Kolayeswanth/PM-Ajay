@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import DistrictMap from '../../../components/maps/DistrictMap';
-import { districtStats, mockProjects, districts } from '../../../data/mockData';
+import { districtStats, mockProjects, districts, districts } from '../../../data/mockData';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { FileText, IndianRupee, CheckCircle2, Eye, XCircle, Plus, Download } from 'lucide-react';
 import InteractiveButton from '../../../components/InteractiveButton';
 import { FileText, IndianRupee, CheckCircle2, Eye, XCircle, Plus, Download } from 'lucide-react';
 
@@ -188,129 +190,28 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId, stateId }) => {
     return (
         <>
             {/* District KPIs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
-                {/* Card 1: Total Projects */}
-                <div style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-                    border: '1px solid #F3F4F6'
-                }}>
-                    <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        backgroundColor: '#FEF3C7',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '24px',
-                        color: '#D97706'
-                    }}>
-                        <FileText size={24} />
-                    </div>
-                    <div style={{
-                        fontSize: '24px',
-                        fontWeight: '700',
-                        color: '#111827',
-                        lineHeight: '1.2',
-                        marginBottom: '4px'
-                    }}>
-                        {stats.totalProjects}
-                    </div>
-                    <div style={{
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#6B7280',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                    }}>
-                        Total Projects
-                    </div>
-                </div>
-
-                {/* Card 2: Fund Allocated */}
-                <div style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-                    border: '1px solid #F3F4F6'
-                }}>
-                    <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        backgroundColor: '#EFF6FF',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '24px',
-                        color: '#2563EB'
-                    }}>
-                        <IndianRupee size={24} />
-                    </div>
-                    <div style={{
-                        fontSize: '24px',
-                        fontWeight: '700',
-                        color: '#111827',
-                        lineHeight: '1.2',
-                        marginBottom: '4px'
-                    }}>
-                        ₹{stats.fundAllocated} Cr
-                    </div>
-                    <div style={{
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#6B7280',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                    }}>
-                        Fund Allocated
-                    </div>
-                </div>
-
-                {/* Card 3: Completed Projects */}
-                <div style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-                    border: '1px solid #F3F4F6'
-                }}>
-                    <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        backgroundColor: '#ECFDF5',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '24px',
-                        color: '#059669'
-                    }}>
-                        <CheckCircle2 size={24} />
-                    </div>
-                    <div style={{
-                        fontSize: '24px',
-                        fontWeight: '700',
-                        color: '#111827',
-                        lineHeight: '1.2',
-                        marginBottom: '4px'
-                    }}>
-                        {stats.completedProjects}
-                    </div>
-                    <div style={{
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#6B7280',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                    }}>
-                        Completed
-                    </div>
-                </div>
+            <div className="kpi-row">
+                <ModernStatCard
+                    icon={FileText}
+                    value={stats.totalProjects}
+                    label="Total Projects"
+                    color="#D97706"
+                    bgColor="#FEF3C7"
+                />
+                <ModernStatCard
+                    icon={IndianRupee}
+                    value={`₹${stats.fundAllocated} Cr`}
+                    label="Fund Allocated"
+                    color="#2563EB"
+                    bgColor="#EFF6FF"
+                />
+                <ModernStatCard
+                    icon={CheckCircle2}
+                    value={stats.completedProjects}
+                    label="Completed"
+                    color="#059669"
+                    bgColor="#ECFDF5"
+                />
             </div>
 
             {/* Recent Funds Received */}

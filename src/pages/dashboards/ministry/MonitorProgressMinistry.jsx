@@ -4,16 +4,12 @@ import { Search, Filter, Download, Eye, FileSpreadsheet } from 'lucide-react';
 import Modal from '../../../components/Modal';
 import InteractiveButton from '../../../components/InteractiveButton';
 
-const MonitorProgressMinistry = () => {
+const MonitorProgressMinistry = ({ selectedState = null, selectedDistrict = null }) => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
-    const [stateFilter, setStateFilter] = useState('All');
-    const [districtFilter, setDistrictFilter] = useState('All');
 
-    const [states, setStates] = useState([]);
-    const [districts, setDistricts] = useState([]);
 
     // Modal State
     const [selectedProject, setSelectedProject] = useState(null);
@@ -22,51 +18,10 @@ const MonitorProgressMinistry = () => {
     const [loadingHistory, setLoadingHistory] = useState(false);
 
     useEffect(() => {
-        fetchStates();
         fetchProjects();
     }, []);
 
-    // Fetch States for Filter
-    const fetchStates = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('states')
-                .select('id, name')
-                .order('name');
 
-            if (data) setStates(data);
-        } catch (err) {
-            console.error('Error fetching states:', err);
-        }
-    };
-
-    // Fetch Districts when State changes
-    useEffect(() => {
-        const fetchDistricts = async () => {
-            if (stateFilter === 'All') {
-                setDistricts([]);
-                setDistrictFilter('All');
-                return;
-            }
-
-            const selectedStateObj = states.find(s => s.name === stateFilter);
-            if (!selectedStateObj) return;
-
-            try {
-                const { data, error } = await supabase
-                    .from('districts')
-                    .select('name')
-                    .eq('state_id', selectedStateObj.id)
-                    .order('name');
-
-                if (data) setDistricts(data.map(d => d.name));
-            } catch (err) {
-                console.error('Error fetching districts:', err);
-            }
-        };
-
-        fetchDistricts();
-    }, [stateFilter, states]);
 
     const fetchProjects = async () => {
         setLoading(true);
@@ -200,20 +155,20 @@ const MonitorProgressMinistry = () => {
 
         const matchesStatus = statusFilter === 'All' || project.status === statusFilter;
 
-        // State Filter
+        // State Filter - use prop instead of local state
         const projectState = project.implementing_agencies?.state_name;
-        const matchesState = stateFilter === 'All' ||
-            (projectState && projectState.toLowerCase() === stateFilter.toLowerCase());
+        const matchesState = !selectedState ||
+            (projectState && projectState.toLowerCase() === selectedState.toLowerCase());
 
-        // District Filter
+        // District Filter - use prop instead of local state
         const projectDistrict = project.implementing_agencies?.district_name;
         let matchesDistrict = false;
 
-        if (districtFilter === 'All') {
+        if (!selectedDistrict) {
             matchesDistrict = true;
         } else if (projectDistrict) {
             const pDist = projectDistrict.trim().toLowerCase();
-            const fDist = districtFilter.trim().toLowerCase();
+            const fDist = selectedDistrict.trim().toLowerCase();
 
             if (pDist === fDist) matchesDistrict = true;
             else if (pDist.includes(fDist) || fDist.includes(pDist)) matchesDistrict = true;
@@ -234,7 +189,20 @@ const MonitorProgressMinistry = () => {
     return (
         <div className="dashboard-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 className="section-title">All Projects Overview</h2>
+                <div>
+                    <h2 className="section-title">
+                        {selectedDistrict
+                            ? `${selectedDistrict} District Projects`
+                            : selectedState
+                                ? `${selectedState} State Projects`
+                                : 'All India Projects Overview'}
+                    </h2>
+                    {(selectedState || selectedDistrict) && (
+                        <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>
+                            Showing projects filtered by map selection
+                        </p>
+                    )}
+                </div>
                 <InteractiveButton variant="secondary" size="md">
                     <Download size={18} />
                     Export All Data
@@ -244,7 +212,7 @@ const MonitorProgressMinistry = () => {
             {/* Filters */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                gridTemplateColumns: '2fr 1fr',
                 gap: '16px',
                 marginBottom: '24px',
                 backgroundColor: 'white',
@@ -268,54 +236,6 @@ const MonitorProgressMinistry = () => {
                             outline: 'none'
                         }}
                     />
-                </div>
-
-                {/* State Filter */}
-                <div style={{ position: 'relative' }}>
-                    <Filter size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                    <select
-                        value={stateFilter}
-                        onChange={(e) => setStateFilter(e.target.value)}
-                        style={{
-                            width: '100%',
-                            padding: '10px 10px 10px 40px',
-                            borderRadius: '8px',
-                            border: '1px solid #E5E7EB',
-                            outline: 'none',
-                            appearance: 'none',
-                            backgroundColor: 'white'
-                        }}
-                    >
-                        <option value="All">All States</option>
-                        {states.map(s => (
-                            <option key={s.id} value={s.name}>{s.name}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* District Filter */}
-                <div style={{ position: 'relative' }}>
-                    <Filter size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                    <select
-                        value={districtFilter}
-                        onChange={(e) => setDistrictFilter(e.target.value)}
-                        disabled={stateFilter === 'All'}
-                        style={{
-                            width: '100%',
-                            padding: '10px 10px 10px 40px',
-                            borderRadius: '8px',
-                            border: '1px solid #E5E7EB',
-                            outline: 'none',
-                            appearance: 'none',
-                            backgroundColor: stateFilter === 'All' ? '#F3F4F6' : 'white',
-                            cursor: stateFilter === 'All' ? 'not-allowed' : 'pointer'
-                        }}
-                    >
-                        <option value="All">All Districts</option>
-                        {districts.map(d => (
-                            <option key={d} value={d}>{d}</option>
-                        ))}
-                    </select>
                 </div>
 
                 {/* Status Filter */}
@@ -378,8 +298,11 @@ const MonitorProgressMinistry = () => {
                                         </td>
                                         <td style={{ padding: '16px' }}>
                                             <div style={{ color: '#111827', fontWeight: '500' }}>{project.implementing_agencies?.state_name || 'N/A'}</div>
-                                            <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                                            <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
                                                 {project.implementing_agencies?.district_name || 'N/A'}
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
+                                                {project.location || 'N/A'}
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px' }}>

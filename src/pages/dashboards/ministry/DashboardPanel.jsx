@@ -3,6 +3,7 @@ import StatCard from '../../../components/StatCard';
 import IndiaMap from '../../../components/maps/IndiaMap';
 import DistrictMap from '../../../components/maps/DistrictMap';
 import CityMap from '../../../components/maps/CityMap';
+import MonitorProgressMinistry from './MonitorProgressMinistry';
 import { nationalStats, states, mockProjects } from '../../../data/mockData';
 import { Download } from 'lucide-react';
 import InteractiveButton from '../../../components/InteractiveButton';
@@ -246,6 +247,12 @@ const DashboardPanel = ({ selectedState, setSelectedState, selectedDistrict, set
                     )}
                 </div>
             </div>
+
+            {/* All Projects List */}
+            <MonitorProgressMinistry
+                selectedState={selectedState}
+                selectedDistrict={selectedDistrict}
+            />
         </div>
     );
 };
