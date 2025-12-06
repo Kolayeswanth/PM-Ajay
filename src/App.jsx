@@ -53,7 +53,7 @@ const AppLayout = ({ children }) => {
     return (
         <>
             {!shouldHideHeader && <Header />}
-            <main style={{ flex: 1, marginTop: shouldHideHeader ? 0 : 'var(--header-height)' }}>
+            <main style={{ flex: 1 }}>
                 {children}
             </main>
         </>

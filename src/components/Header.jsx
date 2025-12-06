@@ -68,50 +68,53 @@ const Header = () => {
     const shouldHideNavBar = location.pathname === '/dashboard' && user?.role === ROLES.DISTRICT;
 
     return (
-        <header className="header">
-            {/* Top Bar */}
-            <div className="header-top">
-                <div className="container">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                            <img src="/logos/emblem.png" alt="Government of India" className="logo-emblem" style={{ height: '40px' }} />
-                            <span>भारत सरकार | Government of India</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: 'var(--text-xs)' }}>
-                            <a href="#" style={{ color: 'var(--text-inverse)' }}>हिंदी</a>
-                            <a href="#" style={{ color: 'var(--text-inverse)' }}>Accessibility</a>
-                            <a href="#" style={{ color: 'var(--text-inverse)' }}>Sitemap</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Header */}
-            <div className="header-main">
-                <div className="container">
-                    <div className="header-content">
-                        <div className="header-logos">
-
-                            <img src="/logos/adarsh-gram.png" alt="Ministry of Social Justice & Empowerment" className="logo-emblem" />
-                        </div>
-
-                        <div className="header-title">
-                            <h4>Pradhan Mantri Anusuchit Jaati Abhyuday Yojna<br />(PM-AJAY)</h4>
-                            <p>Department of Social Justice & Empowerment,
-                                Ministry of Social Justice & Empowerment,
-                                Government of India</p>
-                        </div>
-
-                        <div className="header-logos">
-                            <img src="logos/logo-amrit.png" alt="PM-AJAY" className="logo-emblem" />
+        <>
+            <div className="header-branding">
+                {/* Top Bar */}
+                <div className="header-top">
+                    <div className="container">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                <img src="/logos/emblem.png" alt="Government of India" className="logo-emblem" style={{ height: '40px' }} />
+                                <span>भारत सरकार | Government of India</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: 'var(--text-xs)' }}>
+                                <a href="#" style={{ color: 'var(--text-inverse)' }}>हिंदी</a>
+                                <a href="#" style={{ color: 'var(--text-inverse)' }}>Accessibility</a>
+                                <a href="#" style={{ color: 'var(--text-inverse)' }}>Sitemap</a>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Main Header */}
+                <div className="header-main">
+                    <div className="container">
+                        <div className="header-content">
+                            <div className="header-logos">
+
+                                <img src="/logos/adarsh-gram.png" alt="Ministry of Social Justice & Empowerment" className="logo-emblem" />
+                            </div>
+
+                            <div className="header-title">
+                                <h4>Pradhan Mantri Anusuchit Jaati Abhyuday Yojna<br />(PM-AJAY)</h4>
+                                <p>Department of Social Justice & Empowerment,
+                                    Ministry of Social Justice & Empowerment,
+                                    Government of India</p>
+                            </div>
+
+                            <div className="header-logos">
+                                <img src="logos/logo-amrit.png" alt="PM-AJAY" className="logo-emblem" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             {/* Navigation - Hide for district users on dashboard */}
             {!shouldHideNavBar && (
-                <div className="header-nav">
+                <div className="header-nav sticky-header-nav">
                     <div className="container-fluid">
                         {/* Hamburger Menu Button */}
                         <button
@@ -161,7 +164,7 @@ const Header = () => {
                     </div>
                 </div>
             )}
-        </header>
+        </>
     );
 };
 
