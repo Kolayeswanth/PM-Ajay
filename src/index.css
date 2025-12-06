@@ -159,8 +159,6 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 body {
@@ -170,15 +168,13 @@ body {
   color: var(--text-primary);
   background-color: var(--bg-secondary);
   min-height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  /* overflow-y: auto; removed */
 }
 
 /* ===================================
@@ -269,12 +265,25 @@ a:hover {
    =================================== */
 
 .header {
+  /* Legacy/Dashboard support if needed */
   background: var(--color-saffron);
   box-shadow: var(--shadow-md);
-  position: fixed;
+  position: relative;
   width: 100%;
-  top: 0;
   z-index: var(--z-sticky);
+}
+
+.header-branding {
+  position: relative;
+  width: 100%;
+  z-index: var(--z-sticky);
+}
+
+.sticky-header-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  box-shadow: var(--shadow-md);
 }
 
 .header-top {
@@ -326,7 +335,7 @@ a:hover {
 
 .header-nav {
   background-color: #5cba5c;
-  position: relative;
+  /* position: relative;  Removed to allow sticky mixin to work, or sticky handles relative context anyway */
 }
 
 /* Hamburger Menu Button */
@@ -1053,7 +1062,7 @@ textarea.form-control {
     padding: var(--space-2) 0;
   }
 
-  .header-top .container > div {
+  .header-top .container>div {
     flex-direction: column;
     gap: var(--space-2);
   }
