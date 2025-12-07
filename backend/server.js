@@ -18,6 +18,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/funds', fundRoutes);
+app.use('/api/push-token', require('./routes/pushTokenRoutes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
