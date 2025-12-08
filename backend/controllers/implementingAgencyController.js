@@ -223,7 +223,7 @@ exports.activateImplementingAgency = async (req, res) => {
         let existingUser = false;
 
         // Try to create new Supabase auth user first
-        const defaultPassword = 'PMajay@2024#Demo';
+        const defaultPassword = process.env.DEFAULT_AGENCY_PASSWORD || 'Temp@' + Math.random().toString(36).slice(-8);
 
         try {
             const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -303,7 +303,7 @@ exports.activateImplementingAgency = async (req, res) => {
             message: 'Implementing agency activated successfully',
             credentials: {
                 email: agency.email,
-                password: existingUser ? '(existing user - use existing password)' : 'PMajay@2024#Demo'
+                password: existingUser ? '(existing user - use existing password)' : '(sent via secure channel)'
             }
         });
 
