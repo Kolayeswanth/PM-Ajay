@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
@@ -22,10 +22,11 @@ import FundRelease from './state/FundRelease';
 import ApproveProposals from './state/ApproveProposals';
 import VerifyUCs from './state/VerifyUCs';
 import Notifications from './state/Notifications';
-import { 
-  requestNotificationPermissions, 
+import {
+  requestNotificationPermissions,
   notifyPendingApprovals,
-  setupNotificationListeners 
+  setupNotificationListeners,
+  registerForPushNotificationsAsync
 } from '../../services/notificationService';
 
 const { width } = Dimensions.get('window');
@@ -60,15 +61,15 @@ const StateDashboard = ({ navigation }) => {
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
+        {
+          text: 'Logout',
           onPress: () => {
             logout();
             if (navigation) {
               navigation.replace('Login');
             }
           },
-          style: 'destructive' 
+          style: 'destructive'
         }
       ]
     );
@@ -76,9 +77,7 @@ const StateDashboard = ({ navigation }) => {
 
   // Request notification permissions on mount
   useEffect(() => {
-    requestNotificationPermissions();
-    
-    // Setup notification listeners
+    // ... (existing listener cleanup code)
     const cleanup = setupNotificationListeners(
       (notification) => {
         console.log('Notification received in foreground:', notification);
@@ -86,10 +85,12 @@ const StateDashboard = ({ navigation }) => {
       (response) => {
         console.log('Notification tapped:', response);
         const notifData = response.notification.request.content.data;
-        
+
         // Navigate to appropriate tab based on notification type
         if (notifData.type === 'pending_approvals') {
           setActiveTab('proposals');
+        } else if (notifData.type === 'fund_release') {
+          setActiveTab('received');
         }
       }
     );
@@ -97,11 +98,24 @@ const StateDashboard = ({ navigation }) => {
     return cleanup;
   }, []);
 
-  // Fetch state name from user profile
+  // Fetch state name and Register Push Token
   useEffect(() => {
     const fetchStateName = async () => {
       if (user?.id) {
         try {
+          // Register for Push Notifications
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            console.log('📲 Updating push token for user:', user.id);
+            const { error: tokenError } = await supabase
+              .from('profiles')
+              .update({ push_token: token })
+              .eq('id', user.id);
+
+            if (tokenError) console.error('Error updating push token:', tokenError);
+            else console.log('✅ Push token saved to profile');
+          }
+
           // Fetch profile from Supabase
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -168,7 +182,7 @@ const StateDashboard = ({ navigation }) => {
         if (result.success) {
           setDashboardStats(result.data);
           console.log('📊 Pending Approvals Count:', result.data.pendingApprovals);
-          
+
           // Send notification for pending approvals on first load
           if (!notificationChecked && result.data.pendingApprovals > 0) {
             console.log('🔔 Sending notification for pending approvals:', result.data.pendingApprovals);
@@ -196,71 +210,71 @@ const StateDashboard = ({ navigation }) => {
   };
 
   const sidebarMenu = [
-    { 
-      icon: <Text style={{ fontSize: 20 }}>📊</Text>, 
-      label: 'Dashboard', 
-      action: () => setActiveTab('dashboard'), 
-      active: activeTab === 'dashboard' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>📊</Text>,
+      label: 'Dashboard',
+      action: () => setActiveTab('dashboard'),
+      active: activeTab === 'dashboard'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>📈</Text>, 
-      label: 'Monitor Progress', 
-      action: () => setActiveTab('monitor'), 
-      active: activeTab === 'monitor' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>📈</Text>,
+      label: 'Monitor Progress',
+      action: () => setActiveTab('monitor'),
+      active: activeTab === 'monitor'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>💰</Text>, 
-      label: 'Funds Received from Ministry', 
-      action: () => setActiveTab('received'), 
-      active: activeTab === 'received' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>💰</Text>,
+      label: 'Funds Received from Ministry',
+      action: () => setActiveTab('received'),
+      active: activeTab === 'received'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>👥</Text>, 
-      label: 'Manage District Admins', 
-      action: () => setActiveTab('admins'), 
-      active: activeTab === 'admins' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>👥</Text>,
+      label: 'Manage District Admins',
+      action: () => setActiveTab('admins'),
+      active: activeTab === 'admins'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>💸</Text>, 
-      label: 'Fund Release to Districts', 
-      action: () => setActiveTab('funds'), 
-      active: activeTab === 'funds' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>💸</Text>,
+      label: 'Fund Release to Districts',
+      action: () => setActiveTab('funds'),
+      active: activeTab === 'funds'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>📄</Text>, 
-      label: 'Approve District Proposals', 
-      action: () => setActiveTab('proposals'), 
-      active: activeTab === 'proposals' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>📄</Text>,
+      label: 'Approve District Proposals',
+      action: () => setActiveTab('proposals'),
+      active: activeTab === 'proposals'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>✅</Text>, 
-      label: 'Verify Utilisation Certificates', 
-      action: () => setActiveTab('ucs'), 
-      active: activeTab === 'ucs' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>✅</Text>,
+      label: 'Verify Utilisation Certificates',
+      action: () => setActiveTab('ucs'),
+      active: activeTab === 'ucs'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>📋</Text>, 
-      label: 'Reports', 
-      action: () => setActiveTab('reports'), 
-      active: activeTab === 'reports' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>📋</Text>,
+      label: 'Reports',
+      action: () => setActiveTab('reports'),
+      active: activeTab === 'reports'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>🔔</Text>, 
-      label: 'Notifications', 
-      action: () => setActiveTab('notifications'), 
-      active: activeTab === 'notifications' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>🔔</Text>,
+      label: 'Notifications',
+      action: () => setActiveTab('notifications'),
+      active: activeTab === 'notifications'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>❓</Text>, 
-      label: 'Help/Support', 
-      action: () => setActiveTab('help'), 
-      active: activeTab === 'help' 
+    {
+      icon: <Text style={{ fontSize: 20 }}>❓</Text>,
+      label: 'Help/Support',
+      action: () => setActiveTab('help'),
+      active: activeTab === 'help'
     },
-    { 
-      icon: <Text style={{ fontSize: 20 }}>🚪</Text>, 
-      label: 'Logout', 
-      action: handleLogout, 
-      isLogout: true 
+    {
+      icon: <Text style={{ fontSize: 20 }}>🚪</Text>,
+      label: 'Logout',
+      action: handleLogout,
+      isLogout: true
     }
   ];
 
@@ -302,7 +316,7 @@ const StateDashboard = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Header />
-      
+
       <DashboardHeader
         toggleSidebar={toggleSidebar}
         breadcrumb={getBreadcrumb()}
@@ -317,118 +331,118 @@ const StateDashboard = ({ navigation }) => {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
-      
+
       <View style={styles.content}>
         {/* Dashboard Content */}
         {activeTab === 'dashboard' && (
-          <ScrollView 
+          <ScrollView
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
-          <View style={styles.dashboardPanel}>
-            {/* Stats Cards Grid */}
-            <View style={styles.statsGrid}>
-              {/* Total Fund Received */}
-              <View style={styles.statCard}>
-                <View style={[styles.statIconBox, { backgroundColor: '#FEF3C7' }]}>
-                  <Text style={styles.statIconText}>💰</Text>
+            <View style={styles.dashboardPanel}>
+              {/* Stats Cards Grid */}
+              <View style={styles.statsGrid}>
+                {/* Total Fund Received */}
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconBox, { backgroundColor: '#FEF3C7' }]}>
+                    <Text style={styles.statIconText}>💰</Text>
+                  </View>
+                  <Text style={styles.statValue}>
+                    {formatCurrency(dashboardStats.totalFundReceived || 0)}
+                  </Text>
+                  <Text style={styles.statLabel}>TOTAL FUND RECEIVED</Text>
                 </View>
-                <Text style={styles.statValue}>
-                  {formatCurrency(dashboardStats.totalFundReceived || 0)}
-                </Text>
-                <Text style={styles.statLabel}>TOTAL FUND RECEIVED</Text>
-              </View>
 
-              {/* Fund Utilized */}
-              <View style={styles.statCard}>
-                <View style={[styles.statIconBox, { backgroundColor: '#D1FAE5' }]}>
-                  <Text style={styles.statIconText}>📈</Text>
+                {/* Fund Utilized */}
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconBox, { backgroundColor: '#D1FAE5' }]}>
+                    <Text style={styles.statIconText}>📈</Text>
+                  </View>
+                  <Text style={styles.statValue}>
+                    {dashboardStats.fundUtilizedPercentage || 0}%
+                  </Text>
+                  <Text style={styles.statLabel}>FUND UTILIZED</Text>
                 </View>
-                <Text style={styles.statValue}>
-                  {dashboardStats.fundUtilizedPercentage || 0}%
-                </Text>
-                <Text style={styles.statLabel}>FUND UTILIZED</Text>
-              </View>
 
-              {/* Districts Reporting */}
-              <View style={styles.statCard}>
-                <View style={[styles.statIconBox, { backgroundColor: '#DBEAFE' }]}>
-                  <Text style={styles.statIconText}>📍</Text>
+                {/* Districts Reporting */}
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconBox, { backgroundColor: '#DBEAFE' }]}>
+                    <Text style={styles.statIconText}>📍</Text>
+                  </View>
+                  <Text style={styles.statValue}>
+                    {dashboardStats.districtsReporting || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>DISTRICTS REPORTING</Text>
                 </View>
-                <Text style={styles.statValue}>
-                  {dashboardStats.districtsReporting || 0}
-                </Text>
-                <Text style={styles.statLabel}>DISTRICTS REPORTING</Text>
-              </View>
 
-              {/* Pending Approvals */}
-              <View style={styles.statCard}>
-                <View style={[styles.statIconBox, { backgroundColor: '#FEF3C7' }]}>
-                  <Text style={styles.statIconText}>⏰</Text>
+                {/* Pending Approvals */}
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconBox, { backgroundColor: '#FEF3C7' }]}>
+                    <Text style={styles.statIconText}>⏰</Text>
+                  </View>
+                  <Text style={styles.statValue}>
+                    {dashboardStats.pendingApprovals || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>PENDING APPROVALS</Text>
                 </View>
-                <Text style={styles.statValue}>
-                  {dashboardStats.pendingApprovals || 0}
-                </Text>
-                <Text style={styles.statLabel}>PENDING APPROVALS</Text>
               </View>
-            </View>
-            {/* District Fund Status Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>District Fund Status</Text>
-              </View>
-              
-              {dashboardStats.districtFundStatus && dashboardStats.districtFundStatus.length > 0 ? (
-                <View style={styles.tableContainer}>
-                  {dashboardStats.districtFundStatus.map((district, index) => (
-                    <View key={index} style={styles.districtCard}>
-                      <Text style={styles.districtName}>{district.districtName}</Text>
-                      
-                      <View style={styles.districtRow}>
-                        <Text style={styles.districtLabel}>Fund Released:</Text>
-                        <Text style={styles.districtValue}>
-                          {formatCurrency(district.fundReleased)}
-                        </Text>
-                      </View>
-                      
-                      <View style={styles.districtRow}>
-                        <Text style={styles.districtLabel}>Fund Utilized:</Text>
-                        <Text style={styles.districtValue}>
-                          {formatCurrency(district.fundUtilized)} ({district.utilizationPercent}%)
-                        </Text>
-                      </View>
-                      
-                      <View style={styles.districtRow}>
-                        <Text style={styles.districtLabel}>Project Status:</Text>
-                        <View style={[
-                          styles.badge,
-                          district.projectStatus === 'On Track' ? styles.badgeSuccess : styles.badgeWarning
-                        ]}>
-                          <Text style={styles.badgeText}>{district.projectStatus}</Text>
+              {/* District Fund Status Section */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>District Fund Status</Text>
+                </View>
+
+                {dashboardStats.districtFundStatus && dashboardStats.districtFundStatus.length > 0 ? (
+                  <View style={styles.tableContainer}>
+                    {dashboardStats.districtFundStatus.map((district, index) => (
+                      <View key={index} style={styles.districtCard}>
+                        <Text style={styles.districtName}>{district.districtName}</Text>
+
+                        <View style={styles.districtRow}>
+                          <Text style={styles.districtLabel}>Fund Released:</Text>
+                          <Text style={styles.districtValue}>
+                            {formatCurrency(district.fundReleased)}
+                          </Text>
+                        </View>
+
+                        <View style={styles.districtRow}>
+                          <Text style={styles.districtLabel}>Fund Utilized:</Text>
+                          <Text style={styles.districtValue}>
+                            {formatCurrency(district.fundUtilized)} ({district.utilizationPercent}%)
+                          </Text>
+                        </View>
+
+                        <View style={styles.districtRow}>
+                          <Text style={styles.districtLabel}>Project Status:</Text>
+                          <View style={[
+                            styles.badge,
+                            district.projectStatus === 'On Track' ? styles.badgeSuccess : styles.badgeWarning
+                          ]}>
+                            <Text style={styles.badgeText}>{district.projectStatus}</Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.districtRow}>
+                          <Text style={styles.districtLabel}>UC Uploaded:</Text>
+                          <View style={[
+                            styles.badge,
+                            district.ucUploaded ? styles.badgeSuccess : styles.badgeError
+                          ]}>
+                            <Text style={styles.badgeText}>{district.ucUploaded ? 'YES' : 'NO'}</Text>
+                          </View>
                         </View>
                       </View>
-                      
-                      <View style={styles.districtRow}>
-                        <Text style={styles.districtLabel}>UC Uploaded:</Text>
-                        <View style={[
-                          styles.badge,
-                          district.ucUploaded ? styles.badgeSuccess : styles.badgeError
-                        ]}>
-                          <Text style={styles.badgeText}>{district.ucUploaded ? 'YES' : 'NO'}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyIcon}>📭</Text>
-                  <Text style={styles.emptyText}>No district fund data available</Text>
-                </View>
-              )}
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyIcon}>📭</Text>
+                    <Text style={styles.emptyText}>No district fund data available</Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
           </ScrollView>
         )}
 
@@ -464,8 +478,8 @@ const StateDashboard = ({ navigation }) => {
 
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
-          <Notifications 
-            userRole={user?.role} 
+          <Notifications
+            userRole={user?.role}
             stateName={stateName}
           />
         )}

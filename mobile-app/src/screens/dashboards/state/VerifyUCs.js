@@ -21,7 +21,7 @@ const VerifyUCs = ({ stateName }) => {
   const fetchUCs = async () => {
     try {
       setLoading(true);
-      
+
       const cleanStateName = stateName?.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
       const response = await fetch(`${API_BASE_URL}/ucs/state?stateName=${encodeURIComponent(cleanStateName)}`);
 
@@ -183,8 +183,8 @@ const VerifyUCs = ({ stateName }) => {
                   <View style={[
                     styles.statusBadge,
                     uc.status === 'VERIFIED' ? styles.statusVerified :
-                    uc.status === 'REJECTED' ? styles.statusRejected :
-                    styles.statusPending
+                      uc.status === 'REJECTED' ? styles.statusRejected :
+                        styles.statusPending
                   ]}>
                     <Text style={styles.statusText}>{uc.status}</Text>
                   </View>

@@ -21,7 +21,7 @@ const ApproveProposals = ({ stateName }) => {
   const fetchProposals = async () => {
     try {
       setLoading(true);
-      
+
       const cleanStateName = stateName?.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
       const response = await fetch(`${API_BASE_URL}/proposals/state?stateName=${encodeURIComponent(cleanStateName)}`);
 
@@ -194,8 +194,8 @@ const ApproveProposals = ({ stateName }) => {
                   <View style={[
                     styles.statusBadge,
                     proposal.status === 'APPROVED_BY_STATE' ? styles.statusApproved :
-                    proposal.status === 'REJECTED' ? styles.statusRejected :
-                    styles.statusPending
+                      proposal.status === 'REJECTED' ? styles.statusRejected :
+                        styles.statusPending
                   ]}>
                     <Text style={styles.statusText}>{proposal.status}</Text>
                   </View>

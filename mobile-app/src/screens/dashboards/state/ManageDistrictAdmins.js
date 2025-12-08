@@ -134,7 +134,7 @@ const ManageDistrictAdmins = ({ stateId }) => {
         {/* Admins List */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>District Administrators</Text>
-          
+
           {filteredAdmins.length > 0 ? (
             filteredAdmins.map((admin, index) => (
               <View key={index} style={styles.adminCard}>
@@ -155,7 +155,7 @@ const ManageDistrictAdmins = ({ stateId }) => {
                     <Text style={styles.detailLabel}>📧 Email:</Text>
                     <Text style={styles.detailValue}>{admin.email}</Text>
                   </View>
-                  
+
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>📱 Phone:</Text>
                     <Text style={styles.detailValue}>{admin.phone || 'N/A'}</Text>

@@ -61,14 +61,14 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
       if (error) {
         console.error('Error fetching notifications:', error);
       } else {
-        console.log('✅ Fetched notifications:', data?.length || 0);
-        if (data && data.length > 0) {
-          console.log('📝 Sample notification:', {
-            title: data[0].title,
-            message: data[0].message?.substring(0, 50) + '...',
-            read: data[0].read
-          });
-        }
+        // console.log('✅ Fetched notifications:', data?.length || 0);
+        // if (data && data.length > 0) {
+        //   console.log('📝 Sample notification:', {
+        //     title: data[0].title,
+        //     message: data[0].message?.substring(0, 50) + '...',
+        //     read: data[0].read
+        //   });
+        // }
         setNotifications(data || []);
       }
     } catch (err) {
@@ -82,13 +82,6 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
     // Only fetch if we have a valid state name (not "Loading...")
     if (effectiveRole && stateName && stateName !== 'Loading...') {
       fetchNotifications();
-
-      // Auto-refresh every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000);
-
-      return () => {
-        clearInterval(interval);
-      };
     }
   }, [userRole, stateName, districtName]);
 
@@ -104,7 +97,7 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
         setNotifications(notifications.map(n =>
           n.id === id ? { ...n, read: true } : n
         ));
-        
+
         // If no more unread notifications, close the modal
         const updatedNotifications = notifications.map(n =>
           n.id === id ? { ...n, read: true } : n
@@ -150,8 +143,8 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
 
   return (
     <>
-      <TouchableOpacity 
-        onPress={handleBellPress} 
+      <TouchableOpacity
+        onPress={handleBellPress}
         style={styles.bellButton}
       >
         <Feather name="bell" size={24} color="#333" />
@@ -169,8 +162,8 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
         onRequestClose={() => setIsOpen(false)}
       >
         <View style={styles.modalOverlay}>
-          <Pressable 
-            style={styles.modalBackground} 
+          <Pressable
+            style={styles.modalBackground}
             onPress={() => setIsOpen(false)}
           />
           <View style={styles.modalContent}>
@@ -179,7 +172,7 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
               <Text style={styles.modalTitle} numberOfLines={2}>
                 Notifications {notifications.length > 0 && `(${unreadCount} unread)`}
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setIsOpen(false)}
                 style={styles.closeButton}
               >
@@ -199,7 +192,7 @@ const NotificationBell = ({ userRole, stateName, districtName }) => {
                 <Text style={styles.emptyText}>No unread notifications</Text>
               </View>
             ) : (
-              <ScrollView 
+              <ScrollView
                 style={styles.notificationList}
                 contentContainerStyle={styles.notificationListContent}
                 showsVerticalScrollIndicator={true}

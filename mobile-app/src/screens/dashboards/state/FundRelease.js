@@ -31,7 +31,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, stateName }) => {
   const fetchReleasedFunds = async () => {
     try {
       setLoading(true);
-      
+
       const cleanStateName = stateName?.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
       const response = await fetch(`${API_BASE_URL}/funds/district-releases?stateName=${encodeURIComponent(cleanStateName)}`);
 
@@ -160,7 +160,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, stateName }) => {
         {/* Released Funds List */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Fund Release History</Text>
-          
+
           {releasedFunds.length > 0 ? (
             releasedFunds.map((fund, index) => (
               <View key={index} style={styles.fundCard}>
@@ -168,7 +168,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, stateName }) => {
                   <Text style={styles.fundDistrict}>{fund.districtName}</Text>
                   <Text style={styles.fundAmount}>{formatCurrency(fund.amountInRupees)}</Text>
                 </View>
-                
+
                 <View style={styles.fundDetails}>
                   <View style={styles.fundRow}>
                     <Text style={styles.fundLabel}>Component:</Text>
