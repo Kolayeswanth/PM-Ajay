@@ -10,12 +10,12 @@ const HomeScreen = ({ navigation }) => {
     <SafeAreaView className="flex-1 bg-gray-50 p-6">
       <View className="flex-row justify-between items-center mb-8">
         <View>
-             <Text className="text-2xl font-bold text-gray-900">Dashboard</Text>
-             <Text className="text-gray-500 text-sm">Welcome Back!</Text>
+          <Text className="text-2xl font-bold text-gray-900">Dashboard</Text>
+          <Text className="text-gray-500 text-sm">Welcome Back!</Text>
         </View>
-        <TouchableOpacity 
-            onPress={logout}
-            className="bg-red-500 px-4 py-2 rounded-lg"
+        <TouchableOpacity
+          onPress={logout}
+          className="bg-red-500 px-4 py-2 rounded-lg"
         >
           <Text className="text-white font-medium">Logout</Text>
         </TouchableOpacity>
@@ -27,24 +27,32 @@ const HomeScreen = ({ navigation }) => {
         <Text className="text-blue-600 mt-2">{user?.role}</Text>
       </View>
 
+      <TouchableOpacity
+        onPress={() => navigation.navigate('MinistryDashboard')}
+        className="bg-purple-600 p-4 rounded-xl mb-6 shadow-md"
+      >
+        <Text className="text-white font-bold text-center text-lg">Open Ministry Dashboard</Text>
+      </TouchableOpacity>
+
+
       <View className="flex-row flex-wrap justify-between">
-         {/* Simple Dashboard Cards */}
-         <View className="w-[48%] bg-white p-4 rounded-xl shadow-sm mb-4 aspect-square justify-center items-center cursor-pointer">
-            <Text className="text-3xl font-bold text-blue-600 mb-2">12</Text>
-            <Text className="text-gray-500 text-center text-xs">Active Projects</Text>
-         </View>
-         <View className="w-[48%] bg-white p-4 rounded-xl shadow-sm mb-4 aspect-square justify-center items-center">
-            <Text className="text-3xl font-bold text-green-600 mb-2">₹4.5Cr</Text>
-            <Text className="text-gray-500 text-center text-xs">Funds Allocated</Text>
-         </View>
-          <View className="w-[48%] bg-white p-4 rounded-xl shadow-sm mb-4 aspect-square justify-center items-center">
-            <Text className="text-3xl font-bold text-orange-600 mb-2">8</Text>
-            <Text className="text-gray-500 text-center text-xs">Pending Proposals</Text>
-         </View>
-         <View className="w-[48%] bg-white p-4 rounded-xl shadow-sm mb-4 aspect-square justify-center items-center">
-            <Text className="text-3xl font-bold text-purple-600 mb-2">95%</Text>
-            <Text className="text-gray-500 text-center text-xs">Utilization</Text>
-         </View>
+        {/* Simple Dashboard Cards */}
+        <View className="w-[48%] bg-white p-4 rounded-xl shadow-sm mb-4 aspect-square justify-center items-center cursor-pointer">
+          <Text className="text-3xl font-bold text-blue-600 mb-2">12</Text>
+          <Text className="text-gray-500 text-center text-xs">Active Projects</Text>
+        </View>
+        <View className="w-[48%] bg-white p-4 rounded-xl shadow-sm mb-4 aspect-square justify-center items-center">
+          <Text className="text-3xl font-bold text-green-600 mb-2">₹4.5Cr</Text>
+          <Text className="text-gray-500 text-center text-xs">Funds Allocated</Text>
+        </View>
+        <View className="w-[48%] bg-white p-4 rounded-xl shadow-sm mb-4 aspect-square justify-center items-center">
+          <Text className="text-3xl font-bold text-orange-600 mb-2">8</Text>
+          <Text className="text-gray-500 text-center text-xs">Pending Proposals</Text>
+        </View>
+        <View className="w-[48%] bg-white p-4 rounded-xl shadow-sm mb-4 aspect-square justify-center items-center">
+          <Text className="text-3xl font-bold text-purple-600 mb-2">95%</Text>
+          <Text className="text-gray-500 text-center text-xs">Utilization</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
