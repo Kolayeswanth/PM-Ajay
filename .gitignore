@@ -1,8 +1,8 @@
 
 # Environment variables
-.env
-.env.local
-.env.production
+# .env
+# .env.local
+# .env.production
 
 # Credentials (NEVER commit these!)
 CREDENTIALS_REFERENCE.md
