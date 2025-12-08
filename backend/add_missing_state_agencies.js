@@ -55,7 +55,7 @@ async function addMissingStateAgencies() {
             // Create a clean state code from state name
             const stateCode = state.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '');
             const email = `nodal.${stateCode}@pmajay.gov.in`;
-            const password = 'Password@123'; // Default password
+            const password = process.env.DEFAULT_AGENCY_PASSWORD || 'Temp@' + Math.random().toString(36).slice(-8);
 
             console.log(`Creating user for ${state.name} (${email})...`);
 
