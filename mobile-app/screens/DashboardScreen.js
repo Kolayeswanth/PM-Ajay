@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import MinistryDashboard from './ministry/MinistryDashboard';
 
 export default function DashboardScreen({ navigation }) {
     const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadUser = async () => {
@@ -11,91 +13,93 @@ export default function DashboardScreen({ navigation }) {
             if (userData) {
                 setUser(JSON.parse(userData));
             }
+            setLoading(false);
         };
         loadUser();
     }, []);
 
-    const handleLogout = async () => {
-        await AsyncStorage.removeItem('userToken');
-        await AsyncStorage.removeItem('userData');
-        navigation.replace('Login');
-    };
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#FF9933" />
+                <Text style={styles.loadingText}>Loading Dashboard...</Text>
+            </View>
+        );
+    }
 
+    // Route to appropriate dashboard based on user role
+    const role = user?.role?.toLowerCase();
+
+    if (role === 'ministry' || role === 'ministry_admin') {
+        return <MinistryDashboard navigation={navigation} />;
+    }
+
+    // Default fallback dashboard for other roles
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Dashboard</Text>
-                <TouchableOpacity onPress={handleLogout}>
-                    <Text style={styles.logoutText}>Logout</Text>
-                </TouchableOpacity>
+                <Text style={styles.headerSubtitle}>Role: {user?.role || 'N/A'}</Text>
             </View>
-
-            <ScrollView style={styles.content}>
-                <View style={styles.card}>
-                    <Text style={styles.welcomeText}>Welcome, {user?.full_name || 'User'}</Text>
-                    <Text style={styles.roleText}>Role: {user?.role || 'N/A'}</Text>
-                </View>
-
-                <View style={styles.infoCard}>
-                    <Text style={styles.infoTitle}>Notifications Active</Text>
-                    <Text style={styles.infoText}>
-                        You will receive push notifications for fund allocations and releases alongside WhatsApp messages.
-                    </Text>
-                </View>
-
-                {/* Add more dashboard features here mirroring the web app */}
-            </ScrollView>
+            <View style={styles.content}>
+                <Text style={styles.welcomeText}>Welcome, {user?.full_name || 'User'}</Text>
+                <Text style={styles.infoText}>
+                    Dashboard for {user?.role} role is under development.
+                </Text>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+    },
+    loadingText: {
+        marginTop: 15,
+        fontSize: 16,
+        color: '#6B7280',
+    },
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#F9FAFB',
     },
     header: {
         backgroundColor: '#fff',
         padding: 20,
         paddingTop: 50,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: '#E5E7EB',
     },
     headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#111827',
     },
-    logoutText: {
-        color: 'red',
-        fontSize: 16,
+    headerSubtitle: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginTop: 4,
     },
     content: {
+        flex: 1,
         padding: 20,
-    },
-    card: {
-        backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 10,
-        marginBottom: 20,
-        elevation: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     welcomeText: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginBottom: 5,
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#111827',
+        marginBottom: 10,
     },
-    roleText: {
-        fontSize: 16,
-        color: '#666',
-    },
-    infoCard: {
-        backgroundColor: '#e3f2fd',
-        padding: 20,
-        borderRadius: 10,
-        marginBottom: 20,
+    infoText: {
+        fontSize: 14,
+        color: '#6B7280',
+        textAlign: 'center',
     },
     infoTitle: {
         fontSize: 18,
