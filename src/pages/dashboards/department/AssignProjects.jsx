@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabaseClient';
+import RoleResponsibilityDisplay from '../../../components/RoleResponsibilityDisplay';
 
 const AssignProjects = () => {
     const { user } = useAuth();
@@ -11,6 +12,35 @@ const AssignProjects = () => {
     const [selectedAgency, setSelectedAgency] = useState('');
     const [assigning, setAssigning] = useState(false);
     const [assignedProjects, setAssignedProjects] = useState([]);
+    
+    // Role and Responsibility State
+    const [assignedRole, setAssignedRole] = useState('');
+    const [assignedResponsibilities, setAssignedResponsibilities] = useState([]);
+    const [roleNotes, setRoleNotes] = useState('');
+
+    // Helper function to get responsibilities based on role
+    const getResponsibilitiesForRole = (role) => {
+        const roleResponsibilities = {
+            'Site Supervisor': ['Day-to-day site management', 'Worker supervision', 'Safety compliance'],
+            'Procurement Officer': ['Material procurement', 'Vendor management', 'Cost optimization'],
+            'Construction Manager': ['Construction oversight', 'Timeline adherence', 'Quality control'],
+            'Field Engineer': ['Technical implementation', 'Design adherence', 'Problem resolution'],
+            'Safety Officer': ['Safety protocols enforcement', 'Incident reporting', 'Compliance'],
+            'Progress Tracker': ['Work progress documentation', 'Milestone reporting', 'Photo documentation']
+        };
+        return roleResponsibilities[role] || [];
+    };
+
+    // Helper function to handle responsibility checkbox changes
+    const handleResponsibilityChange = (responsibility) => {
+        setAssignedResponsibilities(prev => {
+            if (prev.includes(responsibility)) {
+                return prev.filter(r => r !== responsibility);
+            } else {
+                return [...prev, responsibility];
+            }
+        });
+    };
 
     useEffect(() => {
         fetchData();
@@ -248,7 +278,11 @@ const AssignProjects = () => {
                 .from('work_orders')
                 .update({
                     executing_agency_id: selectedAgency,
-                    status: 'Assigned to EA'
+                    status: 'Assigned to EA',
+                    // Role and responsibility fields
+                    assigned_user_role: assignedRole,
+                    assigned_user_responsibilities: assignedResponsibilities,
+                    assigned_user_notes: roleNotes
                 })
                 .eq('id', selectedProject);
 
@@ -258,6 +292,9 @@ const AssignProjects = () => {
             fetchData(); // Refresh lists
             setSelectedProject('');
             setSelectedAgency('');
+            setAssignedRole('');
+            setAssignedResponsibilities([]);
+            setRoleNotes('');
         } catch (error) {
             console.error('Error assigning project:', error);
             alert('Failed to assign project: ' + error.message);
@@ -327,6 +364,54 @@ const AssignProjects = () => {
                                 </select>
                             </div>
 
+                            {/* Role Selection */}
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Assigned Role</label>
+                                <select
+                                    className="form-control"
+                                    value={assignedRole}
+                                    onChange={(e) => setAssignedRole(e.target.value)}
+                                >
+                                    <option value="">-- Select Role --</option>
+                                    <option value="Site Supervisor">Site Supervisor</option>
+                                    <option value="Procurement Officer">Procurement Officer</option>
+                                    <option value="Construction Manager">Construction Manager</option>
+                                    <option value="Field Engineer">Field Engineer</option>
+                                    <option value="Safety Officer">Safety Officer</option>
+                                    <option value="Progress Tracker">Progress Tracker</option>
+                                </select>
+                            </div>
+
+                            {/* Responsibilities Checkboxes */}
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Responsibilities</label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {getResponsibilitiesForRole(assignedRole).map((responsibility) => (
+                                        <label key={responsibility} style={{ display: 'flex', alignItems: 'center' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={assignedResponsibilities.includes(responsibility)}
+                                                onChange={() => handleResponsibilityChange(responsibility)}
+                                                style={{ marginRight: '8px' }}
+                                            />
+                                            {responsibility}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Notes */}
+                            <div className="form-group" style={{ marginBottom: 15 }}>
+                                <label className="form-label">Notes</label>
+                                <textarea
+                                    className="form-control"
+                                    value={roleNotes}
+                                    onChange={(e) => setRoleNotes(e.target.value)}
+                                    rows="3"
+                                    placeholder="Additional notes about this assignment..."
+                                />
+                            </div>
+
                             <button
                                 className="btn btn-primary"
                                 onClick={handleAssign}
@@ -351,6 +436,7 @@ const AssignProjects = () => {
                                         <th>Location</th>
                                         <th>Amount</th>
                                         <th>Deadline</th>
+                                        <th>Role</th>
                                         <th>Status</th>
                                         <th>Assigned On</th>
                                     </tr>
@@ -363,6 +449,7 @@ const AssignProjects = () => {
                                                     <div style={{ fontWeight: 'bold' }}>
                                                         {project.title || 'N/A'}
                                                     </div>
+                                                    <RoleResponsibilityDisplay project={project} />
                                                 </td>
                                                 <td>
                                                     {project.executing_agencies?.agency_name || 'Unknown'}
@@ -375,6 +462,11 @@ const AssignProjects = () => {
                                                     {project.deadline
                                                         ? new Date(project.deadline).toLocaleDateString('en-IN')
                                                         : 'N/A'}
+                                                </td>
+                                                <td>
+                                                    <span className="badge badge-info">
+                                                        {project.assigned_user_role || 'N/A'}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <span className={`badge ${project.status === 'Completed' ? 'badge-success' :
@@ -391,7 +483,7 @@ const AssignProjects = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="7" style={{ textAlign: 'center', padding: 20, color: '#666' }}>
+                                            <td colSpan="8" style={{ textAlign: 'center', padding: 20, color: '#666' }}>
                                                 No projects assigned to executing agencies yet.
                                             </td>
                                         </tr>
