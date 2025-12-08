@@ -1,0 +1,35 @@
+[
+    {
+        "agency_name": "PWD Karnataka",
+        "email": "pwd.karnataka@example.com",
+        "state_id": 14,
+        "district_id": 231,
+        "agency_type": "Government",
+        "registration_no": "REG001",
+        "address": "Bangalore, Karnataka",
+        "contact_number": "9876543210",
+        "status": "Active"
+    },
+    {
+        "agency_name": "NHAI Karnataka",
+        "email": "nhai.karnataka@example.com",
+        "state_id": 14,
+        "district_id": 231,
+        "agency_type": "Government",
+        "registration_no": "REG002",
+        "address": "Bangalore, Karnataka",
+        "contact_number": "9876543211",
+        "status": "Active"
+    },
+    {
+        "agency_name": "PWD Maharashtra",
+        "email": "pwd.maharashtra@example.com",
+        "state_id": 19,
+        "district_id": null,
+        "agency_type": "Government",
+        "registration_no": "REG003",
+        "address": "Mumbai, Maharashtra",
+        "contact_number": "9876543212",
+        "status": "Active"
+    }
+]

@@ -1,0 +1,5 @@
+agency_name,email,state_id,district_id,agency_type,registration_no,address,contact_number,status
+"PWD Karnataka","pwd.karnataka@example.com",14,231,"Government","REG001","Bangalore, Karnataka","9876543210","Active"
+"NHAI Karnataka","nhai.karnataka@example.com",14,231,"Government","REG002","Bangalore, Karnataka","9876543211","Active"
+"PWD Maharashtra","pwd.maharashtra@example.com",19,NULL,"Government","REG003","Mumbai, Maharashtra","9876543212","Active"
+"NHAI Maharashtra","nhai.maharashtra@example.com",19,NULL,"Government","REG004","Mumbai, Maharashtra","9876543213","Active"
