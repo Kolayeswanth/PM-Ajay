@@ -336,3 +336,402 @@ exports.getDistrictStats = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+// Get Fund Flow Data with filters
+// Get unique scheme components from database
+exports.getSchemeComponents = async (req, res) => {
+    try {
+        console.log('📋 Fetching unique scheme components from database...');
+
+        // Fetch all fund allocations to get scheme components
+        const { data: fundAllocations, error: allocError } = await supabase
+            .from('fund_allocations')
+            .select('scheme_components');
+
+        if (allocError) {
+            console.error('Error fetching fund allocations:', allocError);
+            return res.status(500).json({ success: false, error: allocError.message });
+        }
+
+        // Extract unique components from the scheme_components arrays
+        const componentsSet = new Set();
+        fundAllocations.forEach(allocation => {
+            if (allocation.scheme_components && Array.isArray(allocation.scheme_components)) {
+                allocation.scheme_components.forEach(component => {
+                    if (component && component.trim()) {
+                        componentsSet.add(component.trim());
+                    }
+                });
+            }
+        });
+
+        // Convert Set to sorted array
+        const uniqueComponents = Array.from(componentsSet).sort();
+
+        console.log(`✅ Found ${uniqueComponents.length} unique components:`, uniqueComponents);
+
+        res.json({
+            success: true,
+            data: uniqueComponents
+        });
+    } catch (error) {
+        console.error('❌ Error in getSchemeComponents:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+// Get fund flow data with comprehensive filters
+exports.getFundFlow = async (req, res) => {
+    try {
+        const { 
+            state, 
+            district, 
+            component, 
+            year, 
+            startDate, 
+            endDate, 
+            minAmount, 
+            maxAmount, 
+            status 
+        } = req.query;
+        
+        console.log('📊 Fetching fund flow data with filters:', { 
+            state, district, component, year, startDate, endDate, minAmount, maxAmount, status 
+        });
+
+        // Get state and district IDs if filters are provided
+        let stateId = null;
+        let districtId = null;
+
+        if (state) {
+            const { data: stateData, error: stateError } = await supabase
+                .from('states')
+                .select('id, name')
+                .eq('name', state)
+                .single();
+            if (!stateError && stateData) {
+                stateId = stateData.id;
+            }
+        }
+
+        if (district) {
+            const { data: districtData, error: districtError } = await supabase
+                .from('districts')
+                .select('id, name, state_id')
+                .eq('name', district)
+                .single();
+            if (!districtError && districtData) {
+                districtId = districtData.id;
+                if (!stateId) stateId = districtData.state_id;
+            }
+        }
+
+        // 1. Get fund allocations from ministry to states
+        const { data: fundAllocations, error: allocError } = await supabase
+            .from('fund_allocations')
+            .select('*');
+
+        if (allocError) {
+            console.error('Error fetching fund allocations:', allocError);
+        }
+
+        // 2. Get state fund releases (only joins with states, not districts)
+        const { data: stateFundReleases, error: stateReleaseError } = await supabase
+            .from('state_fund_releases')
+            .select('*, states(name)');
+
+        if (stateReleaseError) {
+            console.error('Error fetching state fund releases:', stateReleaseError);
+        }
+
+        // 3. Get district fund releases
+        const { data: districtFundReleases, error: distReleaseError } = await supabase
+            .from('fund_releases')
+            .select('*, districts(name, state_id)');
+
+        if (distReleaseError) {
+            console.error('Error fetching district fund releases:', distReleaseError);
+        }
+
+        // 4. Get village fund releases
+        const { data: villageFunds, error: villageFundsError } = await supabase
+            .from('village_fund_releases')
+            .select('*');
+
+        if (villageFundsError) {
+            console.error('Error fetching village fund releases:', villageFundsError);
+        }
+
+        // Get all states and districts for mapping
+        const { data: allStates } = await supabase.from('states').select('id, name');
+        const { data: allDistricts } = await supabase.from('districts').select('id, name, state_id');
+        
+        const stateMap = allStates?.reduce((acc, s) => { acc[s.id] = s.name; return acc; }, {}) || {};
+        const districtMap = allDistricts?.reduce((acc, d) => { acc[d.id] = { name: d.name, state_id: d.state_id }; return acc; }, {}) || {};
+
+        // Apply filters to fund allocations
+        let filteredAllocations = fundAllocations || [];
+        
+        if (state) {
+            filteredAllocations = filteredAllocations.filter(alloc => alloc.state_name === state);
+        }
+
+        if (component) {
+            filteredAllocations = filteredAllocations.filter(alloc => 
+                alloc.scheme_components && alloc.scheme_components.includes(component)
+            );
+        }
+
+        if (startDate) {
+            filteredAllocations = filteredAllocations.filter(alloc => 
+                alloc.allocation_date && alloc.allocation_date >= startDate
+            );
+        }
+
+        if (endDate) {
+            filteredAllocations = filteredAllocations.filter(alloc => 
+                alloc.allocation_date && alloc.allocation_date <= endDate
+            );
+        }
+        
+        if (minAmount) {
+            const minAmountRupees = parseFloat(minAmount) * 10000000;
+            filteredAllocations = filteredAllocations.filter(alloc => 
+                parseFloat(alloc.amount_allocated) >= minAmountRupees
+            );
+        }
+        
+        if (maxAmount) {
+            const maxAmountRupees = parseFloat(maxAmount) * 10000000;
+            filteredAllocations = filteredAllocations.filter(alloc => 
+                parseFloat(alloc.amount_allocated) <= maxAmountRupees
+            );
+        }
+
+        // Apply filters to state fund releases
+        let filteredStateReleases = stateFundReleases || [];
+        
+        if (stateId) {
+            filteredStateReleases = filteredStateReleases.filter(release => release.state_id === stateId);
+        }
+
+        if (component) {
+            filteredStateReleases = filteredStateReleases.filter(release => 
+                release.component && release.component.includes(component)
+            );
+        }
+
+        if (startDate) {
+            filteredStateReleases = filteredStateReleases.filter(release => 
+                release.release_date && release.release_date >= startDate
+            );
+        }
+
+        if (endDate) {
+            filteredStateReleases = filteredStateReleases.filter(release => 
+                release.release_date && release.release_date <= endDate
+            );
+        }
+        
+        if (minAmount) {
+            filteredStateReleases = filteredStateReleases.filter(release => 
+                parseFloat(release.amount_cr) >= parseFloat(minAmount)
+            );
+        }
+        
+        if (maxAmount) {
+            filteredStateReleases = filteredStateReleases.filter(release => 
+                parseFloat(release.amount_cr) <= parseFloat(maxAmount)
+            );
+        }
+
+        // Apply filters to district fund releases
+        let filteredDistrictReleases = districtFundReleases || [];
+        
+        if (districtId) {
+            filteredDistrictReleases = filteredDistrictReleases.filter(release => release.district_id === districtId);
+        }
+
+        if (component) {
+            filteredDistrictReleases = filteredDistrictReleases.filter(release => 
+                release.component && release.component.includes(component)
+            );
+        }
+
+        if (startDate) {
+            filteredDistrictReleases = filteredDistrictReleases.filter(release => 
+                release.release_date && release.release_date >= startDate
+            );
+        }
+
+        if (endDate) {
+            filteredDistrictReleases = filteredDistrictReleases.filter(release => 
+                release.release_date && release.release_date <= endDate
+            );
+        }
+
+        // Apply filters to village fund releases
+        let filteredVillageFunds = villageFunds || [];
+        
+        if (state) {
+            filteredVillageFunds = filteredVillageFunds.filter(fund => fund.state_name === state);
+        }
+
+        if (district) {
+            filteredVillageFunds = filteredVillageFunds.filter(fund => fund.district_name === district);
+        }
+
+        if (component) {
+            filteredVillageFunds = filteredVillageFunds.filter(fund => 
+                fund.component && fund.component.includes(component)
+            );
+        }
+
+        if (startDate) {
+            filteredVillageFunds = filteredVillageFunds.filter(fund => 
+                fund.release_date && fund.release_date >= startDate
+            );
+        }
+
+        if (endDate) {
+            filteredVillageFunds = filteredVillageFunds.filter(fund => 
+                fund.release_date && fund.release_date <= endDate
+            );
+        }
+
+        if (status) {
+            filteredVillageFunds = filteredVillageFunds.filter(fund => fund.status === status);
+        }
+
+        // Aggregate data for visualization using filtered data
+        const ministryToStateFlow = filteredAllocations?.reduce((acc, alloc) => {
+            const stateName = alloc.state_name;
+            if (!acc[stateName]) {
+                acc[stateName] = {
+                    state: stateName,
+                    allocated: 0,
+                    released: 0,
+                    count: 0
+                };
+            }
+            acc[stateName].allocated += parseFloat(alloc.amount_allocated) || 0;
+            acc[stateName].released += parseFloat(alloc.amount_released) || 0;
+            acc[stateName].count += 1;
+            return acc;
+        }, {}) || {};
+
+        // Get all states and districts for state_fund_releases mapping
+        const { data: allStates } = await supabase.from('states').select('id, name');
+        const { data: allDistricts } = await supabase.from('districts').select('id, name, state_id');
+        
+        const stateMap = allStates?.reduce((acc, s) => { acc[s.id] = s.name; return acc; }, {}) || {};
+        const districtMap = allDistricts?.reduce((acc, d) => { acc[d.id] = { name: d.name, state_id: d.state_id }; return acc; }, {}) || {};
+
+        const stateToDistrictFlow = filteredStateReleases?.reduce((acc, release) => {
+            const stateName = stateMap[release.state_id] || 'Unknown State';
+            // state_fund_releases doesn't have district info, so we'll aggregate by state
+            const key = `${stateName}_Total`;
+            if (!acc[key]) {
+                acc[key] = {
+                    state: stateName,
+                    district: 'All Districts',
+                    released: 0,
+                    count: 0
+                };
+            }
+            acc[key].released += parseFloat(release.amount_cr || 0) * 10000000;
+            acc[key].count += 1;
+            return acc;
+        }, {}) || {};
+
+        const districtToProjectFlow = districtFundReleases?.reduce((acc, release) => {
+            const districtInfo = districtMap[release.district_id];
+            const districtName = districtInfo?.name || 'Unknown District';
+            const key = `${release.district_id}_${districtName}`;
+            if (!acc[key]) {
+                acc[key] = {
+                    district_id: release.district_id,
+                    district_name: districtName,
+                    released: 0,
+                    count: 0
+                };
+            }
+            acc[key].released += parseFloat(release.amount_cr || 0) * 10000000;
+            acc[key].count += 1;
+            return acc;
+        }, {}) || {};
+
+        // Aggregate village-level fund releases
+        const villageToProjectFlow = villageFunds?.reduce((acc, release) => {
+            const villageName = release.village_name || 'Unknown Village';
+            if (!acc[villageName]) {
+                acc[villageName] = {
+                    village: villageName,
+                    district: release.district_name,
+                    state: release.state_name,
+                    released: 0,
+                    utilized: 0,
+                    count: 0
+                };
+            }
+            acc[villageName].released += parseFloat(release.amount_released) || 0;
+            acc[villageName].utilized += parseFloat(release.amount_utilized) || 0;
+            acc[villageName].count += 1;
+            return acc;
+        }, {}) || {};
+
+        // 6. Calculate summary statistics
+        const totalAllocatedByMinistry = Object.values(ministryToStateFlow)
+            .reduce((sum, item) => sum + item.allocated, 0);
+
+        const totalReleasedByStates = Object.values(stateToDistrictFlow)
+            .reduce((sum, item) => sum + item.released, 0);
+
+        const totalReleasedByDistricts = Object.values(districtToProjectFlow)
+            .reduce((sum, item) => sum + item.released, 0);
+
+        const totalReleasedToVillages = Object.values(villageToProjectFlow)
+            .reduce((sum, item) => sum + item.released, 0);
+
+        const totalUtilizedByVillages = Object.values(villageToProjectFlow)
+            .reduce((sum, item) => sum + item.utilized, 0);
+
+        console.log('✅ Fund flow data calculated successfully');
+
+        res.json({
+            success: true,
+            data: {
+                summary: {
+                    totalAllocatedByMinistry: totalAllocatedByMinistry / 10000000, // Convert to crores
+                    totalReleasedByStates: totalReleasedByStates / 10000000,
+                    totalReleasedByDistricts: totalReleasedByDistricts / 10000000,
+                    totalReleasedToAgencies: totalReleasedToVillages / 10000000,
+                    totalUtilized: totalUtilizedByVillages / 10000000,
+                    efficiency: totalAllocatedByMinistry > 0 
+                        ? ((totalReleasedByStates / totalAllocatedByMinistry) * 100).toFixed(2)
+                        : 0,
+                    utilizationRate: totalReleasedToVillages > 0
+                        ? ((totalUtilizedByVillages / totalReleasedToVillages) * 100).toFixed(2)
+                        : 0
+                },
+                flows: {
+                    ministryToState: Object.values(ministryToStateFlow),
+                    stateToDistrict: Object.values(stateToDistrictFlow),
+                    districtToProject: Object.values(districtToProjectFlow),
+                    agencyAllocations: Object.values(villageToProjectFlow)
+                },
+                filters: {
+                    state,
+                    district
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching fund flow data:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};

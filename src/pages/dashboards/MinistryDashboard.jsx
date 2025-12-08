@@ -14,6 +14,7 @@ import MonitorProgress from './ministry/MonitorProgress';
 import IssueNotifications from './ministry/IssueNotifications';
 import ReportsAnalytics from './ministry/ReportsAnalytics';
 import HelpSupport from './ministry/HelpSupport';
+import FundFlow from './ministry/FundFlow';
 
 import {
     LayoutDashboard,
@@ -26,7 +27,8 @@ import {
     FileBarChart,
     HelpCircle,
     LogOut,
-    FileText
+    FileText,
+    TrendingUp
 } from 'lucide-react';
 
 const MinistryDashboard = () => {
@@ -54,6 +56,7 @@ const MinistryDashboard = () => {
         { icon: <Users size={20} />, label: 'Manage State Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
         { icon: <Wallet size={20} />, label: 'Fund Allocation', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
         { icon: <Send size={20} />, label: 'Fund Released', action: () => setActiveTab('released'), active: activeTab === 'released' },
+        { icon: <TrendingUp size={20} />, label: 'Data Flow', action: () => setActiveTab('fundflow'), active: activeTab === 'fundflow' },
         { icon: <FileCheck size={20} />, label: 'Project Approval', action: () => setActiveTab('plans'), active: activeTab === 'plans' },
         { icon: <FileText size={20} />, label: 'Annual Plan Approvals', action: () => setActiveTab('aap'), active: activeTab === 'aap' },
         { icon: <LineChart size={20} />, label: 'Monitor Progress', action: () => setActiveTab('monitor'), active: activeTab === 'monitor' },
@@ -86,6 +89,8 @@ const MinistryDashboard = () => {
                 return <FundAllocation formatCurrency={formatCurrency} />;
             case 'released':
                 return <FundReleased formatCurrency={formatCurrency} />;
+            case 'fundflow':
+                return <FundFlow />;
             case 'plans':
                 return <AnnualPlansApproval />;
             case 'aap':
@@ -117,6 +122,7 @@ const MinistryDashboard = () => {
             'admins': 'Manage State Admins',
             'funds': 'Fund Allocation',
             'released': 'Fund Released',
+            'fundflow': 'Data Flow',
             'plans': 'Project Approval',
             'aap': 'Annual Plan Approvals',
             'monitor': 'Monitor Progress',

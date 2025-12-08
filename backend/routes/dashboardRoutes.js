@@ -11,4 +11,10 @@ router.get('/district-stats/:districtId', dashboardController.getDistrictStats);
 // Get State Dashboard statistics
 router.get('/state-stats', dashboardController.getStateStats);
 
+// Get unique scheme components from database
+router.get('/scheme-components', dashboardController.getSchemeComponents);
+
+// Get Fund Flow data with filters
+router.get('/fund-flow', dashboardController.getFundFlow);
+
 module.exports = router;
