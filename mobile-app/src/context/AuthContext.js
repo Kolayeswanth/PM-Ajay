@@ -12,6 +12,19 @@ export const useAuth = () => {
   return context;
 };
 
+// User roles
+export const ROLES = {
+  MINISTRY: 'centre_admin',
+  STATE: 'state_admin',
+  DISTRICT: 'district_admin',
+  GP: 'gp_admin',
+  DEPARTMENT: 'department_admin',
+  CONTRACTOR: 'contractor',
+  IMPLEMENTING_AGENCY: 'implementing_agency',
+  EXECUTING_AGENCY: 'executing_agency',
+  PUBLIC: 'public'
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
