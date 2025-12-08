@@ -4,6 +4,8 @@ import { StyleSheet, View, Platform, Alert, LogBox } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginScreen from './screens/LoginScreen';
@@ -35,7 +37,11 @@ LogBox.ignoreLogs([
 ]);
 
 export default function App() {
+  const [expoPushToken, setExpoPushToken] = useState('');
+
   useEffect(() => {
+    registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
+
     // Start polling when app starts
     const interval = setInterval(checkForNotifications, 10000); // Check every 10 seconds
     return () => clearInterval(interval);
@@ -86,6 +92,7 @@ export default function App() {
         <Stack.Screen 
           name="Login" 
           component={LoginScreen} 
+          initialParams={{ pushToken: expoPushToken }}
           options={{ headerShown: false }}
         />
         <Stack.Screen 
@@ -97,4 +104,46 @@ export default function App() {
       <StatusBar style="auto" />
     </NavigationContainer>
   );
+}
+
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      // alert('Failed to get push token for push notification!');
+      console.log('Permission not granted for notifications');
+      return;
+    }
+    // Learn more about projectId:
+    // https://docs.expo.dev/push-notifications/push-notifications-setup/#configure-projectid
+    try {
+        token = (await Notifications.getExpoPushTokenAsync({ 
+            projectId: Constants.expoConfig?.extra?.eas?.projectId 
+        })).data;
+        console.log('Push token:', token);
+    } catch (e) {
+        console.log('Error getting token:', e);
+    }
+  } else {
+    // alert('Must use physical device for Push Notifications');
+    console.log('Not on physical device');
+  }
+
+  return token;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login, registerPushToken } from '../services/api';
 
@@ -125,6 +126,15 @@ export default function LoginScreen({ navigation, route }) {
                     console.error('Failed to register push token:', tokenError);
                 }
             }
+
+            // Trigger local notification for successful login
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: "Login Successful",
+                    body: "You've successfully logged into the PM-Ajay Portal",
+                },
+                trigger: null,
+            });
 
             console.log('✅ Navigating to dashboard...');
             navigation.replace('Dashboard');
