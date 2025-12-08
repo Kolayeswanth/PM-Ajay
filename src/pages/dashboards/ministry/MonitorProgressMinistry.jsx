@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { Search, Filter, Download, Eye, FileSpreadsheet } from 'lucide-react';
 import Modal from '../../../components/Modal';
 import InteractiveButton from '../../../components/InteractiveButton';
+import FundReleaseMap from '../../../components/maps/FundReleaseMap';
 
 const MonitorProgressMinistry = ({ selectedState = null, selectedDistrict = null }) => {
     const [projects, setProjects] = useState([]);
@@ -207,6 +208,14 @@ const MonitorProgressMinistry = ({ selectedState = null, selectedDistrict = null
                     <Download size={18} />
                     Export All Data
                 </InteractiveButton>
+            </div>
+
+            {/* Fund Release Map */}
+            <div style={{ marginBottom: '24px' }}>
+                <FundReleaseMap onStateClick={(stateName) => {
+                    console.log('State clicked:', stateName);
+                    // District drill-down will be added in next step
+                }} />
             </div>
 
             {/* Filters */}

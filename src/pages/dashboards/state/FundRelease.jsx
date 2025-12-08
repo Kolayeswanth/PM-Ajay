@@ -31,6 +31,9 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     // Fetch state name from user profile
     const [stateName, setStateName] = useState('');
 
+    const [activeTab, setActiveTab] = useState('district'); // 'district' or 'village'
+    const [villageFunds, setVillageFunds] = useState([]);
+
     useEffect(() => {
         const fetchStateName = async () => {
             if (!user?.id) return;
@@ -51,11 +54,30 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
 
     // Fetch Data when stateName is available
     useEffect(() => {
-        if (stateName && stateCode) {
-            fetchDistricts();
-            fetchReleasedFunds();
+        if (stateName) {
+            if (activeTab === 'district' && stateCode) {
+                fetchDistricts();
+                fetchReleasedFunds();
+            } else if (activeTab === 'village') {
+                fetchVillageFunds();
+            }
         }
-    }, [stateName, stateCode]);
+    }, [stateName, stateCode, activeTab]);
+
+    const fetchVillageFunds = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/villages/funds/state/${encodeURIComponent(stateName)}`);
+            const result = await response.json();
+            if (result.success) {
+                setVillageFunds(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching village funds:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const fetchDistricts = async () => {
         if (!stateCode) return;
@@ -98,7 +120,8 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                     }));
                     setReleasedFunds(formattedData);
 
-                    // Calculate total released
+                    // Calculate total released (Only for district releases for now, or unified?)
+                    // Keeping separate sums for clarity
                     const total = formattedData.reduce((sum, item) => sum + (item.amountCr || 0), 0);
                     setTotalReleased(total);
                 } else {
@@ -353,49 +376,193 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                 </div>
             )}
 
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <InteractiveButton
+                    variant={activeTab === 'district' ? 'primary' : 'outline'}
+                    onClick={() => setActiveTab('district')}
+                >
+                    🏢 District Releases
+                </InteractiveButton>
+                <InteractiveButton
+                    variant={activeTab === 'village' ? 'primary' : 'outline'}
+                    onClick={() => setActiveTab('village')}
+                >
+                    🏘️ Village Releases
+                </InteractiveButton>
+            </div>
+
             {/* Table */}
-            <div className="table-wrapper">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>District</th>
-                            <th>Scheme Component</th>
-                            <th style={{ textAlign: 'right' }}>Amount Released</th>
-                            <th>Release Date</th>
-                            <th>Officer ID</th>
-                            <th>Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
+            {activeTab === 'district' ? (
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                                <th>District</th>
+                                <th>Scheme Component</th>
+                                <th style={{ textAlign: 'right' }}>Amount Released</th>
+                                <th>Release Date</th>
+                                <th>Officer ID</th>
+                                <th>Remarks</th>
                             </tr>
-                        ) : releasedFunds.length > 0 ? (
-                            releasedFunds.map((item) => (
-                                <tr key={item.id}>
-                                    <td style={{ fontWeight: 600 }}>{item.districtName}</td>
-                                    <td>{item.component.join(', ')}</td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
-                                        {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
-                                    </td>
-                                    <td>{item.date}</td>
-                                    <td>{item.officerId || '-'}</td>
-                                    <td style={{ color: '#666', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.remarks}>
-                                        {item.remarks || '-'}
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={6} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                                </tr>
+                            ) : releasedFunds.length > 0 ? (
+                                releasedFunds.map((item) => (
+                                    <tr key={item.id}>
+                                        <td style={{ fontWeight: 600 }}>{item.districtName}</td>
+                                        <td>{item.component.join(', ')}</td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
+                                            {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
+                                        </td>
+                                        <td>{item.date}</td>
+                                        <td>{item.officerId || '-'}</td>
+                                        <td style={{ color: '#666', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.remarks}>
+                                            {item.remarks || '-'}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        No fund release records found.
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
-                                    No fund release records found.
-                                </td>
+                                <th>Release Date</th>
+                                <th>District</th>
+                                <th>Village</th>
+                                <th>Components</th>
+                                <th style={{ textAlign: 'right' }}>Minimum Allocation</th>
+                                <th style={{ textAlign: 'right' }}>Amount Released</th>
+                                <th style={{ textAlign: 'right' }}>Remaining Funds</th>
+                                <th>Sanction Order</th>
+                                <th>Status</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={8} style={{ textAlign: 'center', padding: 30 }}>Loading village data...</td>
+                                </tr>
+                            ) : villageFunds.length > 0 ? (
+                                villageFunds.map((item) => (
+                                    <tr key={item.id}>
+                                        <td>
+                                            {new Date(item.release_date).toLocaleDateString("en-IN", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                            })}
+                                        </td>
+                                        <td>{item.district_name}</td>
+                                        <td style={{ fontWeight: "bold", color: "#2d3436" }}>{item.village_name}</td>
+                                        <td>
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                                {/* Components Group */}
+                                                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                                                    {item.component.filter(c => ['Adarsh Gram', 'GIA', 'Hostel'].includes(c)).map((comp, idx) => (
+                                                        <span
+                                                            key={`comp-${idx}`}
+                                                            style={{
+                                                                background: '#e3f2fd',
+                                                                color: '#1976d2',
+                                                                padding: '6px 12px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 'bold',
+                                                                textTransform: 'uppercase',
+                                                                display: 'inline-block'
+                                                            }}
+                                                        >
+                                                            {comp}
+                                                        </span>
+                                                    ))}
+                                                </div>
+
+                                                {/* Projects Group */}
+                                                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                                                    {(item.projects && item.projects.length > 0 ? item.projects : (item.component.filter(c => !['Adarsh Gram', 'GIA', 'Hostel'].includes(c))))?.map((comp, idx) => (
+                                                        <span
+                                                            key={`proj-${idx}`}
+                                                            style={{
+                                                                background: '#f3e5f5', // Different color for Projects (Purple)
+                                                                color: '#7b1fa2',
+                                                                padding: '6px 12px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 'bold',
+                                                                textTransform: 'uppercase',
+                                                                display: 'inline-block'
+                                                            }}
+                                                        >
+                                                            {comp}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ textAlign: "right", fontWeight: "bold", color: "#2ecc71" }}>
+                                            ₹{item.amount_allocated ? item.amount_allocated.toLocaleString("en-IN") : "0"}
+                                        </td>
+                                        <td style={{ textAlign: "right", fontWeight: "bold", color: "#00b894" }}>
+                                            ₹{item.amount_released ? item.amount_released.toLocaleString("en-IN") : "0"}
+                                        </td>
+                                        <td style={{ textAlign: "right", fontWeight: "bold", color: "#e67e22" }}>
+                                            ₹{((item.amount_released || 0) - (item.amount_utilized || 0)).toLocaleString("en-IN")}
+                                        </td>
+                                        <td style={{ fontSize: "12px", color: "#636e72" }}>
+                                            {item.sanction_order_no || "-"}
+                                        </td>
+                                        <td>
+                                            <span
+                                                style={{
+                                                    padding: "4px 8px",
+                                                    borderRadius: "12px",
+                                                    fontSize: "11px",
+                                                    fontWeight: "bold",
+                                                    backgroundColor:
+                                                        item.status === "Released"
+                                                            ? "rgba(0, 184, 148, 0.1)"
+                                                            : item.status === "Utilized"
+                                                                ? "rgba(9, 132, 227, 0.1)"
+                                                                : "rgba(99, 110, 114, 0.1)",
+                                                    color:
+                                                        item.status === "Released"
+                                                            ? "#00b894"
+                                                            : item.status === "Utilized"
+                                                                ? "#0984e3"
+                                                                : "#636e72",
+                                                }}
+                                            >
+                                                {item.status || "Released"}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        No village fund release records found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Release Modal */}
             <Modal
