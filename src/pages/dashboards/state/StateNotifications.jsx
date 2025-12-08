@@ -6,40 +6,40 @@ const StateNotifications = () => {
     const [notifications, setNotifications] = useState([
         {
             id: 1,
-            title: 'Annual Plan Submission Deadline Extended',
-            date: '2025-11-20',
-            from: 'Ministry of Social Justice',
+            title: 'Fund Release Approved for District',
+            date: '2025-11-25',
+            from: 'Ministry',
             status: 'Unread',
-            message: 'The deadline for Annual Plan submission has been extended to December 15, 2025. Please ensure timely submission.',
-            priority: 'High'
+            priority: 'High',
+            message: 'The fund release request for your state amounting to ₹10.50 Cr has been approved and processed.'
         },
         {
             id: 2,
-            title: 'New Guidelines for Fund Utilization',
-            date: '2025-11-15',
-            from: 'Ministry of Social Justice',
+            title: 'New Guidelines for UC Submission',
+            date: '2025-11-22',
+            from: 'Ministry',
             status: 'Read',
-            message: 'Updated guidelines for fund utilization under PM-AJAY scheme have been issued. Please refer to the attached document.',
-            priority: 'Medium'
+            priority: 'Medium',
+            message: 'Updated guidelines for Utilization Certificate submission have been released. Please ensure all districts follow the new format.'
         },
         {
             id: 3,
-            title: 'District Proposal Approval Required',
-            date: '2025-11-25',
-            from: 'Pune District Admin',
+            title: 'Pending Proposal Review Reminder',
+            date: '2025-11-20',
+            from: 'System',
             status: 'Unread',
-            message: 'New project proposal from Pune District requires your approval. Please review at the earliest.',
-            priority: 'High'
+            priority: 'Medium',
+            message: 'You have 5 pending proposals from districts that require your immediate attention.'
         },
         {
             id: 4,
-            title: 'UC Submission Reminder',
-            date: '2025-11-22',
-            from: 'Ministry of Social Justice',
+            title: 'Site Visit Schedule',
+            date: '2025-11-18',
+            from: 'Ministry',
             status: 'Read',
-            message: 'Reminder: Utilization Certificates for Q3 are due by November 30, 2025.',
-            priority: 'Medium'
-        },
+            priority: 'Low',
+            message: 'Ministry monitoring team will be visiting your state on Dec 5th for site inspection of ongoing projects.'
+        }
     ]);
 
     const [toast, setToast] = useState(null);
@@ -52,163 +52,62 @@ const StateNotifications = () => {
 
     const handleViewPDF = (notification) => {
         try {
-            console.log('Generating PDF for notification:', notification.title);
-
             // Mark as read
             setNotifications(notifications.map(n => n.id === notification.id ? { ...n, status: 'Read' } : n));
 
             const printWindow = window.open('', '_blank');
-
             const htmlContent = `
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <title>Notification - ${notification.title}</title>
                     <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            padding: 40px;
-                            max-width: 800px;
-                            margin: 0 auto;
-                        }
-                        .header {
-                            text-align: center;
-                            border-bottom: 3px solid #3498db;
-                            padding-bottom: 20px;
-                            margin-bottom: 30px;
-                        }
-                        .logo {
-                            font-size: 24px;
-                            font-weight: bold;
-                            color: #2c3e50;
-                            margin-bottom: 10px;
-                        }
-                        .state-name {
-                            color: #666;
-                            font-size: 14px;
-                        }
-                        .notification-badge {
-                            display: inline-block;
-                            padding: 5px 15px;
-                            border-radius: 20px;
-                            font-size: 12px;
-                            font-weight: bold;
-                            margin-top: 10px;
-                        }
-                        .priority-high {
-                            background-color: #fee;
-                            color: #c00;
-                        }
-                        .priority-medium {
-                            background-color: #ffc;
-                            color: #860;
-                        }
-                        .priority-low {
-                            background-color: #efe;
-                            color: #060;
-                        }
-                        .section {
-                            margin-bottom: 25px;
-                        }
-                        .section-title {
-                            font-weight: bold;
-                            color: #2c3e50;
-                            font-size: 16px;
-                            margin-bottom: 10px;
-                            border-bottom: 2px solid #ecf0f1;
-                            padding-bottom: 5px;
-                        }
-                        .info-row {
-                            display: flex;
-                            margin-bottom: 10px;
-                        }
-                        .info-label {
-                            font-weight: bold;
-                            width: 150px;
-                            color: #555;
-                        }
-                        .info-value {
-                            color: #333;
-                        }
-                        .message-body {
-                            background-color: #f9f9f9;
-                            padding: 20px;
-                            border-left: 4px solid #3498db;
-                            line-height: 1.6;
-                            margin-top: 20px;
-                        }
-                        .footer {
-                            margin-top: 50px;
-                            padding-top: 20px;
-                            border-top: 2px solid #ecf0f1;
-                            text-align: center;
-                            color: #666;
-                            font-size: 12px;
-                        }
-                        @media print {
-                            body {
-                                padding: 20px;
-                            }
-                        }
+                        body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+                        .header { text-align: center; border-bottom: 3px solid #3498db; padding-bottom: 20px; margin-bottom: 30px; }
+                        .logo { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+                        .state-name { color: #666; font-size: 14px; }
+                        .notification-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 10px; }
+                        .priority-high { background-color: #fee; color: #c00; }
+                        .priority-medium { background-color: #ffc; color: #860; }
+                        .priority-low { background-color: #efe; color: #060; }
+                        .section { margin-bottom: 25px; }
+                        .section-title { font-weight: bold; color: #2c3e50; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #ecf0f1; padding-bottom: 5px; }
+                        .info-row { display: flex; margin-bottom: 10px; }
+                        .info-label { font-weight: bold; width: 150px; color: #555; }
+                        .message-body { background-color: #f9f9f9; padding: 20px; border-left: 4px solid #3498db; line-height: 1.6; margin-top: 20px; }
+                        .footer { margin-top: 50px; padding-top: 20px; border-top: 2px solid #ecf0f1; text-align: center; color: #666; font-size: 12px; }
                     </style>
                 </head>
                 <body>
                     <div class="header">
                         <div class="logo">PM-AJAY Portal</div>
-                        <div class="state-name">State Dashboard - Maharashtra</div>
-                        <div class="notification-badge priority-${notification.priority.toLowerCase()}">
-                            ${notification.priority} Priority
-                        </div>
+                        <div class="state-name">State Dashboard</div>
+                        <div class="notification-badge priority-${notification.priority.toLowerCase()}">${notification.priority} Priority</div>
                     </div>
-
                     <div class="section">
                         <h2 style="color: #2c3e50; margin-bottom: 20px;">${notification.title}</h2>
-                        
-                        <div class="info-row">
-                            <div class="info-label">Notification ID:</div>
-                            <div class="info-value">NOT-${notification.id}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Date Received:</div>
-                            <div class="info-value">${notification.date}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">From:</div>
-                            <div class="info-value"><strong>${notification.from}</strong></div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Priority:</div>
-                            <div class="info-value">${notification.priority}</div>
-                        </div>
+                        <div class="info-row"><div class="info-label">Notification ID:</div><div>NOT-${notification.id}</div></div>
+                        <div class="info-row"><div class="info-label">Date Received:</div><div>${notification.date}</div></div>
+                        <div class="info-row"><div class="info-label">From:</div><div><strong>${notification.from}</strong></div></div>
                     </div>
-
                     <div class="section">
                         <div class="section-title">Notification Message</div>
-                        <div class="message-body">
-                            ${notification.message}
-                        </div>
+                        <div class="message-body">${notification.message}</div>
                     </div>
-
                     <div class="footer">
                         <p>This is an official notification from PM-AJAY Portal</p>
-                        <p>Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+                        <p>Generated on: ${new Date().toLocaleString()}</p>
                     </div>
                 </body>
                 </html>
             `;
-
             printWindow.document.write(htmlContent);
             printWindow.document.close();
-
-            printWindow.onload = function () {
-                printWindow.print();
-            };
-
-            showToast('PDF preview opened! Use "Save as PDF" to download.');
-            console.log('PDF window opened successfully');
+            printWindow.onload = function () { printWindow.print(); };
+            showToast('PDF preview opened');
         } catch (error) {
             console.error('Error generating PDF:', error);
-            showToast('Error generating PDF. Please try again.');
+            showToast('Error generating PDF');
         }
     };
 
@@ -217,7 +116,6 @@ const StateNotifications = () => {
         showToast('Notification marked as read');
     };
 
-    // Filter notifications
     const filteredNotifications = filterStatus
         ? notifications.filter(n => n.status === filterStatus)
         : notifications;
@@ -287,7 +185,7 @@ const StateNotifications = () => {
                                     <td>
                                         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
                                             <InteractiveButton variant="info" size="sm" onClick={() => handleViewPDF(notif)}>
-                                                <Eye size={16} style={{ marginRight: '5px' }} /> View
+                                                <Eye size={16} /> View
                                             </InteractiveButton>
                                             {notif.status === 'Unread' && (
                                                 <InteractiveButton variant="success" size="sm" onClick={() => handleMarkAsRead(notif.id)}>

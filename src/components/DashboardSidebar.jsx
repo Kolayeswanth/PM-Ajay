@@ -33,9 +33,43 @@ const DashboardSidebar = ({ menuItems, user, isOpen = true }) => {
                                     <button
                                         onClick={item.action}
                                         className={`dashboard-sidebar-link ${item.active ? 'active' : ''} ${item.isLogout ? 'logout-item' : ''}`}
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
                                     >
-                                        <span className="sidebar-icon">{item.icon}</span>
-                                        <span className="sidebar-label">{item.label}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <span className="sidebar-icon">{item.icon}</span>
+                                            <span className="sidebar-label">{item.label}</span>
+                                        </div>
+                                        {item.extraAction && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    item.extraAction.onClick();
+                                                }}
+                                                style={{
+                                                    backgroundColor: item.extraAction.color || '#25D366',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '50%',
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                                                    transition: 'all 0.2s ease',
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform = 'scale(1)';
+                                                }}
+                                                title="Call Support"
+                                            >
+                                                {item.extraAction.icon}
+                                            </button>
+                                        )}
                                     </button>
                                 ) : (
                                     <NavLink

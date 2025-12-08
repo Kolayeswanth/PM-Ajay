@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import DistrictMap from '../../../components/maps/DistrictMap';
-import { districtStats, mockProjects } from '../../../data/mockData';
+import { districtStats, mockProjects, districts } from '../../../data/mockData';
+import StatCard from '../../../components/StatCard';
+import InteractiveButton from '../../../components/InteractiveButton';
+import { FileText, IndianRupee, CheckCircle2, Eye, XCircle, Plus, Download } from 'lucide-react';
 
 const DistrictDashboardPanel = ({ formatCurrency, districtId, stateId }) => {
     const [stats, setStats] = useState({
@@ -187,26 +190,23 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId, stateId }) => {
         <>
             {/* District KPIs */}
             <div className="kpi-row">
-                <ModernStatCard
-                    icon={FileText}
+                <StatCard
+                    icon={<FileText size={24} />}
                     value={stats.totalProjects}
                     label="Total Projects"
                     color="#D97706"
-                    bgColor="#FEF3C7"
                 />
-                <ModernStatCard
-                    icon={IndianRupee}
+                <StatCard
+                    icon={<IndianRupee size={24} />}
                     value={`₹${stats.fundAllocated} Cr`}
                     label="Fund Allocated"
                     color="#2563EB"
-                    bgColor="#EFF6FF"
                 />
-                <ModernStatCard
-                    icon={CheckCircle2}
+                <StatCard
+                    icon={<CheckCircle2 size={24} />}
                     value={stats.completedProjects}
                     label="Completed"
                     color="#059669"
-                    bgColor="#ECFDF5"
                 />
             </div>
 
@@ -368,44 +368,44 @@ const DistrictDashboardPanel = ({ formatCurrency, districtId, stateId }) => {
                             </h3>
 
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
-                                        {/* Circular Progress */}
-                                        <div style={{ position: 'relative', width: '200px', height: '200px' }}>
-                                            <svg height="200" width="200" style={{ transform: 'rotate(-90deg)' }}>
-                                                <circle stroke="#E5E7EB" strokeWidth="30" fill="transparent" r="70" cx="100" cy="100" />
-                                                <circle
-                                                    stroke="#7C3AED"
-                                                    strokeWidth="30"
-                                                    strokeDasharray={`${2 * Math.PI * 70}`}
-                                                    style={{ strokeDashoffset: `${2 * Math.PI * 70 * (1 - (districtProgress / 100))}`, transition: 'stroke-dashoffset 1.5s ease-out' }}
-                                                    strokeLinecap="round"
-                                                    fill="transparent"
-                                                    r="70"
-                                                    cx="100"
-                                                    cy="100"
-                                                />
-                                            </svg>
-                                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--color-navy)' }}>
-                                                    {districtProgress}%
-                                                </div>
-                                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Utilized</div>
-                                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
+                                {/* Circular Progress */}
+                                <div style={{ position: 'relative', width: '200px', height: '200px' }}>
+                                    <svg height="200" width="200" style={{ transform: 'rotate(-90deg)' }}>
+                                        <circle stroke="#E5E7EB" strokeWidth="30" fill="transparent" r="70" cx="100" cy="100" />
+                                        <circle
+                                            stroke="#7C3AED"
+                                            strokeWidth="30"
+                                            strokeDasharray={`${2 * Math.PI * 70}`}
+                                            style={{ strokeDashoffset: `${2 * Math.PI * 70 * (1 - (districtProgress / 100))}`, transition: 'stroke-dashoffset 1.5s ease-out' }}
+                                            strokeLinecap="round"
+                                            fill="transparent"
+                                            r="70"
+                                            cx="100"
+                                            cy="100"
+                                        />
+                                    </svg>
+                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--color-navy)' }}>
+                                            {districtProgress}%
                                         </div>
-
-                                        {/* Legend */}
-                                        <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: '13px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#7C3AED' }}></div>
-                                                <span style={{ color: 'var(--color-navy)' }}>Utilized: ₹{(fundUtilized / 10000000).toFixed(2)} Cr</span>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#E5E7EB' }}></div>
-                                                <span style={{ color: 'var(--text-secondary)' }}>Remaining: ₹{((fundAllocated - fundUtilized) / 10000000).toFixed(2)} Cr</span>
-                                            </div>
-                                        </div>
+                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Utilized</div>
                                     </div>
                                 </div>
+
+                                {/* Legend */}
+                                <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: '13px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#7C3AED' }}></div>
+                                        <span style={{ color: 'var(--color-navy)' }}>Utilized: ₹{(fundUtilized / 10000000).toFixed(2)} Cr</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#E5E7EB' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Remaining: ₹{((fundAllocated - fundUtilized) / 10000000).toFixed(2)} Cr</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                     {/* Component Progress Card */}

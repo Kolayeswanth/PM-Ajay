@@ -11,6 +11,8 @@ import AssignedWorks from './contractor/AssignedWorks';
 import WorkProgress from './contractor/WorkProgress';
 import PaymentStatus from './contractor/PaymentStatus';
 import ContractorHelp from './contractor/ContractorHelp';
+import ContractorAllProjects from './contractor/ContractorAllProjects';
+import { MessageCircle } from 'lucide-react';
 
 const ContractorDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -198,6 +200,8 @@ const ContractorDashboard = () => {
                 return <PaymentStatus />;
             case 'help':
                 return <ContractorHelp />;
+            case 'allProjects':
+                return <ContractorAllProjects contractorName={user?.full_name} />;
             default:
                 return <ContractorDashboardPanel formatCurrency={formatCurrency} stats={stats} recentWorks={works.slice(0, 3)} onNavigate={handleTabChange} />;
         }
@@ -227,6 +231,36 @@ const ContractorDashboard = () => {
                         </p>
                     </div>
                     <div className="dashboard-actions" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <button
+                            onClick={() => setActiveTab('allProjects')}
+                            style={{
+                                backgroundColor: '#25D366',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+                                transition: 'all 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#20BA5A';
+                                e.currentTarget.style.transform = 'scale(1.1)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#25D366';
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
+                            }}
+                            title="Messages"
+                        >
+                            <MessageCircle size={20} />
+                        </button>
                         <LanguageSwitcher />
                         <NotificationBell />
                     </div>

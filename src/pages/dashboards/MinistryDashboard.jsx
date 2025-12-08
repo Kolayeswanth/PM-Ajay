@@ -14,6 +14,7 @@ import MonitorProgress from './ministry/MonitorProgress';
 import IssueNotifications from './ministry/IssueNotifications';
 import ReportsAnalytics from './ministry/ReportsAnalytics';
 import HelpSupport from './ministry/HelpSupport';
+import AllProjects from './ministry/AllProjects';
 
 import {
     LayoutDashboard,
@@ -26,7 +27,9 @@ import {
     FileBarChart,
     HelpCircle,
     LogOut,
-    FileText
+    FileText,
+    Phone,
+    MessageCircle
 } from 'lucide-react';
 
 const MinistryDashboard = () => {
@@ -98,6 +101,8 @@ const MinistryDashboard = () => {
                 return <ReportsAnalytics />;
             case 'help':
                 return <HelpSupport />;
+            case 'allProjects':
+                return <AllProjects />;
             default:
                 return (
                     <DashboardPanel
@@ -122,7 +127,8 @@ const MinistryDashboard = () => {
             'monitor': 'Monitor Progress',
             'notifications': 'Notifications & Circulars',
             'reports': 'Reports & Analytics',
-            'help': 'Help & Support'
+            'help': 'Help & Support',
+            'allProjects': 'All Projects'
         };
         return `Home > ${labels[activeTab] || 'Dashboard'}`;
     };
@@ -144,6 +150,37 @@ const MinistryDashboard = () => {
                         <h3 style={{ margin: 0 }}>Ministry Dashboard</h3>
                     </div>
                     <div className="dashboard-actions">
+                        <button
+                            onClick={() => setActiveTab('allProjects')}
+                            style={{
+                                backgroundColor: '#25D366',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                marginRight: '12px',
+                                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+                                transition: 'all 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#20BA5A';
+                                e.currentTarget.style.transform = 'scale(1.1)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#25D366';
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
+                            }}
+                            title="Messages"
+                        >
+                            <MessageCircle size={20} />
+                        </button>
                         <NotificationBell userRole="ministry" />
                     </div>
                 </div>

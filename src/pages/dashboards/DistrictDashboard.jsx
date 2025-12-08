@@ -14,6 +14,7 @@ import DistrictHelp from './district/DistrictHelp';
 import CreateProposal from './district/CreateProposal';
 import AssignProjectsDistrict from './district/AssignProjectsDistrict';
 import FundReleaseToAgencies from './district/FundReleaseToAgencies';
+import DistrictAllProjects from './district/DistrictAllProjects';
 import {
     LayoutDashboard,
     FilePlus,
@@ -25,7 +26,8 @@ import {
     Bell,
     HelpCircle,
     LogOut,
-    Send
+    Send,
+    MessageCircle
 } from 'lucide-react';
 
 const DistrictDashboard = () => {
@@ -153,6 +155,8 @@ const DistrictDashboard = () => {
                 return <DistrictNotifications />;
             case 'help':
                 return <DistrictHelp />;
+            case 'allProjects':
+                return <DistrictAllProjects districtName={districtName} stateName={stateName} />;
             default:
                 return <DistrictDashboardPanel formatCurrency={formatCurrency} districtId={districtId} stateId={stateId} />;
         }
@@ -185,6 +189,37 @@ const DistrictDashboard = () => {
                         <h3 style={{ margin: 0 }}>District Dashboard - {districtName}</h3>
                     </div>
                     <div className="dashboard-actions">
+                        <button
+                            onClick={() => setActiveTab('allProjects')}
+                            style={{
+                                backgroundColor: '#25D366',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                marginRight: '12px',
+                                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+                                transition: 'all 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#20BA5A';
+                                e.currentTarget.style.transform = 'scale(1.1)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#25D366';
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
+                            }}
+                            title="Messages"
+                        >
+                            <MessageCircle size={20} />
+                        </button>
                         <NotificationBell userRole="district" districtName={districtName} />
                     </div>
                 </div>

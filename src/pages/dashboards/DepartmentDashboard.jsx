@@ -12,7 +12,9 @@ import DepartmentHelp from './department/DepartmentHelp';
 import ManageExecutingAgencies from './department/ManageExecutingAgencies';
 import AssignProjects from './department/AssignProjects';
 import AgencyProjects from './department/AgencyProjects';
+import DepartmentAllProjects from './department/DepartmentAllProjects';
 import { mockProjects } from '../../data/mockData';
+import { MessageCircle } from 'lucide-react';
 
 const DepartmentDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -173,6 +175,8 @@ const DepartmentDashboard = () => {
                 return <DepartmentNotifications />;
             case 'help':
                 return <DepartmentHelp />;
+            case 'allProjects':
+                return <DepartmentAllProjects agencyName={user?.name} />;
             default:
                 return <DepartmentDashboardPanel formatCurrency={formatCurrency} stats={stats} recentOrders={workOrders.slice(0, 3)} projects={workOrders} onNavigate={handleTabChange} />;
         }
@@ -200,6 +204,36 @@ const DepartmentDashboard = () => {
                 <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>{getBreadcrumb()}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <button
+                            onClick={() => setActiveTab('allProjects')}
+                            style={{
+                                backgroundColor: '#25D366',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+                                transition: 'all 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#20BA5A';
+                                e.currentTarget.style.transform = 'scale(1.1)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#25D366';
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
+                            }}
+                            title="Messages"
+                        >
+                            <MessageCircle size={20} />
+                        </button>
                         <NotificationBell />
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontWeight: '500', color: '#374151' }}>{user?.name || 'Department Admin'}</div>

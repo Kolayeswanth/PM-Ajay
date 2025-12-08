@@ -14,6 +14,7 @@ import StateNotifications from './state/StateNotifications';
 import StateHelp from './state/StateHelp';
 import FundsReceivedFromMinistry from './state/FundsReceivedFromMinistry';
 import MonitorProgressState from './state/MonitorProgressState';
+import StateAllProjects from './state/StateAllProjects';
 import {
     LayoutDashboard,
     Wallet,
@@ -25,7 +26,8 @@ import {
     Bell,
     HelpCircle,
     LogOut,
-    Activity
+    Activity,
+    MessageCircle
 } from 'lucide-react';
 
 const StateDashboard = () => {
@@ -133,6 +135,8 @@ const StateDashboard = () => {
                 return <StateNotifications />;
             case 'help':
                 return <StateHelp />;
+            case 'allProjects':
+                return <StateAllProjects stateName={stateName} />;
             default:
                 return <StateDashboardPanel formatCurrency={formatCurrency} stateName={stateName} />;
         }
@@ -171,6 +175,37 @@ const StateDashboard = () => {
                         <h3 style={{ margin: 0 }}>Dashboard - {stateName}</h3>
                     </div>
                     <div className="dashboard-actions">
+                        <button
+                            onClick={() => setActiveTab('allProjects')}
+                            style={{
+                                backgroundColor: '#25D366',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                marginRight: '12px',
+                                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+                                transition: 'all 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#20BA5A';
+                                e.currentTarget.style.transform = 'scale(1.1)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#25D366';
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
+                            }}
+                            title="Messages"
+                        >
+                            <MessageCircle size={20} />
+                        </button>
                         <NotificationBell userRole="state" stateName={stateName} />
                     </div>
                 </div>

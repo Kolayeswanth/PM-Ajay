@@ -601,3 +601,76 @@ exports.getApprovedProjects = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+// Get all proposals (for All Projects view)
+exports.getAllProposals = async (req, res) => {
+    try {
+        // 1. Fetch all proposals
+        const { data: proposals, error } = await supabase
+            .from('district_proposals')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Supabase select error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+
+        if (!proposals || proposals.length === 0) {
+            return res.json({ success: true, data: [] });
+        }
+
+        // 2. Get unique District IDs
+        const districtIds = [...new Set(proposals.map(p => p.district_id))];
+
+        // 3. Fetch Districts
+        const { data: districts, error: distError } = await supabase
+            .from('districts')
+            .select('id, name, state_id')
+            .in('id', districtIds);
+
+        if (distError) {
+            throw distError;
+        }
+
+        // 4. Get unique State IDs
+        const stateIds = [...new Set(districts.map(d => d.state_id))];
+
+        // 5. Fetch States
+        const { data: states, error: stateError } = await supabase
+            .from('states')
+            .select('id, name')
+            .in('id', stateIds);
+
+        if (stateError) {
+            throw stateError;
+        }
+
+        // 6. Create Maps for easy lookup
+        const stateMap = states.reduce((acc, s) => {
+            acc[s.id] = s.name;
+            return acc;
+        }, {});
+
+        const districtMap = districts.reduce((acc, d) => {
+            acc[d.id] = {
+                name: d.name,
+                stateName: stateMap[d.state_id]
+            };
+            return acc;
+        }, {});
+
+        // 7. Merge data
+        const flattenedProposals = proposals.map(p => ({
+            ...p,
+            district_name: districtMap[p.district_id]?.name || 'Unknown District',
+            state_name: districtMap[p.district_id]?.stateName || 'Unknown State'
+        }));
+
+        res.json({ success: true, data: flattenedProposals });
+    } catch (error) {
+        console.error('Error fetching all proposals:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
