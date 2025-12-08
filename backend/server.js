@@ -56,5 +56,6 @@ app.listen(PORT, () => {
 });
 
 // Start Background Services
+// Cron reminder service for pending proposals + approval notifications
 const cronService = require('./services/cronService');
 cronService.startScheduler();

@@ -7,6 +7,7 @@ const CreateProposal = ({ districtId }) => {
         component: 'Adarsh Gram',
         estimatedCost: '',
         description: '',
+        phoneNumber: '',
         files: []
     });
     const [loading, setLoading] = useState(false);
@@ -83,6 +84,7 @@ const CreateProposal = ({ districtId }) => {
             data.append('projectName', formData.projectName);
             data.append('component', formData.component);
             data.append('estimatedCost', formData.estimatedCost);
+            data.append('phoneNumber', formData.phoneNumber);
             data.append('description', formData.description);
 
             formData.files.forEach((file) => {
@@ -106,6 +108,7 @@ const CreateProposal = ({ districtId }) => {
                 component: 'Adarsh Gram',
                 estimatedCost: '',
                 description: '',
+                phoneNumber: '',
                 files: []
             });
             fetchProposals(); // Refresh the list
@@ -202,6 +205,21 @@ const CreateProposal = ({ districtId }) => {
                                         required
                                     />
                                 </div>
+                                <div className="form-group">
+                                    <label className="form-label">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        name="phoneNumber"
+                                        className="form-control"
+                                        value={formData.phoneNumber}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter contact number"
+                                        pattern="[0-9]{10}"
+                                        maxLength="10"
+                                        title="Please enter a valid 10-digit phone number"
+                                        required
+                                    />
+                                </div>
                             </div>
 
                             <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
@@ -260,6 +278,7 @@ const CreateProposal = ({ districtId }) => {
                                     component: 'Adarsh Gram',
                                     estimatedCost: '',
                                     description: '',
+                                    phoneNumber: '',
                                     files: []
                                 })}>
                                     Reset
