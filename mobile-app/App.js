@@ -13,13 +13,18 @@ import { getNotifications } from './services/api';
 const Stack = createStackNavigator();
 
 // Configure notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+} catch (error) {
+  console.log('Notification handler failed (expected in Expo Go):', error.message);
+}
 
 // Ignore specific logs for demo
 LogBox.ignoreLogs([
@@ -52,14 +57,18 @@ export default function App() {
             const lastShownId = await AsyncStorage.getItem('lastNotificationId');
             if (lastShownId !== latest.id) {
                 // Show local notification
-                await Notifications.scheduleNotificationAsync({
-                    content: {
-                        title: latest.title,
-                        body: latest.body,
-                        data: latest,
-                    },
-                    trigger: null, // Show immediately
-                });
+                try {
+                    await Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: latest.title,
+                            body: latest.body,
+                            data: latest,
+                        },
+                        trigger: null, // Show immediately
+                    });
+                } catch (error) {
+                    console.log('Skipping notification (not supported in Expo Go):', error.message);
+                }
                 
                 // Save as shown
                 await AsyncStorage.setItem('lastNotificationId', latest.id);
