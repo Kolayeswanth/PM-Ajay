@@ -484,6 +484,7 @@ exports.releaseFund = async (req, res) => {
             let allocation;
             let currentReleased = 0;
             let totalAllocated = 0;
+            let newReleased = 0; // Declare here so it's accessible later
 
             if (!isProjectRelease) {
                 // Get latest allocation for state-level releases
@@ -503,7 +504,7 @@ exports.releaseFund = async (req, res) => {
                 allocation = allocations[0];
                 currentReleased = parseInt(allocation.amount_released) || 0;
                 totalAllocated = parseInt(allocation.amount_allocated) || 0;
-                const newReleased = currentReleased + amountInRupees;
+                newReleased = currentReleased + amountInRupees;
 
                 if (newReleased > totalAllocated) {
                     return res.status(400).json({
@@ -524,6 +525,8 @@ exports.releaseFund = async (req, res) => {
                 }
             } else {
                 console.log('✅ Skipping fund allocation check for project release');
+                // For project releases, just calculate newReleased for the message
+                newReleased = currentReleased + amountInRupees;
             }
 
             // Insert into state_fund_releases
