@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 import InteractiveButton from '../../../components/InteractiveButton';
+import VillageFundReleaseForm from './VillageFundReleaseForm';
 
 /**
  * FundAllocation - Ministry Allocates Funds ONLY for Ministry-Approved Proposals
@@ -11,8 +12,9 @@ import InteractiveButton from '../../../components/InteractiveButton';
  * - Sends WhatsApp notification via backend
  */
 
-const FundAllocation = ({ formatCurrency }) => {
+const FundAllocation = ({ formatCurrency, onNavigate }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showVillageForm, setShowVillageForm] = useState(false);
     const [allocationData, setAllocationData] = useState({
         stateName: '',
         component: [],
@@ -214,13 +216,27 @@ const FundAllocation = ({ formatCurrency }) => {
         return <div style={{ padding: 20, textAlign: 'center' }}>Loading approved proposals...</div>;
     }
 
+    if (showVillageForm) {
+        return <VillageFundReleaseForm onBack={() => setShowVillageForm(false)} onNavigate={onNavigate} />;
+    }
+
     return (
         <div className="fund-allocation-page" style={{ padding: 20 }}>
-            <div style={{ marginBottom: 20 }}>
-                <h2 style={{ margin: 0 }}>Fund Allocation for Approved Projects</h2>
-                <p style={{ fontSize: 14, color: '#666', marginTop: 8 }}>
-                    ℹ️ Allocate funds only for states with Ministry-approved proposals
-                </p>
+            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h2 style={{ margin: 0 }}>Fund Allocation for Approved Projects</h2>
+                    <p style={{ fontSize: 14, color: '#666', marginTop: 8 }}>
+                        ℹ️ Allocate funds only for states with Ministry-approved proposals
+                    </p>
+                </div>
+                <InteractiveButton
+                    variant="primary"
+                    size="md"
+                    onClick={() => setShowVillageForm(true)}
+                    style={{ whiteSpace: 'nowrap' }}
+                >
+                    🏘️ Allocate Village Funds
+                </InteractiveButton>
             </div>
 
             {toast && (

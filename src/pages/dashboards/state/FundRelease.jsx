@@ -3,7 +3,7 @@ import Modal from '../../../components/Modal';
 import { useAuth } from '../../../contexts/AuthContext';
 import InteractiveButton from '../../../components/InteractiveButton';
 
-const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
+const FundRelease = ({ formatCurrency, stateId, stateCode, preFillData }) => {
     const { user } = useAuth();
     const [releasedFunds, setReleasedFunds] = useState([]);
     const [receivedFunds, setReceivedFunds] = useState([]);
@@ -16,11 +16,17 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
     const [loading, setLoading] = useState(true);
     const [districtStats, setDistrictStats] = useState(null);
 
+    // New state for implementing agencies
+    const [implementingAgencies, setImplementingAgencies] = useState([]);
+    const [filteredAgencies, setFilteredAgencies] = useState([]);
+
     const [formData, setFormData] = useState({
         districtId: '',
+        component: '', // Ensure component is here
         amount: '',
         date: new Date().toISOString().slice(0, 10),
-        bankAccount: ''
+        bankAccount: '',
+        implementingAgencyId: '' // Added field
     });
 
     const [errors, setErrors] = useState({});
@@ -30,6 +36,9 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
 
     // Fetch state name from user profile
     const [stateName, setStateName] = useState('');
+
+    const [activeTab, setActiveTab] = useState('district'); // 'district' or 'village'
+    const [villageFunds, setVillageFunds] = useState([]);
 
     useEffect(() => {
         const fetchStateName = async () => {
@@ -51,11 +60,60 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
 
     // Fetch Data when stateName is available
     useEffect(() => {
-        if (stateName && stateCode) {
-            fetchDistricts();
-            fetchReleasedFunds();
+        if (stateName) {
+            if (activeTab === 'district' && stateCode) {
+                fetchDistricts();
+                fetchReleasedFunds();
+                fetchImplementingAgencies();
+            } else if (activeTab === 'village') {
+                fetchVillageFunds();
+            }
         }
-    }, [stateName, stateCode]);
+    }, [stateName, stateCode, activeTab]);
+
+    const fetchImplementingAgencies = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/implementing-agencies?stateName=${encodeURIComponent(stateName)}`);
+            const result = await response.json();
+            if (result.success) {
+                setImplementingAgencies(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching implementing agencies:', error);
+        }
+    };
+
+    // Filter agencies when district changes
+    useEffect(() => {
+        if (formData.districtId) {
+            const selectedDistrict = districts.find(d => d.id === parseInt(formData.districtId) || d.id === formData.districtId);
+            if (selectedDistrict) {
+                const filtered = implementingAgencies.filter(agency =>
+                    agency.district_name === selectedDistrict.name
+                );
+                setFilteredAgencies(filtered);
+            } else {
+                setFilteredAgencies(implementingAgencies);
+            }
+        } else {
+            setFilteredAgencies(implementingAgencies);
+        }
+    }, [formData.districtId, districts, implementingAgencies]);
+
+    const fetchVillageFunds = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/villages/funds/state/${encodeURIComponent(stateName)}`);
+            const result = await response.json();
+            if (result.success) {
+                setVillageFunds(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching village funds:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const fetchDistricts = async () => {
         if (!stateCode) return;
@@ -98,7 +156,8 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                     }));
                     setReleasedFunds(formattedData);
 
-                    // Calculate total released
+                    // Calculate total released (Only for district releases for now, or unified?)
+                    // Keeping separate sums for clarity
                     const total = formattedData.reduce((sum, item) => sum + (item.amountCr || 0), 0);
                     setTotalReleased(total);
                 } else {
@@ -193,6 +252,40 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
         setTimeout(() => setToast(null), 3000);
     };
 
+    // New: Handle Pre-fill Data
+    useEffect(() => {
+        if (preFillData && !isModalOpen && componentStats && implementingAgencies.length > 0) {
+            // Only open if not already open and dependencies loaded
+            console.log('Pre-filling fund release:', preFillData);
+
+            // We need to map project details to form data
+            // District ID might need to be found by name if not passed, but let's assume we can rely on passing it or user selecting?
+            // Actually, AssignProjectsState passes implementingAgencyId. We can infer district from that.
+
+            const agency = implementingAgencies.find(a => a.id === preFillData.implementingAgencyId);
+            let districtId = preFillData.districtId;
+
+            if (!districtId && agency) {
+                // Try to find district by name from agency
+                const dist = districts.find(d => d.name === agency.district_name);
+                if (dist) districtId = dist.id;
+            }
+
+            setFormData({
+                districtId: districtId || '',
+                component: preFillData.component || '',
+                amount: '',
+                date: new Date().toISOString().slice(0, 10),
+                bankAccount: '',
+                implementingAgencyId: preFillData.implementingAgencyId || '',
+                availableComponents: [preFillData.component], // Restrict to this component
+                relatedProjectId: preFillData.projectId // Store for reference/logging if needed
+            });
+            setIsModalOpen(true);
+        }
+    }, [preFillData, componentStats, implementingAgencies, districts]);
+
+
     const openModal = () => {
         // Identify components with available balance
         const availableComps = Object.keys(componentStats).filter(c =>
@@ -205,7 +298,8 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
             amount: '',
             date: new Date().toISOString().slice(0, 10),
             bankAccount: '',
-            availableComponents: availableComps // Store for UI
+            implementingAgencyId: '',
+            availableComponents: availableComps
         });
         setErrors({});
         setIsModalOpen(true);
@@ -222,6 +316,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
         const errs = {};
         if (!formData.districtId) errs.districtId = 'Select a district.';
         if (!formData.component) errs.component = 'Select a component.';
+        if (!formData.implementingAgencyId) errs.implementingAgencyId = 'Select an implementing agency.';
 
         const amountCr = parseFloat(formData.amount);
         if (isNaN(amountCr) || amountCr <= 0) errs.amount = 'Enter a valid amount (> 0).';
@@ -255,10 +350,13 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                 amount_cr: amountCr,
                 release_date: formData.date,
                 officer_id: 'STATE-ADMIN',
-                remarks: `Fund release to district for ${activeComponent}`,
+                remarks: preFillData && preFillData.projectName // Use preFillData from props if available
+                    ? `Fund release for Project: ${preFillData.projectName} (${activeComponent})`
+                    : `Fund release to district for ${activeComponent}`,
                 created_by: user?.id,
                 state_name: stateName,
-                bankAccount: formData.bankAccount
+                bankAccount: formData.bankAccount,
+                implementing_agency_id: formData.implementingAgencyId
             };
 
             console.log('📤 Submitting fund release:', payload);
@@ -353,49 +451,193 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                 </div>
             )}
 
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <InteractiveButton
+                    variant={activeTab === 'district' ? 'primary' : 'outline'}
+                    onClick={() => setActiveTab('district')}
+                >
+                    🏢 District Releases
+                </InteractiveButton>
+                <InteractiveButton
+                    variant={activeTab === 'village' ? 'primary' : 'outline'}
+                    onClick={() => setActiveTab('village')}
+                >
+                    🏘️ Village Releases
+                </InteractiveButton>
+            </div>
+
             {/* Table */}
-            <div className="table-wrapper">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>District</th>
-                            <th>Scheme Component</th>
-                            <th style={{ textAlign: 'right' }}>Amount Released</th>
-                            <th>Release Date</th>
-                            <th>Officer ID</th>
-                            <th>Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
+            {activeTab === 'district' ? (
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                                <th>District</th>
+                                <th>Scheme Component</th>
+                                <th style={{ textAlign: 'right' }}>Amount Released</th>
+                                <th>Release Date</th>
+                                <th>Officer ID</th>
+                                <th>Remarks</th>
                             </tr>
-                        ) : releasedFunds.length > 0 ? (
-                            releasedFunds.map((item) => (
-                                <tr key={item.id}>
-                                    <td style={{ fontWeight: 600 }}>{item.districtName}</td>
-                                    <td>{item.component.join(', ')}</td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
-                                        {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
-                                    </td>
-                                    <td>{item.date}</td>
-                                    <td>{item.officerId || '-'}</td>
-                                    <td style={{ color: '#666', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.remarks}>
-                                        {item.remarks || '-'}
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={6} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                                </tr>
+                            ) : releasedFunds.length > 0 ? (
+                                releasedFunds.map((item) => (
+                                    <tr key={item.id}>
+                                        <td style={{ fontWeight: 600 }}>{item.districtName}</td>
+                                        <td>{item.component.join(', ')}</td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
+                                            {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
+                                        </td>
+                                        <td>{item.date}</td>
+                                        <td>{item.officerId || '-'}</td>
+                                        <td style={{ color: '#666', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.remarks}>
+                                            {item.remarks || '-'}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        No fund release records found.
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
-                                    No fund release records found.
-                                </td>
+                                <th>Release Date</th>
+                                <th>District</th>
+                                <th>Village</th>
+                                <th>Components</th>
+                                <th style={{ textAlign: 'right' }}>Total Allocation</th>
+                                <th style={{ textAlign: 'right' }}>Amount Released</th>
+                                <th style={{ textAlign: 'right' }}>Remaining Funds</th>
+                                <th>Sanction Order</th>
+                                <th>Status</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={8} style={{ textAlign: 'center', padding: 30 }}>Loading village data...</td>
+                                </tr>
+                            ) : villageFunds.length > 0 ? (
+                                villageFunds.map((item) => (
+                                    <tr key={item.id}>
+                                        <td>
+                                            {new Date(item.release_date).toLocaleDateString("en-IN", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                            })}
+                                        </td>
+                                        <td>{item.district_name}</td>
+                                        <td style={{ fontWeight: "bold", color: "#2d3436" }}>{item.village_name}</td>
+                                        <td>
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                                {/* Components Group */}
+                                                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                                                    {item.component.filter(c => ['Adarsh Gram', 'GIA', 'Hostel'].includes(c)).map((comp, idx) => (
+                                                        <span
+                                                            key={`comp-${idx}`}
+                                                            style={{
+                                                                background: '#e3f2fd',
+                                                                color: '#1976d2',
+                                                                padding: '6px 12px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 'bold',
+                                                                textTransform: 'uppercase',
+                                                                display: 'inline-block'
+                                                            }}
+                                                        >
+                                                            {comp}
+                                                        </span>
+                                                    ))}
+                                                </div>
+
+                                                {/* Projects Group */}
+                                                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                                                    {(item.projects && item.projects.length > 0 ? item.projects : (item.component.filter(c => !['Adarsh Gram', 'GIA', 'Hostel'].includes(c))))?.map((comp, idx) => (
+                                                        <span
+                                                            key={`proj-${idx}`}
+                                                            style={{
+                                                                background: '#f3e5f5', // Different color for Projects (Purple)
+                                                                color: '#7b1fa2',
+                                                                padding: '6px 12px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 'bold',
+                                                                textTransform: 'uppercase',
+                                                                display: 'inline-block'
+                                                            }}
+                                                        >
+                                                            {comp}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ textAlign: "right", fontWeight: "bold", color: "#2ecc71" }}>
+                                            ₹{item.amount_allocated ? item.amount_allocated.toLocaleString("en-IN") : "0"}
+                                        </td>
+                                        <td style={{ textAlign: "right", fontWeight: "bold", color: "#00b894" }}>
+                                            ₹{item.amount_released ? item.amount_released.toLocaleString("en-IN") : "0"}
+                                        </td>
+                                        <td style={{ textAlign: "right", fontWeight: "bold", color: "#e67e22" }}>
+                                            ₹{((item.amount_released || 0) - (item.amount_utilized || 0)).toLocaleString("en-IN")}
+                                        </td>
+                                        <td style={{ fontSize: "12px", color: "#636e72" }}>
+                                            {item.sanction_order_no || "-"}
+                                        </td>
+                                        <td>
+                                            <span
+                                                style={{
+                                                    padding: "4px 8px",
+                                                    borderRadius: "12px",
+                                                    fontSize: "11px",
+                                                    fontWeight: "bold",
+                                                    backgroundColor:
+                                                        item.status === "Released"
+                                                            ? "rgba(0, 184, 148, 0.1)"
+                                                            : item.status === "Utilized"
+                                                                ? "rgba(9, 132, 227, 0.1)"
+                                                                : "rgba(99, 110, 114, 0.1)",
+                                                    color:
+                                                        item.status === "Released"
+                                                            ? "#00b894"
+                                                            : item.status === "Utilized"
+                                                                ? "#0984e3"
+                                                                : "#636e72",
+                                                }}
+                                            >
+                                                {item.status || "Released"}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        No village fund release records found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Release Modal */}
             <Modal
@@ -418,7 +660,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                     {/* Component Selection Logic */}
                     <div className="form-group">
                         <label className="form-label">Scheme Component</label>
-                        {formData.availableComponents && formData.availableComponents.length > 1 ? (
+                        {formData.availableComponents && formData.availableComponents.length > 1 && !preFillData ? (
                             <select
                                 className="form-control"
                                 value={formData.component}
@@ -431,7 +673,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                                     </option>
                                 ))}
                             </select>
-                        ) : formData.availableComponents && formData.availableComponents.length === 1 ? (
+                        ) : formData.availableComponents && formData.availableComponents.length >= 1 ? (
                             <div style={{ padding: '10px', backgroundColor: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd', color: '#0369a1' }}>
                                 <strong>{formData.availableComponents[0]}</strong>
                                 <span style={{ float: 'right', fontWeight: 'bold' }}>
@@ -452,6 +694,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                             className="form-control"
                             value={formData.districtId}
                             onChange={(e) => setFormData({ ...formData, districtId: e.target.value })}
+                            disabled={!!preFillData} // Disable if pre-filled
                         >
                             <option value="">-- select district --</option>
                             {districts.map((d) => (
@@ -459,6 +702,27 @@ const FundRelease = ({ formatCurrency, stateId, stateCode }) => {
                             ))}
                         </select>
                         {errors.districtId && <div className="form-error">{errors.districtId}</div>}
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Implementing Agency <span style={{ color: 'red' }}>*</span></label>
+                        <select
+                            className="form-control"
+                            value={formData.implementingAgencyId}
+                            onChange={(e) => setFormData({ ...formData, implementingAgencyId: e.target.value })}
+                            disabled={!implementingAgencies.length || !!preFillData} // Disable if pre-filled
+                        >
+                            <option value="">-- select agency --</option>
+                            {filteredAgencies.map((agency) => (
+                                <option key={agency.id} value={agency.id}>
+                                    {agency.agency_name} {formData.districtId ? '' : `(${agency.district_name})`}
+                                </option>
+                            ))}
+                            {filteredAgencies.length === 0 && (
+                                <option disabled>No agencies found {formData.districtId ? 'for this district' : ''}</option>
+                            )}
+                        </select>
+                        {errors.implementingAgencyId && <div className="form-error">{errors.implementingAgencyId}</div>}
                     </div>
 
                     <div className="form-group">
