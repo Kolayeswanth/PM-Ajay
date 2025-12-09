@@ -49,6 +49,7 @@ app.use('/api/monitor', require('./routes/monitorRoutes'));
 app.use('/api/circulars', require('./routes/circularRoutes'));
 app.use('/api/ucs', require('./routes/ucRoutes'));
 app.use('/api/villages', require('./routes/villageRoutes'));
+app.use('/api/tracking', require('./routes/trackingRoutes'));
 
 
 // Health check endpoint
