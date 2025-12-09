@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import { indiaHierarchy } from '../data/indiaHierarchy';
+import './RegisterAgency.css';
 
 const RegisterAgency = () => {
     const navigate = useNavigate();
@@ -10,6 +11,7 @@ const RegisterAgency = () => {
         phoneNumber: '',
         email: '',
         password: '',
+        confirmPassword: '',
         gstNumber: '',
         state: '',
         districts: []
@@ -17,6 +19,7 @@ const RegisterAgency = () => {
     const [availableDistricts, setAvailableDistricts] = useState([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -50,10 +53,19 @@ const RegisterAgency = () => {
 
         try {
             if (formData.districts.length === 0) {
-                setError('Please select at least one district');
-                setLoading(false);
-                return;
+                throw new Error('Please select at least one district');
             }
+
+            // Prepare payload (exclude confirmPassword)
+            const payload = {
+                agencyName: formData.agencyName,
+                phoneNumber: formData.phoneNumber,
+                email: formData.email,
+                password: formData.password,
+                gstNumber: formData.gstNumber,
+                state: formData.state,
+                districts: formData.districts
+            };
 
             const response = await fetch('http://localhost:5001/api/implementing-agencies/register', {
                 method: 'POST',
@@ -77,6 +89,20 @@ const RegisterAgency = () => {
         }
     };
 
+    if (success) {
+        return (
+            <div className="register-agency-container">
+                <div className="success-message-card">
+                    <div className="success-icon" style={{ fontSize: '4rem', color: 'green', display: 'flex', justifyContent: 'center' }}>✓</div>
+                    <h2 style={{ textAlign: 'center' }}>Registration Successful!</h2>
+                    <p style={{ textAlign: 'center' }}>Your agency registration has been submitted for approval.</p>
+                    <p style={{ textAlign: 'center' }}>You will receive an email once your application is reviewed by the Ministry/State Admin.</p>
+                    <p style={{ marginTop: '20px', color: '#64748b', textAlign: 'center' }}>Redirecting to login page...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <div className="login-page">
@@ -87,7 +113,7 @@ const RegisterAgency = () => {
                         <p className="login-subtitle">PM-AJAY Portal</p>
                     </div>
 
-                    {error && <div className="alert alert-error" style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+                    {error && <div className="alert alert-error" style={{ color: 'red', marginBottom: '1rem', textAlign: 'center', backgroundColor: '#fee2e2', padding: '1rem', borderRadius: '0.5rem' }}>{error}</div>}
 
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
@@ -137,7 +163,7 @@ const RegisterAgency = () => {
                                             </div>
                                         ))
                                     ) : (
-                                        <p style={{ fontSize: '14px', color: '#666' }}>No districts available</p>
+                                        <p style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>No districts available</p>
                                     )}
                                 </div>
                                 <small style={{ color: '#666', fontSize: '12px' }}>Selected: {formData.districts.length} districts</small>
@@ -154,8 +180,9 @@ const RegisterAgency = () => {
                             Already have an account? <Link to="/login" style={{ color: 'var(--color-primary)' }}>Login here</Link>
                         </p>
                     </div>
-                </div>
+                </form>
             </div>
+        </div >
             <Footer />
         </>
     );

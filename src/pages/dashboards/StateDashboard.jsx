@@ -5,7 +5,9 @@ import DashboardHeader from '../../components/DashboardHeader';
 import NotificationBell from '../../components/NotificationBell';
 import { useAuth } from '../../contexts/AuthContext';
 import StateDashboardPanel from './state/StateDashboardPanel';
-import ManageDistrictAdmins from './state/ManageDistrictAdmins';
+import ManageImplementingAgencies from './state/ManageImplementingAgencies';
+import AssignProjectsState from './state/AssignProjectsState'; // New Component
+import CentralProjectsAssignment from './state/CentralProjectsAssignment';
 import FundRelease from './state/FundRelease';
 import ApproveProposals from './state/ApproveProposals';
 import VerifyUCs from './state/VerifyUCs';
@@ -27,7 +29,9 @@ import {
     HelpCircle,
     LogOut,
     Activity,
-    UserPlus
+
+    UserPlus,
+    Briefcase
 } from 'lucide-react';
 
 const StateDashboard = () => {
@@ -98,9 +102,10 @@ const StateDashboard = () => {
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
         { icon: <Activity size={20} />, label: 'Monitor Progress', action: () => setActiveTab('monitor'), active: activeTab === 'monitor' },
         { icon: <Wallet size={20} />, label: 'Funds Received from Ministry', action: () => setActiveTab('received'), active: activeTab === 'received' },
-        { icon: <Users size={20} />, label: 'Manage District Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
-        { icon: <Send size={20} />, label: 'Fund Release to Districts', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
-        { icon: <FileCheck size={20} />, label: 'Approve District Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
+        { icon: <Briefcase size={20} />, label: 'Central Projects Assignment', action: () => setActiveTab('central-projects'), active: activeTab === 'central-projects' },
+        { icon: <Users size={20} />, label: 'Manage Implementing Agencies', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
+        { icon: <Send size={20} />, label: 'Fund Release to Implementing Agencies', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
+        { icon: <FileCheck size={20} />, label: 'Approve Implementing Agency Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
         { icon: <FileCheck size={20} />, label: 'Verify Utilisation Certificates', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
         { icon: <UserPlus size={20} />, label: 'Approve Agency Registrations', action: () => setActiveTab('agency-approvals'), active: activeTab === 'agency-approvals' },
         { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
@@ -122,8 +127,10 @@ const StateDashboard = () => {
 
             case 'received':
                 return <FundsReceivedFromMinistry formatCurrency={formatCurrency} />;
+            case 'central-projects':
+                return <CentralProjectsAssignment stateName={stateName} stateId={stateId} />;
             case 'admins':
-                return <ManageDistrictAdmins />;
+                return <ManageImplementingAgencies />;
             case 'funds':
                 return <FundRelease formatCurrency={formatCurrency} stateId={stateId} stateCode={stateCode} />;
             case 'proposals':
@@ -148,9 +155,10 @@ const StateDashboard = () => {
             'dashboard': 'Dashboard',
             'monitor': 'Monitor Progress',
             'received': 'Funds Received from Ministry',
-            'admins': 'Manage District Admins',
-            'funds': 'Fund Release',
-            'proposals': 'Approve Proposals',
+            'central-projects': 'Central Projects Assignment',
+            'admins': 'Manage Implementing Agencies',
+            'funds': 'Fund Release to Implementing Agencies',
+            'proposals': 'Approve Implementing Agency Proposals',
             'ucs': 'Verify UCs',
             'agency-approvals': 'Approve Agency Registrations',
             'reports': 'Reports',

@@ -147,86 +147,81 @@ const AssignProjects = () => {
             console.log('✅ Implementing Agency ID:', implementingAgencyId);
             console.log('State:', userState, 'State ID:', stateId, 'District ID:', districtId);
 
-            // 2. Fetch Projects assigned to this implementing agency (from work_orders)
-            // These are projects that have NOT yet been assigned to an executing agency
-            const { data: workOrdersData, error: workOrdersError } = await supabase
-                .from('work_orders')
-                .select('id, title, amount, location, deadline, status, proposal_id')
-                .eq('implementing_agency_id', implementingAgencyId)
-                .is('executing_agency_id', null) // Only unassigned projects
-                .order('created_at', { ascending: false });
+            // 2. Fetch ALL Ministry-approved proposals (removing district filter)
+            // This ensures all approved projects are visible regardless of which district created them
+            console.log('📋 Fetching ALL Ministry-approved proposals...');
 
-            if (workOrdersError) {
-                console.error('Error fetching work orders:', workOrdersError);
+            const { data: approvedProposals, error: proposalsError } = await supabase
+                .from('district_proposals')
+                .select('id, project_name, component, estimated_cost, allocated_amount, status, approved_at, implementing_agency_id, district_id')
+                .eq('status', 'APPROVED_BY_MINISTRY')
+                .order('approved_at', { ascending: false });
+
+            if (proposalsError) {
+                console.error('Error fetching approved proposals:', proposalsError);
             } else {
-                console.log('Fetched Work Orders (unassigned to EA):', workOrdersData);
-                setProjects(workOrdersData || []);
+                console.log('✅ Fetched Ministry-approved proposals:', approvedProposals?.length || 0, 'proposals found');
+                console.log('Proposals data:', approvedProposals);
+
+                // Transform proposals to match project format
+                const transformedProjects = (approvedProposals || []).map(p => ({
+                    id: p.id,
+                    title: p.project_name,
+                    amount: p.allocated_amount || p.estimated_cost,
+                    component: p.component,
+                    status: p.status,
+                    proposal_id: p.id
+                }));
+                setProjects(transformedProjects);
             }
 
+            // 3. Fetch Executing Agencies from agency_assignments (agencies added by this implementing agency)
+            const { data: assignedAgencies, error: agenciesError } = await supabase
+                .from('agency_assignments')
+                .select('id, name, agency_officer, phone, email, status')
+                .eq('implementing_agency_id', user.id)
+                .eq('status', 'Active');
 
-            // 3. Fetch Executing Agencies for the State/District
-            let agencyQuery = supabase
-                .from('executing_agencies')
-                .select('id, agency_name, state_name, district_name');
-
-            // Filter by state name (executing_agencies table doesn't have state_id or district_id)
-            if (userState) {
-                agencyQuery = agencyQuery.eq('state_name', userState);
-            }
-
-            const { data: executingAgenciesData, error: executingAgenciesError } = await agencyQuery;
-
-            if (executingAgenciesError) {
-                console.error('Error fetching executing agencies:', executingAgenciesError);
+            if (agenciesError) {
+                console.error('Error fetching agencies from agency_assignments:', agenciesError);
             } else {
-                console.log('Fetched Executing Agencies:', executingAgenciesData);
-                setAgencies(executingAgenciesData || []);
+                console.log('✅ Fetched Executing Agencies from agency_assignments:', assignedAgencies);
+                // Transform to expected format
+                const transformedAgencies = (assignedAgencies || []).map(a => ({
+                    id: a.id,
+                    agency_name: a.name,
+                    agency_officer: a.agency_officer
+                }));
+                setAgencies(transformedAgencies);
             }
 
 
-            // 4. Fetch already assigned projects (for display in history table)
+            // 4. Fetch already assigned projects (status = ASSIGNED_TO_EA) for history table
+            console.log('📋 Fetching assigned projects history...');
             const { data: assignedData, error: assignedError } = await supabase
-                .from('work_orders')
-                .select(`
-                    id, 
-                    title, 
-                    amount, 
-                    location, 
-                    deadline, 
-                    status, 
-                    executing_agency_id,
-                    created_at
-                `)
-                .eq('implementing_agency_id', implementingAgencyId)
-                .not('executing_agency_id', 'is', null)
-                .order('created_at', { ascending: false });
+                .from('district_proposals')
+                .select('id, project_name, component, estimated_cost, allocated_amount, status, approved_at, updated_at')
+                .eq('status', 'ASSIGNED_TO_EA')
+                .order('updated_at', { ascending: false });
 
             if (assignedError) {
                 console.error('Error fetching assigned projects:', assignedError);
             } else {
-                // Fetch executing agency names for assigned projects
-                if (assignedData && assignedData.length > 0) {
-                    const eaIds = [...new Set(assignedData.map(p => p.executing_agency_id).filter(Boolean))];
-                    const { data: eaData } = await supabase
-                        .from('executing_agencies')
-                        .select('id, agency_name')
-                        .in('id', eaIds);
+                console.log('✅ Assigned projects found:', assignedData?.length || 0);
 
-                    const eaMap = (eaData || []).reduce((acc, ea) => {
-                        acc[ea.id] = ea;
-                        return acc;
-                    }, {});
+                // Transform to match expected format
+                const transformedAssigned = (assignedData || []).map(p => ({
+                    id: p.id,
+                    title: p.project_name,
+                    component: p.component,
+                    amount: p.allocated_amount || p.estimated_cost,
+                    status: p.status,
+                    created_at: p.updated_at || p.approved_at,
+                    // We don't have executing agency stored in district_proposals yet
+                    executing_agencies: { agency_name: 'Assigned' }
+                }));
 
-                    const mergedAssigned = assignedData.map(p => ({
-                        ...p,
-                        executing_agencies: eaMap[p.executing_agency_id] || null
-                    }));
-
-                    console.log('Assigned Projects:', mergedAssigned);
-                    setAssignedProjects(mergedAssigned);
-                } else {
-                    setAssignedProjects([]);
-                }
+                setAssignedProjects(transformedAssigned);
             }
 
         } catch (error) {
@@ -244,17 +239,41 @@ const AssignProjects = () => {
 
         setAssigning(true);
         try {
-            const { error } = await supabase
-                .from('work_orders')
+            // Get the selected agency and project details
+            const selectedAgencyData = agencies.find(a => String(a.id) === String(selectedAgency));
+            const selectedProjectData = projects.find(p => String(p.id) === String(selectedProject));
+
+            console.log('🔄 Assigning project:', selectedProject, 'to agency:', selectedAgency);
+            console.log('Project data:', selectedProjectData);
+            console.log('All projects:', projects);
+            console.log('Agency data:', selectedAgencyData);
+
+            // Update the proposal status to ASSIGNED_TO_EA
+            const { data: updatedData, error: proposalError } = await supabase
+                .from('district_proposals')
                 .update({
-                    executing_agency_id: selectedAgency,
-                    status: 'Assigned to EA'
+                    status: 'ASSIGNED_TO_EA'
                 })
-                .eq('id', selectedProject);
+                .eq('id', selectedProject)
+                .select();
 
-            if (error) throw error;
+            console.log('Update result - data:', updatedData, 'error:', proposalError);
 
-            alert('Project assigned to executing agency successfully!');
+            if (proposalError) {
+                console.error('Error updating proposal:', proposalError);
+                throw proposalError;
+            }
+
+            if (!updatedData || updatedData.length === 0) {
+                console.warn('⚠️ No rows were updated! The proposal ID might not exist or RLS is blocking.');
+                alert('Warning: Assignment may not have been saved. Please check the database.');
+            } else {
+                console.log('✅ Database updated successfully:', updatedData);
+            }
+
+            console.log('✅ Project assigned to executing agency:', selectedAgencyData?.agency_name);
+            const projectTitle = selectedProjectData?.title || selectedProjectData?.project_name || 'Project';
+            alert(`${projectTitle} assigned to "${selectedAgencyData?.agency_name}" successfully!`);
             fetchData(); // Refresh lists
             setSelectedProject('');
             setSelectedAgency('');
@@ -289,20 +308,20 @@ const AssignProjects = () => {
                                     value={selectedProject}
                                     onChange={(e) => setSelectedProject(e.target.value)}
                                 >
-                                    <option value="">-- Select Project --</option>
+                                    <option value="">-- Select Approved Project --</option>
                                     {projects.length > 0 ? (
                                         projects.map(p => (
                                             <option key={p.id} value={p.id}>
-                                                {p.title} (₹{p.amount?.toLocaleString('en-IN') || '0'})
+                                                {p.title} - {p.component} (₹{p.amount?.toLocaleString('en-IN') || '0'})
                                             </option>
                                         ))
                                     ) : (
-                                        <option disabled>No unassigned projects available</option>
+                                        <option disabled>No Ministry-approved projects available</option>
                                     )}
                                 </select>
                                 {projects.length === 0 && !loading && (
                                     <small style={{ color: '#666', marginTop: 5, display: 'block' }}>
-                                        All projects have been assigned to executing agencies or no projects are allocated to your agency yet.
+                                        No Ministry-approved proposals found. Proposals need to be approved by Ministry first.
                                     </small>
                                 )}
                             </div>
@@ -318,13 +337,18 @@ const AssignProjects = () => {
                                     {agencies.length > 0 ? (
                                         agencies.map(a => (
                                             <option key={a.id} value={a.id}>
-                                                {a.agency_name} - {a.district_name || 'N/A'}
+                                                {a.agency_name} {a.agency_officer ? `(${a.agency_officer})` : ''}
                                             </option>
                                         ))
                                     ) : (
-                                        <option disabled>No executing agencies available</option>
+                                        <option disabled>No executing agencies added yet</option>
                                     )}
                                 </select>
+                                {agencies.length === 0 && !loading && (
+                                    <small style={{ color: '#666', marginTop: 5, display: 'block' }}>
+                                        Add executing agencies from "Manage Executing Agency" first.
+                                    </small>
+                                )}
                             </div>
 
                             <button
