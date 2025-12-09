@@ -6,6 +6,7 @@ import DashboardHeader from '../../components/DashboardHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import DistrictDashboardPanel from './district/DistrictDashboardPanel';
 import ManageGPAdmins from './district/ManageGPAdmins';
+import ExecutingAgencyList from './district/ExecutingAgencyList';
 import FundsReceivedFromState from './district/FundsReceivedFromState';
 import UploadUCs from './district/UploadUCs';
 import DistrictReports from './district/DistrictReports';
@@ -118,6 +119,7 @@ const DistrictDashboard = () => {
         { icon: <FilePlus size={20} />, label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
         { icon: <ClipboardList size={20} />, label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
         { icon: <Users size={20} />, label: 'Manage Implementing Agencies', action: () => setActiveTab('gp-admins'), active: activeTab === 'gp-admins' },
+        { icon: <Users size={20} />, label: 'Executing Agency List', action: () => setActiveTab('executing-agencies'), active: activeTab === 'executing-agencies' },
         { icon: <Wallet size={20} />, label: 'Funds Received from State', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
         { icon: <Send size={20} />, label: 'Fund Release to Agencies', action: () => setActiveTab('fund-release'), active: activeTab === 'fund-release' },
         { icon: <Upload size={20} />, label: 'Upload UCs', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
@@ -141,6 +143,8 @@ const DistrictDashboard = () => {
                 return <AssignProjectsDistrict districtId={districtId} stateId={stateId} stateName={stateName} />;
             case 'gp-admins':
                 return <ManageGPAdmins />;
+            case 'executing-agencies':
+                return <ExecutingAgencyList />;
             case 'funds-received':
                 return <FundsReceivedFromState formatCurrency={formatCurrency} districtId={districtId} />;
             case 'fund-release':
