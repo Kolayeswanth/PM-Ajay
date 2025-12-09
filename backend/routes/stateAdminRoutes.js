@@ -35,4 +35,10 @@ router.get('/available-eas', stateAdminController.getAvailableEAs);
 // Assign executing agency to project
 router.post('/assign-ea', stateAdminController.assignEAToProject);
 
+// IA Fund Release routes
+const iaFundController = require('../controllers/iaFundController');
+router.get('/ia-fund-projects', iaFundController.getProjectsForFundRelease);
+router.post('/ia-fund-release', iaFundController.releaseFundToIA);
+router.get('/ia-fund-history', iaFundController.getIAFundReleaseHistory);
+
 module.exports = router;

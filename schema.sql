@@ -14,6 +14,21 @@ CREATE TABLE public.agency_assignments (
   CONSTRAINT agency_assignments_pkey PRIMARY KEY (id),
   CONSTRAINT agency_assignments_implementing_agency_id_fkey FOREIGN KEY (implementing_agency_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.agency_registrations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  agency_name text NOT NULL,
+  phone_number text NOT NULL,
+  email text NOT NULL UNIQUE,
+  password text NOT NULL,
+  gst_number text NOT NULL,
+  state text NOT NULL,
+  districts ARRAY NOT NULL,
+  status text DEFAULT 'Pending'::text CHECK (status = ANY (ARRAY['Pending'::text, 'Approved'::text, 'Rejected'::text])),
+  submitted_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT agency_registrations_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.approved_projects (
   id integer NOT NULL DEFAULT nextval('approved_projects_id_seq'::regclass),
   proposal_id integer UNIQUE,
@@ -196,6 +211,20 @@ CREATE TABLE public.fund_releases (
   CONSTRAINT fund_releases_pkey PRIMARY KEY (id),
   CONSTRAINT fund_releases_district_id_fkey FOREIGN KEY (district_id) REFERENCES public.districts(id),
   CONSTRAINT fund_releases_implementing_agency_id_fkey FOREIGN KEY (implementing_agency_id) REFERENCES public.implementing_agencies(id)
+);
+CREATE TABLE public.ia_fund_releases (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id bigint NOT NULL,
+  ia_id uuid NOT NULL,
+  amount numeric NOT NULL,
+  installment_number integer NOT NULL,
+  sanction_order_no text NOT NULL,
+  remarks text,
+  released_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT ia_fund_releases_pkey PRIMARY KEY (id),
+  CONSTRAINT ia_fund_releases_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.district_proposals(id),
+  CONSTRAINT ia_fund_releases_ia_id_fkey FOREIGN KEY (ia_id) REFERENCES public.implementing_agencies(id)
 );
 CREATE TABLE public.implementing_agencies (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

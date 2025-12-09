@@ -476,10 +476,13 @@ exports.getCentralProjects = async (req, res) => {
                     description,
                     status,
                     created_at,
+                    approved_at,
                     district_id,
-                    executing_agency_id,
-                    executing_agency_name,
-                    assigned_to_ea_at
+                    implementing_agency_id,
+                    implementing_agencies (
+                        id,
+                        agency_name
+                    )
                 `)
                 .in('district_id', stateDistrictIds)
                 .order('created_at', { ascending: false });
@@ -543,10 +546,10 @@ exports.getCentralProjects = async (req, res) => {
                 description: p.description,
                 status: p.status,
                 created_at: p.created_at,
+                approved_at: p.approved_at,
                 district_name: districtMap[p.district_id],
-                executing_agency_id: p.executing_agency_id,
-                executing_agency_name: p.executing_agency_name,
-                assigned_to_ea_at: p.assigned_to_ea_at
+                implementing_agency_id: p.implementing_agency_id,
+                implementing_agency_name: p.implementing_agencies?.agency_name || null
             }));
 
         // Transform village fund releases
@@ -647,7 +650,7 @@ exports.getAvailableEAs = async (req, res) => {
     }
 };
 
-// Assign IAS officer to project
+// Assign Implementing Agency to project
 exports.assignEAToProject = async (req, res) => {
     try {
         const { projectId, projectType, eaId, eaName, stateId } = req.body;
@@ -655,11 +658,11 @@ exports.assignEAToProject = async (req, res) => {
         if (!projectId || !eaId || !eaName) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'Project ID, IAS officer ID, and name are required' 
+                error: 'Project ID, Implementing Agency ID, and name are required' 
             });
         }
 
-        console.log(`📋 Assigning IAS officer to project:`, { projectId, eaName });
+        console.log(`📋 Assigning Implementing Agency to project:`, { projectId, eaName });
 
         // Parse projectId to determine type and original ID
         // Format: "district-123" or "village-456"
@@ -679,13 +682,14 @@ exports.assignEAToProject = async (req, res) => {
         let data, error;
 
         if (type === 'district_project') {
-            // Update district_proposals table with IAS officer assignment
+            // Update district_proposals table with Implementing Agency assignment
+            // Set status to APPROVED as these are central projects
             const result = await supabase
                 .from('district_proposals')
                 .update({
-                    executing_agency_id: eaId,
-                    executing_agency_name: eaName,
-                    assigned_to_ea_at: new Date().toISOString()
+                    implementing_agency_id: eaId,
+                    status: 'APPROVED',
+                    approved_at: new Date().toISOString()
                 })
                 .eq('id', originalId)
                 .select();
@@ -693,19 +697,17 @@ exports.assignEAToProject = async (req, res) => {
             data = result.data;
             error = result.error;
 
-            console.log(`✅ Assigned EA to district project ${originalId}`);
+            console.log(`✅ Assigned Implementing Agency to district project ${originalId} (Status: APPROVED)`);
 
         } else if (type === 'village_fund') {
-            // For village funds, we'll store EA info in a new column or track separately
+            // For village funds, we'll store IA info in a new column or track separately
             // For now, just log it (you can add columns to village_fund_releases table later)
-            console.log(`📝 EA assignment for village fund ${originalId}: ${eaName} (${eaId})`);
+            console.log(`📝 IA assignment for village fund ${originalId}: ${eaName} (${eaId})`);
             
-            // Return success (storing EA assignment will be implemented in next step)
+            // Return success (storing IA assignment will be implemented in next step)
             data = [{
                 id: originalId,
-                executing_agency_id: eaId,
-                executing_agency_name: eaName,
-                assigned_to_ea_at: new Date().toISOString(),
+                implementing_agency_id: eaId,
                 type: 'village_fund'
             }];
             error = null;
@@ -722,12 +724,12 @@ exports.assignEAToProject = async (req, res) => {
 
         res.json({ 
             success: true, 
-            message: 'Executing agency assigned successfully',
+            message: 'Implementing Agency assigned successfully',
             data: data[0]
         });
 
     } catch (error) {
-        console.error('Error assigning EA to project:', error);
+        console.error('Error assigning IA to project:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };

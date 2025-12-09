@@ -367,6 +367,31 @@ exports.releaseFund = async (req, res) => {
                 return res.status(500).json({ success: false, error: error.message });
             }
 
+            // Create district proposal automatically (APPROVED from central)
+            console.log('📝 Creating district proposal for released funds...');
+            const { data: proposal, error: proposalError } = await supabase
+                .from('district_proposals')
+                .insert([
+                    {
+                        district_id: district_id,
+                        project_name: `Fund Release - ${Array.isArray(component) ? component.join(', ') : component || 'General'}`,
+                        component: Array.isArray(component) ? component.join(', ') : component || 'General',
+                        estimated_cost: amountInRupees,
+                        allocated_amount: amountInRupees,
+                        status: 'APPROVED',
+                        approved_at: new Date().toISOString(),
+                        created_at: new Date().toISOString()
+                    }
+                ])
+                .select()
+                .single();
+
+            if (proposalError) {
+                console.error('⚠️ Error creating district proposal:', proposalError);
+            } else {
+                console.log('✅ District proposal created with ID:', proposal.id, '(Status: APPROVED)');
+            }
+
             console.log('✅ Fund release saved to database');
 
             // Send WhatsApp notification to District Admin

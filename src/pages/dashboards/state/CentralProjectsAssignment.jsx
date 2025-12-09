@@ -61,9 +61,9 @@ const CentralProjectsAssignment = ({ stateName, stateId }) => {
         // Status filter
         if (filterStatus !== 'all') {
             if (filterStatus === 'assigned') {
-                filtered = filtered.filter(p => p.executing_agency_id);
+                filtered = filtered.filter(p => p.implementing_agency_id);
             } else if (filterStatus === 'unassigned') {
-                filtered = filtered.filter(p => !p.executing_agency_id);
+                filtered = filtered.filter(p => !p.implementing_agency_id);
             }
         }
 
@@ -266,7 +266,7 @@ const CentralProjectsAssignment = ({ stateName, stateId }) => {
                     borderLeft: '4px solid #10b981'
                 }}>
                     <div style={{ fontSize: '2rem', fontWeight: '700', color: '#10b981' }}>
-                        {projects.filter(p => p.executing_agency_id).length}
+                        {projects.filter(p => p.implementing_agency_id).length}
                     </div>
                     <div style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
                         Assigned
@@ -280,7 +280,7 @@ const CentralProjectsAssignment = ({ stateName, stateId }) => {
                     borderLeft: '4px solid #f59e0b'
                 }}>
                     <div style={{ fontSize: '2rem', fontWeight: '700', color: '#f59e0b' }}>
-                        {projects.filter(p => !p.executing_agency_id).length}
+                        {projects.filter(p => !p.implementing_agency_id).length}
                     </div>
                     <div style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
                         Pending Assignment
@@ -567,11 +567,11 @@ const CentralProjectsAssignment = ({ stateName, stateId }) => {
                                     borderRadius: '20px',
                                     fontSize: '0.8rem',
                                     fontWeight: '600',
-                                    background: project.executing_agency_id ? '#dcfce7' : '#fef3c7',
-                                    color: project.executing_agency_id ? '#166534' : '#92400e',
+                                    background: project.implementing_agency_id ? '#dcfce7' : '#fef3c7',
+                                    color: project.implementing_agency_id ? '#166534' : '#92400e',
                                     whiteSpace: 'nowrap'
                                 }}>
-                                    {project.executing_agency_id ? '✓ Assigned' : '⏱ Pending'}
+                                    {project.implementing_agency_id ? '✓ Assigned' : '⏱ Pending'}
                                 </span>
                             </div>
 
@@ -619,7 +619,7 @@ const CentralProjectsAssignment = ({ stateName, stateId }) => {
                                 </div>
                             )}
 
-                            {project.executing_agency_id ? (
+                            {project.implementing_agency_id ? (
                                 <div style={{
                                     display: 'flex',
                                     alignItems: 'flex-start',
@@ -635,10 +635,10 @@ const CentralProjectsAssignment = ({ stateName, stateId }) => {
                                             Assigned Implementing Agency:
                                         </strong>
                                         <p style={{ margin: '0 0 0.25rem 0', color: '#15803d', fontWeight: '600' }}>
-                                            {project.executing_agency_name}
+                                            {project.implementing_agency_name}
                                         </p>
                                         <small style={{ color: '#16a34a', fontSize: '0.8rem' }}>
-                                            Assigned on {formatDate(project.assigned_to_ea_at)}
+                                            Assigned on {formatDate(project.approved_at)}
                                         </small>
                                     </div>
                                 </div>

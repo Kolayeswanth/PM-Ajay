@@ -9,6 +9,7 @@ import ManageImplementingAgencies from './state/ManageImplementingAgencies';
 import AssignProjectsState from './state/AssignProjectsState'; // New Component
 import CentralProjectsAssignment from './state/CentralProjectsAssignment';
 import FundRelease from './state/FundRelease';
+import IAFundRelease from './state/IAFundRelease';
 import ApproveProposals from './state/ApproveProposals';
 import VerifyUCs from './state/VerifyUCs';
 import StateReports from './state/StateReports';
@@ -101,7 +102,7 @@ const StateDashboard = () => {
         { icon: <Wallet size={20} />, label: 'Funds Received from Ministry', action: () => setActiveTab('received'), active: activeTab === 'received' },
         { icon: <Briefcase size={20} />, label: 'Central Projects Assignment', action: () => setActiveTab('central-projects'), active: activeTab === 'central-projects' },
         { icon: <Users size={20} />, label: 'Manage Implementing Agencies', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
-        { icon: <Send size={20} />, label: 'Fund Release to Implementing Agencies', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
+        { icon: <Send size={20} />, label: 'IA Fund Release', action: () => setActiveTab('ia-funds'), active: activeTab === 'ia-funds' },
         { icon: <FileCheck size={20} />, label: 'Approve Implementing Agency Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
         { icon: <FileCheck size={20} />, label: 'Verify Utilisation Certificates', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
         { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
@@ -127,8 +128,8 @@ const StateDashboard = () => {
                 return <CentralProjectsAssignment stateName={stateName} stateId={stateId} />;
             case 'admins':
                 return <ManageImplementingAgencies />;
-            case 'funds':
-                return <FundRelease formatCurrency={formatCurrency} stateId={stateId} stateCode={stateCode} />;
+            case 'ia-funds':
+                return <IAFundRelease stateId={stateId} />;
             case 'proposals':
                 return <ApproveProposals />;
             case 'ucs':
@@ -151,7 +152,7 @@ const StateDashboard = () => {
             'received': 'Funds Received from Ministry',
             'central-projects': 'Central Projects Assignment',
             'admins': 'Manage Implementing Agencies',
-            'funds': 'Fund Release to Implementing Agencies',
+            'ia-funds': 'IA Fund Release',
             'proposals': 'Approve Implementing Agency Proposals',
             'ucs': 'Verify UCs',
             'reports': 'Reports',
