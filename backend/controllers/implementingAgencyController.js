@@ -26,7 +26,20 @@ exports.getImplementingAgencies = async (req, res) => {
             return res.status(404).json({ success: false, error: 'State not found' });
         }
 
-        // Get all implementing agencies for districts in this state
+        // Get all districts in this state
+        const { data: stateDistricts, error: districtError } = await supabase
+            .from('districts')
+            .select('id')
+            .eq('state_id', stateData.id);
+
+        if (districtError) {
+            console.error('Error fetching districts:', districtError);
+            return res.status(500).json({ success: false, error: districtError.message });
+        }
+
+        const districtIds = stateDistricts.map(d => d.id);
+
+        // Get all implementing agencies for these districts
         const { data: agencies, error } = await supabase
             .from('implementing_agencies')
             .select(`
@@ -41,7 +54,7 @@ exports.getImplementingAgencies = async (req, res) => {
                     state_id
                 )
             `)
-            .eq('districts.state_id', stateData.id);
+            .in('district_id', districtIds);
 
         if (error) {
             console.error('Error fetching agencies:', error);
@@ -59,7 +72,7 @@ exports.getImplementingAgencies = async (req, res) => {
             status: agency.user_id ? 'Activated' : 'Active'
         }));
 
-        console.log(`✅ Found ${transformedAgencies.length} agencies`);
+        console.log(`✅ Found ${transformedAgencies.length} agencies for ${stateName}`);
         res.json({ success: true, data: transformedAgencies });
 
     } catch (error) {
@@ -100,6 +113,20 @@ exports.createImplementingAgency = async (req, res) => {
 
         if (existingAgency) {
             return res.status(400).json({ success: false, error: 'Agency with this email already exists' });
+        }
+
+        // Check if district already has an implementing agency
+        const { data: existingDistrictAgency } = await supabase
+            .from('implementing_agencies')
+            .select('id, agency_name')
+            .eq('district_id', districtData.id)
+            .single();
+
+        if (existingDistrictAgency) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Implementing agency already exists for ${district} district (${existingDistrictAgency.agency_name})` 
+            });
         }
 
         // Create agency
@@ -152,6 +179,21 @@ exports.updateImplementingAgency = async (req, res) => {
                 return res.status(404).json({ success: false, error: 'District not found' });
             }
             districtId = districtData.id;
+
+            // Check if another agency already exists for this district
+            const { data: existingDistrictAgency } = await supabase
+                .from('implementing_agencies')
+                .select('id, agency_name')
+                .eq('district_id', districtId)
+                .neq('id', id)
+                .single();
+
+            if (existingDistrictAgency) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: `Another implementing agency already exists for ${district} district (${existingDistrictAgency.agency_name})` 
+                });
+            }
         }
 
         // Update agency

@@ -34,7 +34,7 @@ const CreateProposalAgency = () => {
                     'vs': 'Visakhapatnam',
                     'sk': 'Srikakulam',
                     'gn': 'Guntur',
-                    'kr': 'Krishna',
+                    'kn': 'Krishna',
                     'nl': 'Nellore',
                     'cd': 'Chittoor',
                     'ap': 'Anantapur',
