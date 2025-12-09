@@ -2,7 +2,8 @@
 
 # dependencies
 node_modules/
-
+mobile-app/node_modules/
+mobile-app/.env
 # Expo
 .expo/
 dist/

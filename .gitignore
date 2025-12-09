@@ -1,9 +1,9 @@
 
-# Environment variables
-# .env
-# .env.local
-# .env.production
-
+Environment variables
+.env
+.env.local
+.env.production
+mobile-app/.env
 # Credentials (NEVER commit these!)
 CREDENTIALS_REFERENCE.md
 *credentials*.txt

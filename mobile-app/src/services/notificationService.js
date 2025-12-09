@@ -113,6 +113,32 @@ export const notifyNewFunds = async (amount, component) => {
 };
 
 /**
+ * Send notification for fund release from central to state
+ */
+export const notifyFundRelease = async (amount, stateName, remainingBalance) => {
+  console.log(`🔔 Preparing fund release notification: ₹${amount} Cr to ${stateName}`);
+
+  const title = '💰 Fund Released by Ministry';
+  const body = remainingBalance && remainingBalance !== 'N/A'
+    ? `Ministry has released ₹${amount} Cr for ${stateName}. Remaining balance: ₹${remainingBalance} Cr.`
+    : `Ministry has released ₹${amount} Cr for ${stateName}.`;
+
+  const notificationId = await sendLocalNotification({
+    title,
+    body,
+    data: { type: 'fund_release', amount, stateName, remainingBalance },
+  });
+
+  if (notificationId) {
+    console.log('✅ Fund release notification sent successfully with ID:', notificationId);
+  } else {
+    console.log('❌ Failed to send fund release notification');
+  }
+
+  return notificationId;
+};
+
+/**
  * Send notification for new proposal
  */
 export const notifyNewProposal = async (district, projectName) => {
@@ -252,29 +278,61 @@ export const setupRealtimeNotificationListener = (user) => {
         console.log('📨 New Realtime Notification Received:', newNotification);
 
         // Check if this notification is for this user
+        console.log('🔍 Checking notification relevance for user:', user.email, 'Role:', user.role);
+        console.log('📧 Notification details - Role:', newNotification.user_role, 'State:', newNotification.state_name);
+
+        // Map user role to notification role format
+        // User roles: 'state_admin', 'district_admin', etc.
+        // Notification roles: 'state', 'district', 'ministry', 'gp'
+        const roleMap = {
+          'state_admin': 'state',
+          'district_admin': 'district',
+          'centre_admin': 'ministry',
+          'gp_admin': 'gp'
+        };
+        
+        const mappedUserRole = roleMap[user.role] || user.role;
+
+        // Filter by Role first
+        if (newNotification.user_role && newNotification.user_role !== mappedUserRole) {
+          console.log('❌ Role mismatch, ignoring notification. Expected:', mappedUserRole, 'Got:', newNotification.user_role);
+          return;
+        }
+
         // Filter by State Name (for State Admins)
-        // Note: You might need to adjust this logic based on how you map users to states
-        // Currently assuming 'user.state_name' exists or we can infer from role
-
-        // Safety check: if the notification has a specific state_name, and user has one, they must match
         if (newNotification.state_name && user.role === 'state_admin') {
-          // We need to match state. 
-          // Ideally user object has state_name. 
-          // Failsafe: sending it anyway if we can't verify state to ensure demo works, 
-          // BUT checking if we can find state name in user metadata/profile
+          // Extract state name from user's full_name or use state_name property
+          let userStateName = user.state_name;
+          
+          // If state_name is not available, try to extract from full_name
+          if (!userStateName && user.full_name) {
+            userStateName = user.full_name
+              .replace(' State Admin', '')
+              .replace(' Admin', '')
+              .replace(' State', '')
+              .trim();
+          }
 
-          // If user object doesn't have state_name, we might risk showing wrong notifs,
-          // but for this demo context, let's try to match if possible.
-          if (user.state_name && user.state_name !== newNotification.state_name) {
-            console.log('Violating state mismatch, ignoring.');
+          console.log('🏛️ User state:', userStateName, '| Notification state:', newNotification.state_name);
+
+          // Check if states match (case-insensitive)
+          if (userStateName && 
+              userStateName.toLowerCase() !== newNotification.state_name.toLowerCase()) {
+            console.log('❌ State mismatch, ignoring notification.');
             return;
           }
         }
 
-        // Filter by Role
-        if (newNotification.user_role && newNotification.user_role !== user.role) {
-          console.log('Role mismatch, ignoring.');
-          return;
+        console.log('✅ Notification is relevant for this user');
+
+        // Special handling for fund release notifications
+        // Check if message contains fund release keywords
+        const isFundRelease = newNotification.title?.includes('Fund Released') || 
+                             newNotification.message?.includes('released');
+        if (isFundRelease && newNotification.state_name) {
+          const amountMatch = newNotification.message.match(/₹([\d.]+)/);
+          const amount = amountMatch ? amountMatch[1] : 'N/A';
+          console.log('💰 Triggering fund release notification for amount:', amount);
         }
 
         // Trigger Local Notification

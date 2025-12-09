@@ -47,14 +47,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let cleanupListener = () => { };
 
-    if (user) {
-      // Hydrate extra user info if missing (like state_name)
-      const hydrater = async () => {
-        // We can do this here or rely on login to fetch it.
-        // For now, let's assume we proceed with what we have.
-      };
-      hydrater();
-
+    if (user?.id) {
       const { setupRealtimeNotificationListener } = require('../services/notificationService');
       cleanupListener = setupRealtimeNotificationListener(user);
     }
@@ -62,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       if (cleanupListener) cleanupListener();
     };
-  }, [user]);
+  }, [user?.id]);
 
   // Modified getUserProfile logic to include state name
   const getUserProfile = async (sessionUser) => {
@@ -148,45 +141,88 @@ export const AuthProvider = ({ children }) => {
 
             // Helper function to update token
             const updateToken = async () => {
-              const { error, count } = await supabase
+              const { data, error } = await supabase
                 .from('profiles')
                 .update({ push_token: token })
                 .eq('id', userId)
-                .select('*', { count: 'exact' }); // Get count of updated rows
-              return { error, count };
+                .select();
+              return { data, error };
             };
 
             // Attempt 1
-            let { error: tokenError, count } = await updateToken();
+            let { data: updateResult, error: tokenError } = await updateToken();
 
             // If no rows updated (profile missing?), wait and retry
-            if (!tokenError && count === 0) {
+            if (!tokenError && (!updateResult || updateResult.length === 0)) {
               console.log('⚠️ Profile not found immediately. Waiting 2s for trigger...');
               await new Promise(resolve => setTimeout(resolve, 2000));
               const retryResult = await updateToken();
               tokenError = retryResult.error;
-              count = retryResult.count;
+              updateResult = retryResult.data;
             }
 
             // If still no profile, we might need to create it manually (fallback)
-            if (!tokenError && count === 0) {
-              console.log('⚠️ Profile still missing. creating fallback profile...');
-              const { error: insertError } = await supabase
+            if (!tokenError && (!updateResult || updateResult.length === 0)) {
+              console.log('⚠️ Profile still missing. Creating profile with push token...');
+              
+              // First check if profile exists
+              const { data: existingProfile } = await supabase
                 .from('profiles')
-                .upsert({
-                  id: userId,
-                  email: email,
-                  role: 'public', // Default role 
-                  push_token: token
-                });
+                .select('id, email, role')
+                .eq('id', userId)
+                .single();
+              
+              if (existingProfile) {
+                console.log('⚠️ Profile exists but update failed. Possible RLS policy issue.');
+                console.log('📊 Existing profile:', existingProfile);
+                // Try direct RPC call as fallback
+                const { error: rpcError } = await supabase.rpc('update_push_token', {
+                  user_id: userId,
+                  new_token: token
+                }).catch(() => ({ error: { message: 'RPC function not available' } }));
+                
+                if (!rpcError) {
+                  console.log('✅ Push token saved via RPC');
+                } else {
+                  console.error('❌ RPC also failed:', rpcError.message);
+                }
+              } else {
+                // Profile doesn't exist, create it
+                const { error: insertError, data: insertData } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: userId,
+                    email: email,
+                    role: 'state_admin',
+                    push_token: token
+                  })
+                  .select();
 
-              if (insertError) console.error('❌ Error creating fallback profile:', insertError);
-              else console.log('✅ Fallback profile created with push token');
+                if (insertError) {
+                  console.error('❌ Error creating profile:', insertError);
+                } else {
+                  console.log('✅ Profile created with push token');
+                  console.log('✅ Created profile:', insertData?.[0]);
+                }
+              }
 
             } else if (tokenError) {
               console.error('❌ Error saving token to DB:', tokenError);
+              console.error('❌ Error code:', tokenError.code);
+              console.error('❌ Error message:', tokenError.message);
+              console.error('❌ Error details:', tokenError.details);
             } else {
               console.log('✅ Push token saved to profile');
+              console.log('✅ Token saved for user ID:', userId);
+              console.log('✅ Token value:', token.substring(0, 30) + '...');
+              console.log('✅ Rows updated:', updateResult?.length || 0);
+              if (updateResult && updateResult.length > 0) {
+                console.log('✅ Updated profile data:', {
+                  id: updateResult[0].id,
+                  email: updateResult[0].email,
+                  has_token: !!updateResult[0].push_token
+                });
+              }
             }
           } else {
             console.warn('⚠️ No User ID found in session data, cannot save token.');
