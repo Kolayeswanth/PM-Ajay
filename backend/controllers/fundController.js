@@ -743,7 +743,7 @@ exports.getDistrictFundReleasesByState = async (req, res) => {
         // 3. Get fund releases for these districts only
         const { data: releases, error: releasesError } = await supabase
             .from('fund_releases')
-            .select('*, districts(name)')
+            .select('*, districts(name), implementing_agencies(agency_name)')
             .in('district_id', districtIds)
             .order('created_at', { ascending: false });
 
@@ -891,43 +891,62 @@ exports.releaseFundToAgency = async (req, res) => {
                 remarks: remarks,
                 created_by: createdBy
             }])
-            .select('*, implementing_agencies_assignment(admin_name, agency_name, phone_no, email)');
+            .select();
 
         if (error) throw error;
 
         // Send WhatsApp to Agency
         try {
-            const agency = data[0].implementing_agencies_assignment;
-            if (agency && agency.phone_no) {
-                let formattedPhone = agency.phone_no.replace(/\D/g, '');
-                if (formattedPhone.startsWith('91')) formattedPhone = formattedPhone.substring(2);
-                formattedPhone = `91${formattedPhone}`;
+            console.log('📱 Fetching Agency details for notification:', agencyId);
 
-                const watiApiBaseUrl = process.env.WATI_API_URL;
-                const watiApiKey = process.env.WATI_API_KEY;
-                const tenantId = process.env.TENANT_ID;
-                const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
+            // Get Agency details
+            const { data: agency, error: agencyError } = await supabase
+                .from('implementing_agencies')
+                .select('agency_name, email, phone_no, id') // Assuming phone_no exists or is 'phone'
+                .eq('id', agencyId)
+                .single();
 
-                if (watiApiBaseUrl && watiApiKey && tenantId) {
-                    const messageContent =
-                        `FUND RELEASE NOTIFICATION - ` +
-                        `Dear ${agency.admin_name}, ` +
-                        `The District Administration (${districtName}) has released ₹${amountCr.toFixed(2)} Cr to your agency (${agency.agency_name}). ` +
-                        `Component: ${component}. ` +
-                        `Date: ${date}. ` +
-                        `Please utilize the funds as per guidelines. ` +
-                        `Thank you, PM-AJAY`;
+            if (agencyError || !agency) {
+                console.log('⚠️ Could not find agency details for notification');
+            } else {
+                console.log('📱 Found Agency:', agency.agency_name, 'Phone:', agency.phone_no);
 
-                    const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
-                    const payload = {
-                        template_name: templateName,
-                        broadcast_name: 'Agency Fund Release',
-                        parameters: [{ name: "message_body", value: messageContent }]
-                    };
+                if (agency.phone_no) {
+                    let formattedPhone = agency.phone_no.replace(/\D/g, '');
+                    if (formattedPhone.startsWith('91')) formattedPhone = formattedPhone.substring(2);
+                    formattedPhone = `91${formattedPhone}`;
 
-                    await axios.post(endpoint, payload, {
-                        headers: { 'Authorization': `Bearer ${watiApiKey}`, 'Content-Type': 'application/json' }
-                    });
+                    const watiApiBaseUrl = process.env.WATI_API_URL;
+                    const watiApiKey = process.env.WATI_API_KEY;
+                    const tenantId = process.env.TENANT_ID;
+                    const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
+
+                    if (watiApiBaseUrl && watiApiKey && tenantId) {
+                        const messageContent =
+                            `FUND RELEASE NOTIFICATION - ` +
+                            `Dear Implementing Agency (${agency.agency_name}), ` +
+                            `The District Administration (${districtName}) has released ₹${amountCr.toFixed(2)} Cr to your agency. ` +
+                            `Component: ${component}. ` +
+                            `Date: ${date}. ` +
+                            `Please utilize the funds as per guidelines and submit Utilization Certificates on time. ` +
+                            `Thank you, PM-AJAY`;
+
+                        const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
+                        const payload = {
+                            template_name: templateName,
+                            broadcast_name: 'Agency Fund Release',
+                            parameters: [{ name: "message_body", value: messageContent }]
+                        };
+
+                        console.log('📱 Sending WhatsApp to Agency:', formattedPhone);
+
+                        await axios.post(endpoint, payload, {
+                            headers: { 'Authorization': `Bearer ${watiApiKey}`, 'Content-Type': 'application/json' }
+                        });
+                        console.log('✅ WhatsApp notification sent to Agency!');
+                    }
+                } else {
+                    console.log('⚠️ Agency phone number not found, skipping WhatsApp');
                 }
             }
         } catch (err) {
@@ -944,23 +963,72 @@ exports.releaseFundToAgency = async (req, res) => {
 // Get Agency Fund Releases
 exports.getAgencyFundReleases = async (req, res) => {
     try {
-        const { districtId } = req.query;
-        let query = supabase
+        const { districtId, agencyId } = req.query;
+        let allReleases = [];
+
+        // 1. Fetch District -> Agency Releases
+        let query1 = supabase
             .from('agency_fund_releases')
-            .select('*, implementing_agencies_assignment(admin_name, agency_name)')
+            .select('*, implementing_agencies(agency_name), districts(name)')
             .order('created_at', { ascending: false });
 
         if (districtId) {
-            query = query.eq('district_id', districtId);
+            query1 = query1.eq('district_id', districtId);
+        }
+        if (agencyId) {
+            query1 = query1.eq('agency_id', agencyId);
         }
 
-        const { data, error } = await query;
-        if (error) {
-            if (error.code === '42P01') return res.json({ success: true, data: [] });
-            throw error;
+        const { data: districtReleases, error: error1 } = await query1;
+
+        if (error1 && error1.code !== '42P01') {
+            throw error1;
         }
-        res.json({ success: true, data });
+
+        if (districtReleases) {
+            const mappedDistrictReleases = districtReleases.map(r => ({
+                ...r,
+                source: 'District',
+                sourceName: r.districts?.name ? `${r.districts.name} District` : 'District Admin'
+            }));
+            allReleases = [...allReleases, ...mappedDistrictReleases];
+        }
+
+        // 2. Fetch State -> Agency Releases (if agencyId provided)
+        if (agencyId) {
+            console.log('🔍 Fetching State Releases for Agency ID:', agencyId);
+            const { data: stateReleases, error: error2 } = await supabase
+                .from('state_agency_fund_releases')
+                .select('*, states(name)')
+                .eq('agency_id', agencyId)
+                .order('created_at', { ascending: false });
+
+            if (error2 && error2.code !== '42P01') {
+                console.error('Error fetching state releases for agency:', error2);
+            }
+
+            console.log('📄 State Releases Found:', stateReleases ? stateReleases.length : 0);
+
+            if (stateReleases) {
+                const mappedStateReleases = stateReleases.map(r => ({
+                    ...r,
+                    source: 'State',
+                    sourceName: r.states?.name ? `${r.states.name} State Department` : 'State Department',
+                    // Map key fields to ensure consistency in frontend
+                    district_name: r.states?.name, // Use state name where district name typically goes
+                    amount_utilized: 0 // Placeholder as this might not be tracked here yet
+                }));
+                allReleases = [...allReleases, ...mappedStateReleases];
+            }
+        }
+
+        // Sort combined results by date
+        allReleases.sort((a, b) => new Date(b.release_date || b.created_at) - new Date(a.release_date || a.created_at));
+
+        res.json({ success: true, data: allReleases });
+
     } catch (error) {
+        console.error('Error in getAgencyFundReleases:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };

@@ -14,6 +14,7 @@ import ManageExecutingAgencies from './department/ManageExecutingAgencies';
 import AssignProjects from './department/AssignProjects';
 import AgencyProjects from './department/AgencyProjects';
 import CreateProposalAgency from './department/CreateProposalAgency';
+import FundsReceivedFromState from './department/FundsReceivedFromState';
 import { mockProjects } from '../../data/mockData';
 import {
     LayoutDashboard,
@@ -26,7 +27,8 @@ import {
     FileText,
     Bell,
     HelpCircle,
-    LogOut
+    LogOut,
+    IndianRupee
 } from 'lucide-react';
 
 const DepartmentDashboard = () => {
@@ -144,11 +146,6 @@ const DepartmentDashboard = () => {
 
     // --- Lifted State ---
 
-    // Projects (Initialize with mock data filtered for department)
-    // Projects (Initialize with empty array, will be populated by workOrders)
-    // const [projects, setProjects] = useState([]); // We can just use workOrders directly
-
-    // Work Orders (Initialize with data from WorkService)
     // Work Orders (Initialize with data from WorkService)
     const [workOrders, setWorkOrders] = useState([]);
 
@@ -244,6 +241,7 @@ const DepartmentDashboard = () => {
 
     const sidebarMenu = [
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <IndianRupee size={20} />, label: 'Funds Received', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
         { icon: <FileText size={20} />, label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
         { icon: <Folder size={20} />, label: 'Projects', action: () => setActiveTab('projects'), active: activeTab === 'projects' },
         { icon: <Users size={20} />, label: 'Manage Executing Agency', action: () => setActiveTab('executing-agencies'), active: activeTab === 'executing-agencies' },
@@ -270,6 +268,8 @@ const DepartmentDashboard = () => {
                     projects={workOrders}
                     onNavigate={handleTabChange}
                 />;
+            case 'funds-received':
+                return <FundsReceivedFromState />;
             case 'create-proposal':
                 return <CreateProposalAgency />;
             case 'projects':
@@ -303,6 +303,7 @@ const DepartmentDashboard = () => {
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'funds-received': 'Funds Received',
             'create-proposal': 'Create Proposal',
             'projects': 'Projects',
             'executing-agencies': 'Manage Executing Agencies',

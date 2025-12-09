@@ -147,6 +147,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, preFillData }) => {
                     const formattedData = result.data.map(item => ({
                         id: item.id,
                         districtName: item.districts?.name || 'Unknown District',
+                        agencyName: item.implementing_agencies?.agency_name,
                         component: item.component,
                         amountInRupees: item.amount_rupees,
                         amountCr: item.amount_cr,
@@ -387,7 +388,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, preFillData }) => {
     return (
         <div className="fund-released-page" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ margin: 0 }}>Fund Release to Districts</h2>
+                <h2 style={{ margin: 0 }}>Fund Release to Implementing Agencies</h2>
                 <InteractiveButton variant="primary" onClick={openModal}>
                     + Release New Funds
                 </InteractiveButton>
@@ -401,7 +402,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, preFillData }) => {
                         <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2c3e50' }}>₹{totalReceived.toFixed(2)} Cr</div>
                     </div>
                     <div>
-                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Released (Districts)</h3>
+                        <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#666' }}>Total Released (Imp. Agencies)</h3>
                         <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e67e22' }}>₹{totalReleased.toFixed(2)} Cr</div>
                     </div>
                     <div>
@@ -457,7 +458,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, preFillData }) => {
                     variant={activeTab === 'district' ? 'primary' : 'outline'}
                     onClick={() => setActiveTab('district')}
                 >
-                    🏢 District Releases
+                    🏢 Implementing Agency Releases
                 </InteractiveButton>
                 <InteractiveButton
                     variant={activeTab === 'village' ? 'primary' : 'outline'}
@@ -473,7 +474,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, preFillData }) => {
                     <table className="table">
                         <thead>
                             <tr>
-                                <th>District</th>
+                                <th>Implementing Agency / District</th>
                                 <th>Scheme Component</th>
                                 <th style={{ textAlign: 'right' }}>Amount Released</th>
                                 <th>Release Date</th>
@@ -489,7 +490,10 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, preFillData }) => {
                             ) : releasedFunds.length > 0 ? (
                                 releasedFunds.map((item) => (
                                     <tr key={item.id}>
-                                        <td style={{ fontWeight: 600 }}>{item.districtName}</td>
+                                        <td style={{ fontWeight: 600 }}>
+                                            {item.agencyName || item.districtName}
+                                            {item.agencyName && <span style={{ fontSize: '11px', color: '#666', display: 'block' }}>{item.districtName}</span>}
+                                        </td>
                                         <td>{item.component.join(', ')}</td>
                                         <td style={{ textAlign: 'right', fontWeight: 600, color: '#2ecc71' }}>
                                             {formatCurrency ? formatCurrency(item.amountInRupees) : item.amountInRupees}
@@ -643,7 +647,7 @@ const FundRelease = ({ formatCurrency, stateId, stateCode, preFillData }) => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={closeModal}
-                title="Release Funds to District"
+                title="Release Funds to Implementing Agency"
                 footer={
                     <div style={{ display: 'flex', gap: 12 }}>
                         <InteractiveButton variant="outline" onClick={closeModal}>
