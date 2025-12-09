@@ -26,7 +26,9 @@ import {
   requestNotificationPermissions,
   notifyPendingApprovals,
   setupNotificationListeners,
-  registerForPushNotificationsAsync
+  registerForPushNotificationsAsync,
+  setupRealtimeNotificationListener,
+  notifyFundRelease
 } from '../../services/notificationService';
 
 const { width } = Dimensions.get('window');
@@ -75,9 +77,9 @@ const StateDashboard = ({ navigation }) => {
     );
   };
 
-  // Request notification permissions on mount
+  // Request notification permissions on mount and setup realtime listener
   useEffect(() => {
-    // ... (existing listener cleanup code)
+    // Setup notification listeners for local notifications
     const cleanup = setupNotificationListeners(
       (notification) => {
         console.log('Notification received in foreground:', notification);
@@ -95,8 +97,17 @@ const StateDashboard = ({ navigation }) => {
       }
     );
 
-    return cleanup;
-  }, []);
+    // Setup realtime listener for database notifications
+    let realtimeCleanup = () => {};
+    if (user) {
+      realtimeCleanup = setupRealtimeNotificationListener(user);
+    }
+
+    return () => {
+      cleanup();
+      realtimeCleanup();
+    };
+  }, [user]);
 
   // Fetch state name and Register Push Token
   useEffect(() => {
@@ -106,14 +117,27 @@ const StateDashboard = ({ navigation }) => {
           // Register for Push Notifications
           const token = await registerForPushNotificationsAsync();
           if (token) {
-            console.log('📲 Updating push token for user:', user.id);
-            const { error: tokenError } = await supabase
+            console.log('📲 [StateDashboard] Updating push token for user:', user.id);
+            console.log('📲 [StateDashboard] Token:', token.substring(0, 30) + '...');
+            const { error: tokenError, data: updateResult } = await supabase
               .from('profiles')
               .update({ push_token: token })
-              .eq('id', user.id);
+              .eq('id', user.id)
+              .select();
 
-            if (tokenError) console.error('Error updating push token:', tokenError);
-            else console.log('✅ Push token saved to profile');
+            if (tokenError) {
+              console.error('❌ [StateDashboard] Error updating push token:', tokenError);
+            } else {
+              console.log('✅ [StateDashboard] Push token saved to profile');
+              console.log('✅ [StateDashboard] Updated rows:', updateResult?.length || 0);
+              if (updateResult && updateResult.length > 0) {
+                console.log('✅ [StateDashboard] Profile data:', {
+                  id: updateResult[0].id,
+                  email: updateResult[0].email,
+                  tokenSaved: !!updateResult[0].push_token
+                });
+              }
+            }
           }
 
           // Fetch profile from Supabase

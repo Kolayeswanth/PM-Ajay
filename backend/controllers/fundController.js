@@ -403,12 +403,12 @@ exports.releaseFund = async (req, res) => {
 
                         // 1. In-App Notification (Realtime)
                         const { error: notifError } = await supabase.from('notifications').insert([{
-                            user_role: 'district_admin',
+                            user_role: 'district',
                             district_name: districtName,
                             state_name: stateName,
                             title: 'Fund Released By State',
                             message: `${stateName} has released ₹${amountCr.toFixed(2)} Cr to ${districtName}.`,
-                            type: 'fund_release',
+                            type: 'success',
                             read: false,
                             created_at: new Date().toISOString()
                         }]);
@@ -592,11 +592,11 @@ exports.releaseFund = async (req, res) => {
                 if (stateAdmin) {
                     // In-App Notification (Reliable via Realtime)
                     const { error: notifError } = await supabase.from('notifications').insert([{
-                        user_role: 'state_admin',
+                        user_role: 'state',
                         state_name: stateName,
                         title: 'Fund Released By Ministry',
                         message: `Ministry has released ₹${amountCr.toFixed(2)} Cr for ${stateName}.`,
-                        type: 'fund_release',
+                        type: 'success',
                         read: false,
                         created_at: new Date().toISOString()
                     }]);
@@ -618,46 +618,126 @@ exports.releaseFund = async (req, res) => {
                         }, { headers: { 'Authorization': `Bearer ${process.env.WATI_API_KEY}` } }).catch(console.error);
                     }
 
-                    // Expo Push - Robust Official Account Lookup
+                    // Expo Push - Robust Official Account Lookup with Multiple Strategies
                     console.log(`🔍 Expo: Looking for Official State Admin profile for: ${stateName}`);
 
-                    // The profiles table has official accounts like "Uttar Pradesh State Admin"
-                    // We search for role='state_admin' and full_name containing the state name
-                    let { data: officialProfile, error: profileErr } = await supabase
-                        .from('profiles')
-                        .select('push_token, id, email, full_name')
-                        .eq('role', 'state_admin')
-                        .ilike('full_name', `%${stateName}%`) // Matches "Uttar Pradesh State Admin"
-                        .maybeSingle();
+                    // Wait to ensure push token is saved (if just logged in)
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    let officialProfile = null;
+                    let profileErr = null;
+
+                    // Strategy 1: Try finding by state_assignment email first (most reliable)
+                    console.log(`📧 Strategy 1: Looking up by state_assignment email...`);
+                    if (stateAdmin?.email) {
+                        const { data: profileByEmail, error: emailErr } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name, role, updated_at')
+                            .eq('email', stateAdmin.email)
+                            .maybeSingle();
+                        
+                        if (profileByEmail) {
+                            officialProfile = profileByEmail;
+                            console.log(`✅ Found profile by email: ${profileByEmail.email}`);
+                            console.log(`📊 Profile details: ID=${profileByEmail.id}, Role=${profileByEmail.role}, Updated=${profileByEmail.updated_at}`);
+                            console.log(`🔑 Push token status: ${profileByEmail.push_token ? 'EXISTS' : 'NULL'}`);
+                            if (profileByEmail.push_token) {
+                                console.log(`🔑 Push token value: ${profileByEmail.push_token.substring(0, 30)}...`);
+                            }
+                        } else {
+                            console.log(`⚠️ Strategy 1 failed:`, emailErr?.message || 'No profile found');
+                        }
+                    }
+
+                    // Strategy 2: If not found or no token, try by full_name (fallback)
+                    if (!officialProfile || !officialProfile.push_token) {
+                        console.log(`📝 Strategy 2: Looking up by full_name pattern...`);
+                        const { data: profileByName, error: nameErr } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name, role, updated_at')
+                            .eq('role', 'state_admin')
+                            .ilike('full_name', `%${stateName}%`)
+                            .maybeSingle();
+                        
+                        if (profileByName && (!officialProfile || profileByName.push_token)) {
+                            officialProfile = profileByName;
+                            console.log(`✅ Found profile by name: ${profileByName.full_name}`);
+                            console.log(`🔑 Push token status: ${profileByName.push_token ? 'EXISTS' : 'NULL'}`);
+                        } else {
+                            console.log(`⚠️ Strategy 2 failed:`, nameErr?.message || 'No profile with token found');
+                        }
+                    }
+
+                    // Strategy 3: Last resort - manual refresh and retry
+                    if (officialProfile && !officialProfile.push_token) {
+                        console.log(`🔄 Strategy 3: Retrying fetch after additional delay (token may be saving)...`);
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        
+                        const { data: refreshedProfile } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name')
+                            .eq('id', officialProfile.id)
+                            .single();
+                        
+                        if (refreshedProfile?.push_token) {
+                            officialProfile = refreshedProfile;
+                            console.log(`✅ Push token found after retry!`);
+                        } else {
+                            console.log(`⚠️ Push token still null after retry`);
+                        }
+                    }
 
                     if (officialProfile) {
                         console.log(`✅ Expo: Found Official Admin: ${officialProfile.email} (${officialProfile.full_name})`);
 
                         if (officialProfile.push_token) {
                             console.log(`✅ Expo: Found valid push token. Sending notification...`);
+                            console.log(`📤 Push notification payload: Title: "💰 Fund Released by Ministry", Amount: ₹${amountCr.toFixed(2)} Cr, Remaining: ₹${remainingBalance} Cr`);
                             try {
                                 const pushResponse = await axios.post('https://exp.host/--/api/v2/push/send', {
                                     to: officialProfile.push_token,
-                                    title: '💰 Fund Release Update',
-                                    body: `The fund is released to ${stateName}. Released: ₹${amountCr.toFixed(2)} Cr. Remaining: ₹${remainingBalance} Cr.`,
-                                    data: { type: 'fund_release', amount: amountCr },
+                                    title: '💰 Fund Released by Ministry',
+                                    body: `Ministry has released ₹${amountCr.toFixed(2)} Cr for ${stateName}. Remaining balance: ₹${remainingBalance} Cr.`,
+                                    data: { 
+                                        type: 'fund_release', 
+                                        amount: amountCr, 
+                                        stateName: stateName,
+                                        remainingBalance: remainingBalance
+                                    },
                                     sound: 'default',
-                                    priority: 'high'
+                                    priority: 'high',
+                                    channelId: 'default'
                                 });
-                                console.log('✅ Expo: Notification sent successfully:', pushResponse.data?.data);
+                                console.log('✅ Expo: Push notification sent successfully');
+                                console.log('📊 Expo Response:', JSON.stringify(pushResponse.data, null, 2));
                             } catch (err) {
-                                console.error('❌ Expo: Error sending notification:', err.response?.data || err.message);
+                                console.error('❌ Expo: Error sending push notification:', err.response?.data || err.message);
+                                if (err.response) {
+                                    console.error('❌ Response status:', err.response.status);
+                                    console.error('❌ Response data:', JSON.stringify(err.response.data, null, 2));
+                                }
                             }
                         } else {
                             console.log(`⚠️ Expo: Official Admin has no push token set (Token is null). User needs to login to app.`);
+                            console.log(`💡 Tip: Ask the state admin to login to the mobile app to register their device.`);
                         }
 
                     } else {
                         console.log(`⚠️ Expo: Could not find an official profile for state: ${stateName}`);
                         if (profileErr) console.error('Error details:', profileErr);
-
-                        // Fallback: try constructing the email from state code if available? 
-                        // For now, the name match is very reliable based on the schema provided.
+                        
+                        // Try alternative search with more flexible matching
+                        console.log(`🔄 Attempting alternative profile search...`);
+                        const { data: alternativeProfiles } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name, role')
+                            .eq('role', 'state_admin');
+                        
+                        console.log(`📋 All state admin profiles:`, alternativeProfiles?.map(p => ({
+                            email: p.email,
+                            fullName: p.full_name,
+                            hasToken: !!p.push_token
+                        })));
                     }
                 }
             } catch (e) { console.error('Notification error:', e); }
