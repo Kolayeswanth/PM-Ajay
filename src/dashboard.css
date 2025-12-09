@@ -12,21 +12,16 @@
 }
 
 /* Dashboard Header Component - Force Full Width */
-/* Dashboard Header Component - Floating Glass Effect */
 .dashboard-header-component {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    z-index: var(--z-sticky);
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border-light);
-    box-shadow: var(--shadow-sm);
+    z-index: 1020;
+    background-color: #FFFFFF;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    transition: all var(--transition-base);
 }
 
 /* Ministry Dashboard Header Logout Button - Pill Shape Outline */
@@ -63,21 +58,22 @@
 }
 
 /* Dashboard Sidebar - Perfectly Aligned */
-/* Dashboard Sidebar - Modern Clean Look */
 .dashboard-sidebar {
     width: 260px;
-    background-color: var(--bg-primary) !important;
-    color: var(--text-primary);
+    background-color: #ffffff !important;
+    /* Force light grey */
+    color: #111827;
     position: fixed;
     top: var(--header-height);
     left: 0;
     bottom: 0;
     overflow-y: auto;
-    padding: var(--space-4) 0;
+    padding: 0;
     margin: 0;
-    z-index: var(--z-fixed);
-    border-right: 1px solid var(--border-light);
-    transition: transform var(--transition-bounce);
+    z-index: 1000;
+    border-right: 1px solid #D1D5DB;
+    box-shadow: none !important;
+    transition: transform 0.3s ease-in-out;
 }
 
 .dashboard-sidebar.closed {
@@ -152,51 +148,38 @@
 }
 
 /* Navigation Links */
-/* Navigation Links */
 .dashboard-sidebar-link {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: 0.875rem 1.5rem;
-    color: var(--text-secondary);
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    color: #111827;
     text-decoration: none;
-    transition: all var(--transition-base);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
+    transition: all 200ms ease-in-out;
+    font-size: 1rem;
+    font-weight: 500;
     background: transparent;
     border: none;
-    width: 90%;
-    /* Floating look */
-    margin: 0 auto 0.25rem auto;
-    /* Center it */
-    border-radius: var(--radius-lg);
-    /* Rounded pills */
+    border-left: 3px solid transparent;
+    width: 100%;
     cursor: pointer;
     text-align: left;
-    position: relative;
+    margin: 0;
 }
 
-/* Hover State */
 /* Hover State */
 .dashboard-sidebar-link:hover {
-    color: var(--color-primary-dark);
-    background-color: rgba(255, 153, 51, 0.1);
+    color: #FF9933;
+    background-color: rgba(255, 153, 51, 0.05);
     text-decoration: none;
-    transform: translateX(4px);
 }
 
-/* Active State - Modern Pill */
+/* Active State - Outline Only */
 .dashboard-sidebar-link.active {
-    color: var(--text-inverse);
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    font-weight: var(--font-semibold);
-    box-shadow: var(--shadow-colored);
-}
-
-.dashboard-sidebar-link.active:hover {
-    transform: none;
-    /* No movement on active */
-    color: var(--text-inverse);
+    color: #FF9933;
+    background-color: rgba(255, 153, 51, 0.08);
+    border-left: 3px solid #FF9933;
+    font-weight: 300;
 }
 
 /* Logout Button - Red Text */
@@ -234,7 +217,7 @@
     /* Matches sidebar width */
     margin-top: var(--header-height);
     padding: 1.5rem;
-    background-color: var(--bg-secondary) !important;
+    background-color: #FFFFFF !important;
     min-height: calc(100vh - var(--header-height));
     overflow-y: auto;
     transition: margin-left 0.3s ease-in-out;
@@ -253,24 +236,21 @@
 }
 
 .stat-card {
-    background: var(--bg-primary);
-    border-radius: var(--radius-xl);
-    padding: var(--space-6);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-light);
-    border-left: 5px solid var(--color-primary);
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-left-width: 5px;
+    border-left-style: solid;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    transition: all var(--transition-bounce);
-    position: relative;
-    overflow: hidden;
+    transition: transform 0.2s;
 }
 
 .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-xl);
-    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .stat-card-header {
@@ -279,16 +259,15 @@
 }
 
 .stat-card-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius-xl);
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--text-2xl);
+    font-size: 1.5rem;
     position: relative;
     z-index: 1;
-    transition: all var(--transition-base);
 }
 
 /* Create tinted background for icon using currentColor */
@@ -303,20 +282,20 @@
 }
 
 .stat-card-value {
-    font-size: var(--text-4xl);
-    font-weight: var(--font-bold);
-    color: var(--text-primary);
-    line-height: 1.1;
-    margin-bottom: var(--space-2);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    margin-bottom: 0.5rem;
 }
 
 .stat-card-label {
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6B7280;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: var(--space-4);
+    margin-bottom: 1rem;
 }
 
 .stat-card-trend {
@@ -329,15 +308,9 @@
 }
 
 .stat-card-trend.positive {
-    color: var(--color-success);
-    background-color: rgba(16, 185, 129, 0.1);
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-full);
+    color: #10B981;
 }
 
 .stat-card-trend.negative {
-    color: var(--color-error);
-    background-color: rgba(239, 68, 68, 0.1);
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-full);
+    color: #EF4444;
 }

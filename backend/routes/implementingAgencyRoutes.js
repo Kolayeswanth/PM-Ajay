@@ -12,9 +12,6 @@ router.get('/registrations/pending', implementingAgencyController.getPendingRegi
 router.patch('/registrations/:id/approve', implementingAgencyController.approveRegistration);
 router.patch('/registrations/:id/reject', implementingAgencyController.rejectRegistration);
 
-router.get('/', implementingAgencyController.getAllImplementingAgencies);
-router.post('/', implementingAgencyController.addImplementingAgency);
-=======
 // Get all implementing agencies for a state
 router.get('/', implementingAgencyController.getImplementingAgencies);
 
