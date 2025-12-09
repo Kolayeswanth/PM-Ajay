@@ -57,7 +57,7 @@ When activating:
 - Sets role as `implementing_agency`
 - Creates profile
 - Links `user_id` to agency record
-- Default password: `PMajay@2024#Demo`
+- Default password: `[Generated Securely - Check Email]`
 
 ---
 
@@ -156,7 +156,7 @@ Activate implementing agency (creates login).
   "message": "Implementing agency activated successfully",
   "credentials": {
     "email": "ap-eg.district@pmajay.gov.in",
-    "password": "PMajay@2024#Demo"
+    "password": "[REDACTED - Sent via secure channel]"
   }
 }
 ```
@@ -213,7 +213,7 @@ auth.users (via user_id)
 4. **Status changes** to "Activated"
 5. **Agency can now login** with:
    - Email: `ap-eg.district@pmajay.gov.in`
-   - Password: `PMajay@2024#Demo`
+   - Password: `[Sent via secure channel]`
 
 ---
 
@@ -231,7 +231,7 @@ auth.users (via user_id)
 ### **Test as Implementing Agency:**
 
 1. Login with agency email (e.g., `ap-eg.district@pmajay.gov.in`)
-2. Password: `PMajay@2024#Demo`
+2. Password: `[Use the password sent during activation]`
 3. Should see: **"Implementing Agency - East Godavari"**
 4. Should be on Implementing Agency Dashboard (DepartmentDashboard)
 
