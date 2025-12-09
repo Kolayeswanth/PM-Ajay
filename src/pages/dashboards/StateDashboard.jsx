@@ -30,10 +30,8 @@ import {
     LogOut,
     Activity,
 
-    UserPlus
-
+    UserPlus,
     Briefcase
-
 } from 'lucide-react';
 
 const StateDashboard = () => {
