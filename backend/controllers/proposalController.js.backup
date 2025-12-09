@@ -498,7 +498,11 @@ exports.updateProposalStatus = async (req, res) => {
                         if (isApproved && proposalData.phone_number) {
                             console.log(`📱 Sending WhatsApp notification to District Admin (${districtData.name}) at ${proposalData.phone_number}`);
 
-                            const message = 'Your file has been approved by the State Government. Proposal "' + proposalData.project_name + '" (Component: ' + proposalData.component + ') from ' + districtData.name + ' district has been approved and forwarded to the Ministry. - PM-AJAY Portal';
+                            const message = `✅ *Proposal Approved by State*\n\n` +
+                                `Dear District Admin,\n\n` +
+                                `Your proposal "*${proposalData.project_name}*" (Component: ${proposalData.component}) has been *APPROVED* by the State Government.\n\n` +
+                                `It has now been forwarded to the Ministry for final approval.\n\n` +
+                                `~ PM-AJAY Portal`;
 
                             const sent = await sendWhatsAppMessage(proposalData.phone_number, {
                                 message_body: message,
@@ -520,7 +524,7 @@ exports.updateProposalStatus = async (req, res) => {
                 // Get full proposal details with district info
                 const { data: proposalData, error: proposalError } = await supabase
                     .from('district_proposals')
-                    .select('project_name, estimated_cost, component, district_id, phone_number')
+                    .select('project_name, estimated_cost, component, district_id')
                     .eq('id', id)
                     .single();
 
@@ -565,53 +569,6 @@ exports.updateProposalStatus = async (req, res) => {
                             console.error('Failed to create district notification for ministry decision:', notifError);
                         } else {
                             console.log(`✅ District notification created: ${districtData.name} - Ministry ${isApproved ? 'Approved' : 'Rejected'} "${proposalData.project_name}"`);
-                        }
-
-                        // Send WhatsApp notifications for Ministry approvals
-                        if (isApproved && proposalData.phone_number) {
-                            // Get state name
-                            const { data: stateData, error: stateError } = await supabase
-                                .from('states')
-                                .select('name')
-                                .eq('id', districtData.state_id)
-                                .single();
-
-                            const stateName = stateData ? stateData.name : 'your state';
-
-                            // Send WhatsApp to District Officer
-                            console.log(`📱 Sending WhatsApp notification to District Admin (${districtData.name}, ${stateName}) at ${proposalData.phone_number}`);
-
-                            const districtMessage = 'Your file has been approved by the Ministry. Proposal "' + proposalData.project_name + '" (Component: ' + proposalData.component + ') from ' + districtData.name + ' district, ' + stateName + ' has been APPROVED by the Ministry of Social Justice and Empowerment. - PM-AJAY Portal';
-
-                            const sent = await sendWhatsAppMessage(proposalData.phone_number, {
-                                message_body: districtMessage,
-                                broadcast_name: 'Ministry Approval - District Notification'
-                            });
-
-                            if (sent) notificationSent = true;
-
-                            // Send WhatsApp to State Officer - fetch from state_admins table
-                            console.log(`🔍 Looking up state admin for: "${stateName}"`);
-
-                            const { data: stateAdminData, error: stateAdminError } = await supabase
-                                .from('state_assignment')
-                                .select('phone_no, admin_name')
-                                .eq('state_name', stateName)
-                                .eq('status', 'Activated')
-                                .single();
-
-                            if (!stateAdminError && stateAdminData && stateAdminData.phone_no) {
-                                console.log(`📱 Sending WhatsApp notification to State Admin (${stateName}) - ${stateAdminData.admin_name} at ${stateAdminData.phone_no}`);
-
-                                const stateMessage = 'Your file has been approved by the Ministry. Proposal "' + proposalData.project_name + '" (Component: ' + proposalData.component + ') from ' + districtData.name + ' district in your state has been APPROVED by the Ministry. - PM-AJAY Portal';
-
-                                await sendWhatsAppMessage(stateAdminData.phone_no, {
-                                    message_body: stateMessage,
-                                    broadcast_name: 'Ministry Approval - State Notification'
-                                });
-                            } else {
-                                console.warn(`⚠️ No activated state admin found for: "${stateName}"`);
-                            }
                         }
                     }
                 }
@@ -659,8 +616,8 @@ exports.getApprovedProjects = async (req, res) => {
             // For now, let's assume names are enough for the table display.
             approvedAt: p.approved_at,
             releasedAmount: p.released_amount || 0,
-            // Remaining fund = Allocated Amount - Amount Released (never negative)
-            remainingAmount: Math.max(0, (p.allocated_amount || 0) - (p.released_amount || 0))
+            // Remaining fund = Project Cost - Amount Released
+            remainingAmount: (p.estimated_cost || 0) - (p.released_amount || 0)
         }));
 
         res.json({ success: true, data: formattedProjects });

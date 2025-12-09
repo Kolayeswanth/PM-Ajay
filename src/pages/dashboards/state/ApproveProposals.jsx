@@ -107,7 +107,15 @@ const ApproveProposals = () => {
             });
             const result = await response.json();
             if (result.success) {
-                showToast(`Proposal "${selectedProposal.title}" approved successfully`);
+                let msg = `Proposal "${selectedProposal.title}" approved successfully`;
+                if (result.notificationSent) {
+                    msg += `. WhatsApp notification sent!`;
+                } else {
+                    // Only warn if approved, as rejection doesn't send WA yet (or does it? I didn't implement rejection msg)
+                    // My backend code only implemented approval msg.
+                    msg += `. (WhatsApp not sent)`;
+                }
+                showToast(msg);
                 fetchProposals(); // Refresh
                 setIsApproveModalOpen(false);
             } else {
