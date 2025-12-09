@@ -4,18 +4,19 @@ import { supabase } from '../../../lib/supabaseClient';
 import InteractiveButton from '../../../components/InteractiveButton';
 import { Eye } from 'lucide-react';
 
-const ExecutingAgencyList = ({ stateName }) => {
+const ExecutingAgencyList = () => {
     const { user } = useAuth();
     const [agencies, setAgencies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedAgency, setSelectedAgency] = useState(null);
+    const [stateName, setStateName] = useState('Your State');
+    const [filterType, setFilterType] = useState('All');
 
     useEffect(() => {
-        if (stateName) {
-            fetchAgencies();
-        }
-    }, [stateName]);
+        // Load dummy data immediately
+        fetchAgencies();
+    }, []);
 
     const fetchAgencies = async () => {
         setLoading(true);
@@ -24,61 +25,26 @@ const ExecutingAgencyList = ({ stateName }) => {
 
             // Generate completely generic dummy executing agencies data with consistent project counts
             const dummyAgencies = [
-                {
-                    id: 'ea-001',
-                    agency_name: 'ABC Construction Company',
-                    agency_type: 'Construction',
-                    email: 'contact@abc-construction.com',
-                    phone_number: '+91 9876543210',
-                    state_name: stateName,
-                    created_at: '2024-01-15T10:30:00Z',
-                    projectCount: 7,
-                    rating: 4.2
-                },
-                {
-                    id: 'ea-002',
-                    agency_name: 'XYZ Infrastructure Ltd',
-                    agency_type: 'Infrastructure',
-                    email: 'info@xyz-infra.com',
-                    phone_number: '+91 9876543211',
-                    state_name: stateName,
-                    created_at: '2024-02-20T14:15:00Z',
-                    projectCount: 12,
-                    rating: 4.5
-                },
-                {
-                    id: 'ea-003',
-                    agency_name: 'BuildPro Contractors',
-                    agency_type: 'Construction',
-                    email: 'contact@buildpro.com',
-                    phone_number: '+91 9876543212',
-                    state_name: stateName,
-                    created_at: '2024-03-10T09:45:00Z',
-                    projectCount: 5,
-                    rating: 3.8
-                },
-                {
-                    id: 'ea-004',
-                    agency_name: 'Metro Engineering Services',
-                    agency_type: 'Engineering',
-                    email: 'info@metro-eng.com',
-                    phone_number: '+91 9876543213',
-                    state_name: stateName,
-                    created_at: '2024-04-05T11:20:00Z',
-                    projectCount: 15,
-                    rating: 4.7
-                },
-                {
-                    id: 'ea-005',
-                    agency_name: 'Prime Builders Association',
-                    agency_type: 'Construction',
-                    email: 'contact@primebuilders.com',
-                    phone_number: '+91 9876543214',
-                    state_name: stateName,
-                    created_at: '2024-05-12T16:00:00Z',
-                    projectCount: 9,
-                    rating: 4.1
-                },
+                { id: 'ea-001', agency_name: 'Patel Construction Company', agency_type: 'Construction', email: 'contact@abc-construction.com', phone_number: '+91 9876543210', state_name: stateName, created_at: '2024-01-15T10:30:00Z', projectCount: 7, rating: 4.2 },
+                { id: 'ea-002', agency_name: 'Aneel Infrastructure Ltd', agency_type: 'Infrastructure', email: 'info@xyz-infra.com', phone_number: '+91 9876543211', state_name: stateName, created_at: '2024-02-20T14:15:00Z', projectCount: 12, rating: 4.5 },
+                { id: 'ea-003', agency_name: 'BuildPro Contractors', agency_type: 'Construction', email: 'contact@buildpro.com', phone_number: '+91 9876543212', state_name: stateName, created_at: '2024-03-10T09:45:00Z', projectCount: 5, rating: 3.8 },
+                { id: 'ea-004', agency_name: 'Metro Engineering Services', agency_type: 'Engineering', email: 'info@metro-eng.com', phone_number: '+91 9876543213', state_name: stateName, created_at: '2024-04-05T11:20:00Z', projectCount: 15, rating: 4.7 },
+                { id: 'ea-005', agency_name: 'Prime Builders Association', agency_type: 'Construction', email: 'contact@primebuilders.com', phone_number: '+91 9876543214', state_name: stateName, created_at: '2024-05-12T16:00:00Z', projectCount: 9, rating: 4.1 },
+                { id: 'ea-006', agency_name: 'Global Infrastructure Group', agency_type: 'Infrastructure', email: 'info@globalinfra.com', phone_number: '+91 9876543215', state_name: stateName, created_at: '2024-01-20T08:30:00Z', projectCount: 18, rating: 4.6 },
+                { id: 'ea-007', agency_name: 'Elite Engineering Solutions', agency_type: 'Engineering', email: 'contact@eliteeng.com', phone_number: '+91 9876543216', state_name: stateName, created_at: '2024-02-15T12:00:00Z', projectCount: 11, rating: 4.3 },
+                { id: 'ea-008', agency_name: 'Skyline Builders', agency_type: 'Construction', email: 'info@skylinebuilders.com', phone_number: '+91 9876543217', state_name: stateName, created_at: '2024-03-22T10:15:00Z', projectCount: 8, rating: 4.0 },
+                { id: 'ea-009', agency_name: 'Urban Development Corp', agency_type: 'Infrastructure', email: 'contact@urbandev.com', phone_number: '+91 9876543218', state_name: stateName, created_at: '2024-04-18T14:45:00Z', projectCount: 14, rating: 4.4 },
+                { id: 'ea-010', agency_name: 'Precision Engineering Ltd', agency_type: 'Engineering', email: 'info@precisioneng.com', phone_number: '+91 9876543219', state_name: stateName, created_at: '2024-05-25T09:00:00Z', projectCount: 10, rating: 4.2 },
+                { id: 'ea-011', agency_name: 'Apex Construction Services', agency_type: 'Construction', email: 'contact@apexconst.com', phone_number: '+91 9876543220', state_name: stateName, created_at: '2024-01-08T11:30:00Z', projectCount: 6, rating: 3.9 },
+                { id: 'ea-012', agency_name: 'National Infrastructure Partners', agency_type: 'Infrastructure', email: 'info@natinfra.com', phone_number: '+91 9876543221', state_name: stateName, created_at: '2024-02-28T15:20:00Z', projectCount: 16, rating: 4.8 },
+                { id: 'ea-013', agency_name: 'TechBuild Engineering', agency_type: 'Engineering', email: 'contact@techbuild.com', phone_number: '+91 9876543222', state_name: stateName, created_at: '2024-03-14T13:10:00Z', projectCount: 13, rating: 4.5 },
+                { id: 'ea-014', agency_name: 'Royal Contractors', agency_type: 'Construction', email: 'info@royalcontractors.com', phone_number: '+91 9876543223', state_name: stateName, created_at: '2024-04-22T08:45:00Z', projectCount: 7, rating: 4.1 },
+                { id: 'ea-015', agency_name: 'Smart Infrastructure Solutions', agency_type: 'Infrastructure', email: 'contact@smartinfra.com', phone_number: '+91 9876543224', state_name: stateName, created_at: '2024-05-30T16:30:00Z', projectCount: 9, rating: 4.3 },
+                { id: 'ea-016', agency_name: 'Advanced Engineering Works', agency_type: 'Engineering', email: 'info@adveng.com', phone_number: '+91 9876543225', state_name: stateName, created_at: '2024-01-12T10:00:00Z', projectCount: 12, rating: 4.6 },
+                { id: 'ea-017', agency_name: 'Diamond Builders Group', agency_type: 'Construction', email: 'contact@diamondbuilders.com', phone_number: '+91 9876543226', state_name: stateName, created_at: '2024-02-05T14:20:00Z', projectCount: 8, rating: 4.0 },
+                { id: 'ea-018', agency_name: 'Mega Infrastructure Ltd', agency_type: 'Infrastructure', email: 'info@megainfra.com', phone_number: '+91 9876543227', state_name: stateName, created_at: '2024-03-18T11:50:00Z', projectCount: 17, rating: 4.7 },
+                { id: 'ea-019', agency_name: 'Innovative Engineering Co', agency_type: 'Engineering', email: 'contact@innoveng.com', phone_number: '+91 9876543228', state_name: stateName, created_at: '2024-04-10T09:30:00Z', projectCount: 11, rating: 4.4 },
+                { id: 'ea-020', agency_name: 'Supreme Construction Works', agency_type: 'Construction', email: 'info@supremeconst.com', phone_number: '+91 9876543229', state_name: stateName, created_at: '2024-05-15T15:00:00Z', projectCount: 10, rating: 4.2 },
             ];
 
             console.log(`✅ Fetched ${dummyAgencies.length} executing agencies:`, dummyAgencies);
@@ -116,6 +82,28 @@ const ExecutingAgencyList = ({ stateName }) => {
                     <h2 className="section-title">Executing Agencies - {stateName || 'Loading...'}</h2>
                 </div>
 
+                {/* Filter Section */}
+                <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <label style={{ fontWeight: '600', color: '#374151' }}>Filter by Type:</label>
+                    <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        style={{
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid #D1D5DB',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            backgroundColor: 'white'
+                        }}
+                    >
+                        <option value="All">All Types</option>
+                        <option value="Construction">Construction</option>
+                        <option value="Infrastructure">Infrastructure</option>
+                        <option value="Engineering">Engineering</option>
+                    </select>
+                </div>
+
                 <div className="table-wrapper">
                     {loading ? (
                         <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -135,41 +123,43 @@ const ExecutingAgencyList = ({ stateName }) => {
                             </thead>
                             <tbody>
                                 {agencies.length > 0 ? (
-                                    agencies.map((agency, index) => (
-                                        <tr key={agency.id}>
-                                            <td>
-                                                <strong>{agency.agency_name}</strong>
-                                            </td>
-                                            <td>
-                                                <span className="badge badge-primary">
-                                                    {agency.agency_type || 'N/A'}
-                                                </span>
-                                            </td>
-                                            <td>{agency.phone_number || `+91 ${9100000000 + index}${Math.floor(Math.random() * 100)}`}</td>
-                                            <td>
-                                                <span style={{ color: 'var(--color-navy)', fontWeight: '600' }}>
-                                                    {agency.projectCount}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <span style={{ color: '#F59E0B', fontSize: '16px' }}>★</span>
-                                                    <span style={{ fontWeight: '600' }}>
-                                                        {agency.rating}
+                                    agencies
+                                        .filter(agency => filterType === 'All' || agency.agency_type === filterType)
+                                        .map((agency, index) => (
+                                            <tr key={agency.id}>
+                                                <td>
+                                                    <strong>{agency.agency_name}</strong>
+                                                </td>
+                                                <td>
+                                                    <span className="badge badge-primary">
+                                                        {agency.agency_type || 'N/A'}
                                                     </span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <InteractiveButton
-                                                    variant="info"
-                                                    size="sm"
-                                                    onClick={() => handleViewProfile(agency)}
-                                                >
-                                                    <Eye size={16} /> View
-                                                </InteractiveButton>
-                                            </td>
-                                        </tr>
-                                    ))
+                                                </td>
+                                                <td>{agency.phone_number || `+91 ${9100000000 + index}${Math.floor(Math.random() * 100)}`}</td>
+                                                <td>
+                                                    <span style={{ color: 'var(--color-navy)', fontWeight: '600' }}>
+                                                        {agency.projectCount}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <span style={{ color: '#F59E0B', fontSize: '16px' }}>★</span>
+                                                        <span style={{ fontWeight: '600' }}>
+                                                            {agency.rating}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <InteractiveButton
+                                                        variant="info"
+                                                        size="sm"
+                                                        onClick={() => handleViewProfile(agency)}
+                                                    >
+                                                        <Eye size={16} /> View
+                                                    </InteractiveButton>
+                                                </td>
+                                            </tr>
+                                        ))
                                 ) : (
                                     <tr>
                                         <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
@@ -193,29 +183,50 @@ const ExecutingAgencyList = ({ stateName }) => {
                     bottom: 0,
                     backgroundColor: 'rgba(0, 0, 0, 0.5)',
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     justifyContent: 'center',
-                    zIndex: 1000
+                    zIndex: 1000,
+                    paddingTop: '200px',
+                    overflowY: 'auto'
                 }}>
                     <div style={{
                         backgroundColor: 'white',
                         borderRadius: '16px',
-                        padding: '32px',
-                        maxWidth: '800px',
-                        width: '90%',
-                        maxHeight: '80vh',
+                        padding: '20px',
+                        maxWidth: '700px',
+                        width: '85%',
+                        maxHeight: 'calc(100vh - 170px)',
                         overflow: 'auto',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        marginBottom: '20px'
                     }}>
                         {/* Modal Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '24px' }}>
-                            <div>
-                                <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#111827' }}>
-                                    {selectedAgency.agency_name}
-                                </h2>
-                                <span className="badge badge-primary" style={{ marginTop: '8px', display: 'inline-block' }}>
-                                    {selectedAgency.agency_type || 'N/A'}
-                                </span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
+                                {/* Profile Image */}
+                                <div style={{
+                                    width: '50px',
+                                    height: '50px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#3B82F6',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '20px',
+                                    fontWeight: '700',
+                                    color: 'white',
+                                    flexShrink: 0
+                                }}>
+                                    {selectedAgency.agency_name.charAt(0)}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#111827', wordBreak: 'break-word' }}>
+                                        {selectedAgency.agency_name}
+                                    </h2>
+                                    <span className="badge badge-primary" style={{ marginTop: '4px', display: 'inline-block', fontSize: '11px' }}>
+                                        {selectedAgency.agency_type || 'N/A'}
+                                    </span>
+                                </div>
                             </div>
                             <button
                                 onClick={() => setShowModal(false)}
@@ -225,7 +236,8 @@ const ExecutingAgencyList = ({ stateName }) => {
                                     fontSize: '24px',
                                     cursor: 'pointer',
                                     color: '#6B7280',
-                                    padding: '4px 8px'
+                                    padding: '4px 8px',
+                                    flexShrink: 0
                                 }}
                             >
                                 ×
@@ -233,25 +245,25 @@ const ExecutingAgencyList = ({ stateName }) => {
                         </div>
 
                         {/* Agency Stats */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                            <div style={{ padding: '16px', backgroundColor: '#F3F4F6', borderRadius: '12px' }}>
-                                <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Overall Rating</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+                            <div style={{ padding: '12px', backgroundColor: '#F3F4F6', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>Overall Rating</div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <span style={{ color: '#F59E0B', fontSize: '20px' }}>★</span>
-                                    <span style={{ fontSize: '24px', fontWeight: '700', color: '#111827' }}>
+                                    <span style={{ color: '#F59E0B', fontSize: '16px' }}>★</span>
+                                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>
                                         {selectedAgency.rating}
                                     </span>
                                 </div>
                             </div>
-                            <div style={{ padding: '16px', backgroundColor: '#F3F4F6', borderRadius: '12px' }}>
-                                <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Total Projects</div>
-                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827' }}>
+                            <div style={{ padding: '12px', backgroundColor: '#F3F4F6', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>Total Projects</div>
+                                <div style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>
                                     {selectedAgency.projectCount}
                                 </div>
                             </div>
-                            <div style={{ padding: '16px', backgroundColor: '#F3F4F6', borderRadius: '12px' }}>
-                                <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Completed</div>
-                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#10B981' }}>
+                            <div style={{ padding: '12px', backgroundColor: '#F3F4F6', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>Completed</div>
+                                <div style={{ fontSize: '20px', fontWeight: '700', color: '#10B981' }}>
                                     {Math.floor(selectedAgency.projectCount * 0.7)}
                                 </div>
                             </div>
@@ -259,7 +271,7 @@ const ExecutingAgencyList = ({ stateName }) => {
 
                         {/* Projects List */}
                         <div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#111827' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#111827' }}>
                                 Recent Projects
                             </h3>
                             <div style={{ maxHeight: '300px', overflow: 'auto' }}>
