@@ -9,34 +9,69 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Get all fund allocations
 exports.getAllFunds = async (req, res) => {
     try {
-        const { data, error } = await supabase
+        // 1. Fetch all states
+        const { data: states, error: statesError } = await supabase
+            .from('states')
+            .select('name, code')
+            .order('name');
+
+        if (statesError) {
+            console.error('Error fetching states:', statesError);
+            return res.status(500).json({ success: false, error: statesError.message });
+        }
+
+        // 2. Fetch all allocations
+        const { data: allocations, error: allocationError } = await supabase
             .from('fund_allocations')
             .select('*')
             .order('allocation_date', { ascending: false });
 
-        if (error) {
-            console.error('Supabase error:', error);
-            return res.status(500).json({ success: false, error: error.message });
+        if (allocationError) {
+            console.error('Supabase error:', allocationError);
+            return res.status(500).json({ success: false, error: allocationError.message });
         }
 
-        // Group by state and aggregate
+        // 3. Initialize map with all states
         const stateMap = {};
-        data.forEach(allocation => {
+        states.forEach(state => {
+            stateMap[state.name] = {
+                name: state.name,
+                code: state.code || state.name.substring(0, 2).toUpperCase(),
+                component: [],
+                fundAllocated: 0,
+                amountReleased: 0,
+                lastAllocation: null
+            };
+        });
+
+        // 4. Aggregate allocations
+        allocations.forEach(allocation => {
             const stateName = allocation.state_name;
+
+            // If state exists in our map (which comes from states table), update it.
+            // If strictly from allocations (fallback), create it if missing (though states table should cover it).
             if (!stateMap[stateName]) {
                 stateMap[stateName] = {
                     name: stateName,
                     code: allocation.state_code || stateName.substring(0, 2).toUpperCase(),
-                    component: allocation.scheme_components || [],
+                    component: [],
                     fundAllocated: 0,
                     amountReleased: 0,
                     lastAllocation: null
                 };
             }
+
             stateMap[stateName].fundAllocated += parseInt(allocation.amount_allocated) || 0;
             stateMap[stateName].amountReleased += parseInt(allocation.amount_released) || 0;
 
-            // Set last allocation (assuming data is ordered by date desc)
+            // Add component if not present
+            if (allocation.scheme_components && Array.isArray(allocation.scheme_components)) {
+                const currentComponents = new Set(stateMap[stateName].component);
+                allocation.scheme_components.forEach(c => currentComponents.add(c));
+                stateMap[stateName].component = Array.from(currentComponents);
+            }
+
+            // Set last allocation (since sorted by date desc, first one we see is the latest for that state)
             if (!stateMap[stateName].lastAllocation) {
                 stateMap[stateName].lastAllocation = {
                     amountInRupees: parseInt(allocation.amount_allocated),
@@ -651,7 +686,7 @@ exports.releaseFund = async (req, res) => {
                             .select('push_token, id, email, full_name, role, updated_at')
                             .eq('email', stateAdmin.email)
                             .maybeSingle();
-                        
+
                         if (profileByEmail) {
                             officialProfile = profileByEmail;
                             console.log(`✅ Found profile by email: ${profileByEmail.email}`);
@@ -674,7 +709,7 @@ exports.releaseFund = async (req, res) => {
                             .eq('role', 'state_admin')
                             .ilike('full_name', `%${stateName}%`)
                             .maybeSingle();
-                        
+
                         if (profileByName && (!officialProfile || profileByName.push_token)) {
                             officialProfile = profileByName;
                             console.log(`✅ Found profile by name: ${profileByName.full_name}`);
@@ -688,13 +723,13 @@ exports.releaseFund = async (req, res) => {
                     if (officialProfile && !officialProfile.push_token) {
                         console.log(`🔄 Strategy 3: Retrying fetch after additional delay (token may be saving)...`);
                         await new Promise(resolve => setTimeout(resolve, 1500));
-                        
+
                         const { data: refreshedProfile } = await supabase
                             .from('profiles')
                             .select('push_token, id, email, full_name')
                             .eq('id', officialProfile.id)
                             .single();
-                        
+
                         if (refreshedProfile?.push_token) {
                             officialProfile = refreshedProfile;
                             console.log(`✅ Push token found after retry!`);
@@ -714,9 +749,9 @@ exports.releaseFund = async (req, res) => {
                                     to: officialProfile.push_token,
                                     title: '💰 Fund Released by Ministry',
                                     body: `Ministry has released ₹${amountCr.toFixed(2)} Cr for ${stateName}. Remaining balance: ₹${remainingBalance} Cr.`,
-                                    data: { 
-                                        type: 'fund_release', 
-                                        amount: amountCr, 
+                                    data: {
+                                        type: 'fund_release',
+                                        amount: amountCr,
                                         stateName: stateName,
                                         remainingBalance: remainingBalance
                                     },
@@ -741,14 +776,14 @@ exports.releaseFund = async (req, res) => {
                     } else {
                         console.log(`⚠️ Expo: Could not find an official profile for state: ${stateName}`);
                         if (profileErr) console.error('Error details:', profileErr);
-                        
+
                         // Try alternative search with more flexible matching
                         console.log(`🔄 Attempting alternative profile search...`);
                         const { data: alternativeProfiles } = await supabase
                             .from('profiles')
                             .select('push_token, id, email, full_name, role')
                             .eq('role', 'state_admin');
-                        
+
                         console.log(`📋 All state admin profiles:`, alternativeProfiles?.map(p => ({
                             email: p.email,
                             fullName: p.full_name,
@@ -920,23 +955,117 @@ exports.getAllStateFundReleases = async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, error: error.message }); }
 };
 
-// Get releases to districts in a specific state
+// Get releases to districts in a specific state (aggregated by district)
 exports.getDistrictFundReleasesByState = async (req, res) => {
     try {
         const { stateName } = req.query;
-        let query = supabase.from('fund_releases').select('*, districts(name, state_id, states(name))').order('release_date', { ascending: false });
-        if (stateName) {
-            const { data: stateData } = await supabase.from('states').select('id').eq('name', stateName).single();
-            if (stateData) {
-                const { data: districts } = await supabase.from('districts').select('id').eq('state_id', stateData.id);
-                const districtIds = districts?.map(d => d.id) || [];
-                query = query.in('district_id', districtIds);
-            }
+
+        if (!stateName) {
+            return res.status(400).json({ success: false, error: 'State name is required' });
         }
-        const { data, error } = await query;
-        if (error) throw error;
-        res.json({ success: true, data });
-    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+
+        // 1. Get state ID
+        const { data: stateData, error: stateError } = await supabase
+            .from('states')
+            .select('id, name, code')
+            .eq('name', stateName)
+            .single();
+
+        if (stateError || !stateData) {
+            return res.status(404).json({ success: false, error: 'State not found' });
+        }
+
+        // 2. Get all districts in this state
+        const { data: districts, error: districtsError } = await supabase
+            .from('districts')
+            .select('id, name, code')
+            .eq('state_id', stateData.id)
+            .order('name');
+
+        if (districtsError) {
+            console.error('Error fetching districts:', districtsError);
+            return res.status(500).json({ success: false, error: districtsError.message });
+        }
+
+        // 3. Get approved projects for this state (which have district-level allocations)
+        const { data: approvedProjects, error: projectsError } = await supabase
+            .from('approved_projects')
+            .select('district_name, allocated_amount, released_amount, component')
+            .eq('state_name', stateName);
+
+        if (projectsError) {
+            console.error('Error fetching approved projects:', projectsError);
+            return res.status(500).json({ success: false, error: projectsError.message });
+        }
+
+        // 4. Aggregate data by district
+        const districtMap = {};
+
+        // Initialize all districts with 0 values
+        districts.forEach(district => {
+            districtMap[district.name] = {
+                districtId: district.id,
+                districtName: district.name,
+                districtCode: district.code || district.name.substring(0, 3).toUpperCase(),
+                fundAllocated: 0,
+                fundReleased: 0,
+                components: new Set()
+            };
+        });
+
+        // Aggregate project data by district
+        if (approvedProjects && approvedProjects.length > 0) {
+            approvedProjects.forEach(project => {
+                const districtName = project.district_name;
+
+                // Only process if district exists in our map
+                if (districtMap[districtName]) {
+                    const allocated = parseFloat(project.allocated_amount) || 0;
+                    const released = parseFloat(project.released_amount) || 0;
+
+                    districtMap[districtName].fundAllocated += allocated * 100000; // Convert Lakhs to Rupees
+                    districtMap[districtName].fundReleased += released * 100000;
+
+                    // Add component
+                    if (project.component) {
+                        districtMap[districtName].components.add(project.component);
+                    }
+                }
+            });
+        }
+
+        // Convert to array and format
+        const result = Object.values(districtMap).map(district => {
+            const allocatedCr = (district.fundAllocated / 10000000).toFixed(2);
+            const releasedCr = (district.fundReleased / 10000000).toFixed(2);
+            const percentage = district.fundAllocated > 0
+                ? ((district.fundReleased / district.fundAllocated) * 100).toFixed(1)
+                : 0;
+
+            return {
+                districtId: district.districtId,
+                districtName: district.districtName,
+                districtCode: district.districtCode,
+                fundAllocated: district.fundAllocated,
+                fundReleased: district.fundReleased,
+                fundAllocatedCr: allocatedCr,
+                fundReleasedCr: releasedCr,
+                releasePercentage: parseFloat(percentage),
+                components: Array.from(district.components)
+            };
+        });
+
+        res.json({
+            success: true,
+            stateName: stateData.name,
+            stateCode: stateData.code,
+            data: result
+        });
+
+    } catch (error) {
+        console.error('Error in getDistrictFundReleasesByState:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 };
 
 // Get funds overview/stats for a district
