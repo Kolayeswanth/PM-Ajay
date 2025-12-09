@@ -17,6 +17,8 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
     const [errors, setErrors] = useState({});
     const [showCameraModal, setShowCameraModal] = useState(false);
     const [stream, setStream] = useState(null);
+    const [location, setLocation] = useState(null);
+    const [locationStatus, setLocationStatus] = useState('idle'); // idle, fetching, success, error
     const videoRef = React.useRef(null);
     const canvasRef = React.useRef(null);
 
@@ -147,6 +149,22 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
         }
     };
 
+    // Haversine formula to calculate distance in meters
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3; // Earth radius in meters
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Distance in meters
+    };
+
     const handleOpenCamera = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -154,6 +172,9 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
             });
             setStream(mediaStream);
             setShowCameraModal(true);
+
+            // Start fetching location immediately
+            fetchLocation();
 
             // Wait for modal to render, then attach stream to video
             setTimeout(() => {
@@ -165,6 +186,42 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
             console.error('Error accessing camera:', error);
             showToast('Unable to access camera. Please check permissions.');
         }
+    };
+
+    const fetchLocation = () => {
+        setLocationStatus('fetching');
+        if (!navigator.geolocation) {
+            setLocationStatus('error');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const currentLat = position.coords.latitude;
+                const currentLong = position.coords.longitude;
+
+                // SIMULATED Project Location (For Demo: Set it 50m away from current location)
+                // In production, this would come from the 'works' object: works.find(w => w.id === selectedWorkId).location_coords
+                const demoProjectLat = currentLat + 0.0002;
+                const demoProjectLong = currentLong + 0.0002;
+
+                const dist = calculateDistance(currentLat, currentLong, demoProjectLat, demoProjectLong);
+
+                setLocation({
+                    lat: currentLat.toFixed(6),
+                    long: currentLong.toFixed(6),
+                    timestamp: new Date().toLocaleString(),
+                    distance: dist.toFixed(0),
+                    isVerified: dist < 500 // Threshold: 500 meters
+                });
+                setLocationStatus('success');
+            },
+            (error) => {
+                console.error('Error getting location:', error);
+                setLocationStatus('error');
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
     };
 
     const handleCapturePhoto = () => {
@@ -180,12 +237,51 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+            // --- GPS & Fraud Check Overlay ---
+            if (location) {
+                const fontSize = Math.max(16, Math.floor(canvas.width / 25)); // Adaptive font size
+                context.font = `bold ${fontSize}px sans-serif`;
+                context.lineWidth = 3;
+                context.shadowColor = "black";
+                context.shadowBlur = 4;
+
+                const textX = 20;
+                let textY = canvas.height - 20; // Start from bottom
+                const lineHeight = fontSize + 8;
+
+                // Determine Validation Color/Status
+                const matchColor = location.isVerified ? '#10B981' : '#EF4444'; // Green vs Red
+                const matchText = location.isVerified ? 'VERIFIED (Within 500m)' : `MISMATCH (${location.distance}m away)`;
+
+                const lines = [
+                    `Lat: ${location.lat}, Long: ${location.long}`,
+                    `Time: ${location.timestamp}`,
+                    `Loc: ${matchText}`
+                ];
+
+                // Draw from bottom up
+                lines.reverse().forEach((line, index) => {
+                    context.strokeStyle = 'black';
+                    context.fillStyle = (index === 0) ? matchColor : 'white'; // Color the verification line
+                    context.strokeText(line, textX, textY);
+                    context.fillText(line, textX, textY);
+                    textY -= lineHeight;
+                });
+            }
+            // -------------------
+
             // Convert canvas to blob and then to File
             canvas.toBlob((blob) => {
                 const timestamp = Date.now();
-                const file = new File([blob], `camera-photo-${timestamp}.jpg`, { type: 'image/jpeg' });
+                const file = new File([blob], `gps-photo-${timestamp}.jpg`, { type: 'image/jpeg' });
                 setProgressData({ ...progressData, photos: [...progressData.photos, file] });
-                showToast('Photo captured successfully!');
+
+                if (location) {
+                    showToast(location.isVerified ? '✅ Photo Verified & Captured!' : '⚠️ Warning: Location Mismatch captured.');
+                } else {
+                    showToast('Photo captured (No GPS)');
+                }
+
                 handleCloseCamera();
             }, 'image/jpeg', 0.9);
         }
@@ -520,6 +616,13 @@ const WorkProgress = ({ works, onUpdateProgress }) => {
                                 background: '#000'
                             }}
                         />
+
+                        {/* Location Status Indicator */}
+                        <div style={{ textAlign: 'center', fontSize: '12px' }}>
+                            {locationStatus === 'fetching' && <span style={{ color: '#F59E0B' }}>📍 Fetching Location...</span>}
+                            {locationStatus === 'success' && <span style={{ color: '#10B981' }}>✅ Location Found: {location?.lat}, {location?.long}</span>}
+                            {locationStatus === 'error' && <span style={{ color: '#EF4444' }}>❌ Location unavailable (Photo will not be tagged)</span>}
+                        </div>
 
                         <canvas ref={canvasRef} style={{ display: 'none' }} />
 

@@ -17,6 +17,7 @@ import StateNotifications from './state/StateNotifications';
 import StateHelp from './state/StateHelp';
 import FundsReceivedFromMinistry from './state/FundsReceivedFromMinistry';
 import MonitorProgressState from './state/MonitorProgressState';
+import ApproveAgencyRegistrations from './state/ApproveAgencyRegistrations';
 import {
     LayoutDashboard,
     Wallet,
@@ -29,7 +30,11 @@ import {
     HelpCircle,
     LogOut,
     Activity,
+
+    UserPlus
+
     Briefcase
+
 } from 'lucide-react';
 
 const StateDashboard = () => {
@@ -105,6 +110,7 @@ const StateDashboard = () => {
         { icon: <Send size={20} />, label: 'IA Fund Release', action: () => setActiveTab('ia-funds'), active: activeTab === 'ia-funds' },
         { icon: <FileCheck size={20} />, label: 'Approve Implementing Agency Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
         { icon: <FileCheck size={20} />, label: 'Verify Utilisation Certificates', action: () => setActiveTab('ucs'), active: activeTab === 'ucs' },
+        { icon: <UserPlus size={20} />, label: 'Approve Agency Registrations', action: () => setActiveTab('agency-approvals'), active: activeTab === 'agency-approvals' },
         { icon: <FileBarChart size={20} />, label: 'Reports', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
         { icon: <Bell size={20} />, label: 'Notifications', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
         { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => setActiveTab('help'), active: activeTab === 'help' },
@@ -134,6 +140,8 @@ const StateDashboard = () => {
                 return <ApproveProposals />;
             case 'ucs':
                 return <VerifyUCs />;
+            case 'agency-approvals':
+                return <ApproveAgencyRegistrations />;
             case 'reports':
                 return <StateReports />;
             case 'notifications':
@@ -155,6 +163,7 @@ const StateDashboard = () => {
             'ia-funds': 'IA Fund Release',
             'proposals': 'Approve Implementing Agency Proposals',
             'ucs': 'Verify UCs',
+            'agency-approvals': 'Approve Agency Registrations',
             'reports': 'Reports',
             'notifications': 'Notifications',
             'help': 'Help'

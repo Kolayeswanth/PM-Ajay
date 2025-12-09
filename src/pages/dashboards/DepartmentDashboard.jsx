@@ -13,6 +13,8 @@ import DepartmentHelp from './department/DepartmentHelp';
 import ManageExecutingAgencies from './department/ManageExecutingAgencies';
 import AssignProjects from './department/AssignProjects';
 import AgencyProjects from './department/AgencyProjects';
+
+import ExecutingAgencyList from './department/ExecutingAgencyList';
 import CreateProposalAgency from './department/CreateProposalAgency';
 import FundsReceivedFromState from './department/FundsReceivedFromState';
 import { mockProjects } from '../../data/mockData';
@@ -244,6 +246,7 @@ const DepartmentDashboard = () => {
         { icon: <IndianRupee size={20} />, label: 'Funds Received', action: () => setActiveTab('funds-received'), active: activeTab === 'funds-received' },
         { icon: <FileText size={20} />, label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
         { icon: <Folder size={20} />, label: 'Projects', action: () => setActiveTab('projects'), active: activeTab === 'projects' },
+        { icon: <Users size={20} />, label: 'Executing Agencies', action: () => setActiveTab('executing-agencies-list'), active: activeTab === 'executing-agencies-list' },
         { icon: <Users size={20} />, label: 'Manage Executing Agency', action: () => setActiveTab('executing-agencies'), active: activeTab === 'executing-agencies' },
         { icon: <ClipboardList size={20} />, label: 'Assign Projects', action: () => setActiveTab('assign-projects'), active: activeTab === 'assign-projects' },
         { icon: <Activity size={20} />, label: 'Work Progress', action: () => setActiveTab('work-orders'), active: activeTab === 'work-orders' },
@@ -274,6 +277,8 @@ const DepartmentDashboard = () => {
                 return <CreateProposalAgency />;
             case 'projects':
                 return <AgencyProjects />;
+            case 'executing-agencies-list':
+                return <ExecutingAgencyList />;
             case 'executing-agencies':
                 return <ManageExecutingAgencies />;
             case 'assign-projects':
@@ -306,6 +311,7 @@ const DepartmentDashboard = () => {
             'funds-received': 'Funds Received',
             'create-proposal': 'Create Proposal',
             'projects': 'Projects',
+            'executing-agencies-list': 'Executing Agencies',
             'executing-agencies': 'Manage Executing Agencies',
             'assign-projects': 'Assign Projects',
             'work-orders': 'Work Progress',
