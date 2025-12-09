@@ -328,7 +328,8 @@ exports.releaseFund = async (req, res) => {
             remarks,
             created_by,
             state_name,
-            bankAccount
+            bankAccount,
+            implementing_agency_id
         } = req.body;
 
         console.log('💰 Release Fund Request Received:');
@@ -355,7 +356,8 @@ exports.releaseFund = async (req, res) => {
                         release_date: releaseDate,
                         officer_id: officer_id || officerId,
                         remarks: bankAccount ? `${remarks} | Bank Account: ${bankAccount}` : remarks,
-                        created_by: created_by
+                        created_by: created_by,
+                        implementing_agency_id: implementing_agency_id || null
                     }
                 ])
                 .select('*, districts(name, id)');

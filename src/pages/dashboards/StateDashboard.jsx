@@ -6,6 +6,7 @@ import NotificationBell from '../../components/NotificationBell';
 import { useAuth } from '../../contexts/AuthContext';
 import StateDashboardPanel from './state/StateDashboardPanel';
 import ManageImplementingAgencies from './state/ManageImplementingAgencies';
+import AssignProjectsState from './state/AssignProjectsState'; // New Component
 import FundRelease from './state/FundRelease';
 import ApproveProposals from './state/ApproveProposals';
 import VerifyUCs from './state/VerifyUCs';
@@ -25,7 +26,8 @@ import {
     Bell,
     HelpCircle,
     LogOut,
-    Activity
+    Activity,
+    Briefcase
 } from 'lucide-react';
 
 const StateDashboard = () => {
