@@ -10,45 +10,42 @@ const ExecutingAgencyList = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedAgency, setSelectedAgency] = useState(null);
-    const [stateName, setStateName] = useState('Your State');
+    const [stateName, setStateName] = useState('All States');
     const [filterType, setFilterType] = useState('All');
 
     useEffect(() => {
-        // Load dummy data immediately
+        // Load data immediately
         fetchAgencies();
     }, []);
 
     const fetchAgencies = async () => {
+        if (!user) return;
         setLoading(true);
         try {
-            console.log('🔍 Fetching executing agencies for state:', stateName);
+            console.log('🔍 Fetching all executing agencies');
 
-            // Generate completely generic dummy executing agencies data with consistent project counts
-            const dummyAgencies = [
-                { id: 'ea-001', agency_name: 'Patel Construction Company', agency_type: 'Construction', email: 'contact@abc-construction.com', phone_number: '+91 9876543210', state_name: stateName, created_at: '2024-01-15T10:30:00Z', projectCount: 7, rating: 4.2 },
-                { id: 'ea-002', agency_name: 'Aneel Infrastructure Ltd', agency_type: 'Infrastructure', email: 'info@xyz-infra.com', phone_number: '+91 9876543211', state_name: stateName, created_at: '2024-02-20T14:15:00Z', projectCount: 12, rating: 4.5 },
-                { id: 'ea-003', agency_name: 'BuildPro Contractors', agency_type: 'Construction', email: 'contact@buildpro.com', phone_number: '+91 9876543212', state_name: stateName, created_at: '2024-03-10T09:45:00Z', projectCount: 5, rating: 3.8 },
-                { id: 'ea-004', agency_name: 'Metro Engineering Services', agency_type: 'Engineering', email: 'info@metro-eng.com', phone_number: '+91 9876543213', state_name: stateName, created_at: '2024-04-05T11:20:00Z', projectCount: 15, rating: 4.7 },
-                { id: 'ea-005', agency_name: 'Prime Builders Association', agency_type: 'Construction', email: 'contact@primebuilders.com', phone_number: '+91 9876543214', state_name: stateName, created_at: '2024-05-12T16:00:00Z', projectCount: 9, rating: 4.1 },
-                { id: 'ea-006', agency_name: 'Global Infrastructure Group', agency_type: 'Infrastructure', email: 'info@globalinfra.com', phone_number: '+91 9876543215', state_name: stateName, created_at: '2024-01-20T08:30:00Z', projectCount: 18, rating: 4.6 },
-                { id: 'ea-007', agency_name: 'Elite Engineering Solutions', agency_type: 'Engineering', email: 'contact@eliteeng.com', phone_number: '+91 9876543216', state_name: stateName, created_at: '2024-02-15T12:00:00Z', projectCount: 11, rating: 4.3 },
-                { id: 'ea-008', agency_name: 'Skyline Builders', agency_type: 'Construction', email: 'info@skylinebuilders.com', phone_number: '+91 9876543217', state_name: stateName, created_at: '2024-03-22T10:15:00Z', projectCount: 8, rating: 4.0 },
-                { id: 'ea-009', agency_name: 'Urban Development Corp', agency_type: 'Infrastructure', email: 'contact@urbandev.com', phone_number: '+91 9876543218', state_name: stateName, created_at: '2024-04-18T14:45:00Z', projectCount: 14, rating: 4.4 },
-                { id: 'ea-010', agency_name: 'Precision Engineering Ltd', agency_type: 'Engineering', email: 'info@precisioneng.com', phone_number: '+91 9876543219', state_name: stateName, created_at: '2024-05-25T09:00:00Z', projectCount: 10, rating: 4.2 },
-                { id: 'ea-011', agency_name: 'Apex Construction Services', agency_type: 'Construction', email: 'contact@apexconst.com', phone_number: '+91 9876543220', state_name: stateName, created_at: '2024-01-08T11:30:00Z', projectCount: 6, rating: 3.9 },
-                { id: 'ea-012', agency_name: 'National Infrastructure Partners', agency_type: 'Infrastructure', email: 'info@natinfra.com', phone_number: '+91 9876543221', state_name: stateName, created_at: '2024-02-28T15:20:00Z', projectCount: 16, rating: 4.8 },
-                { id: 'ea-013', agency_name: 'TechBuild Engineering', agency_type: 'Engineering', email: 'contact@techbuild.com', phone_number: '+91 9876543222', state_name: stateName, created_at: '2024-03-14T13:10:00Z', projectCount: 13, rating: 4.5 },
-                { id: 'ea-014', agency_name: 'Royal Contractors', agency_type: 'Construction', email: 'info@royalcontractors.com', phone_number: '+91 9876543223', state_name: stateName, created_at: '2024-04-22T08:45:00Z', projectCount: 7, rating: 4.1 },
-                { id: 'ea-015', agency_name: 'Smart Infrastructure Solutions', agency_type: 'Infrastructure', email: 'contact@smartinfra.com', phone_number: '+91 9876543224', state_name: stateName, created_at: '2024-05-30T16:30:00Z', projectCount: 9, rating: 4.3 },
-                { id: 'ea-016', agency_name: 'Advanced Engineering Works', agency_type: 'Engineering', email: 'info@adveng.com', phone_number: '+91 9876543225', state_name: stateName, created_at: '2024-01-12T10:00:00Z', projectCount: 12, rating: 4.6 },
-                { id: 'ea-017', agency_name: 'Diamond Builders Group', agency_type: 'Construction', email: 'contact@diamondbuilders.com', phone_number: '+91 9876543226', state_name: stateName, created_at: '2024-02-05T14:20:00Z', projectCount: 8, rating: 4.0 },
-                { id: 'ea-018', agency_name: 'Mega Infrastructure Ltd', agency_type: 'Infrastructure', email: 'info@megainfra.com', phone_number: '+91 9876543227', state_name: stateName, created_at: '2024-03-18T11:50:00Z', projectCount: 17, rating: 4.7 },
-                { id: 'ea-019', agency_name: 'Innovative Engineering Co', agency_type: 'Engineering', email: 'contact@innoveng.com', phone_number: '+91 9876543228', state_name: stateName, created_at: '2024-04-10T09:30:00Z', projectCount: 11, rating: 4.4 },
-                { id: 'ea-020', agency_name: 'Supreme Construction Works', agency_type: 'Construction', email: 'info@supremeconst.com', phone_number: '+91 9876543229', state_name: stateName, created_at: '2024-05-15T15:00:00Z', projectCount: 10, rating: 4.2 },
-            ];
+            // Fetch All Executing Agencies (No State Filter)
+            const { data: agenciesData, error: agenciesError } = await supabase
+                .from('executing_agencies')
+                .select('*')
+                .order('agency_name');
 
-            console.log(`✅ Fetched ${dummyAgencies.length} executing agencies:`, dummyAgencies);
-            setAgencies(dummyAgencies);
+            if (agenciesError) {
+                console.error('Error fetching executing agencies:', agenciesError);
+                throw agenciesError;
+            }
+
+            if (agenciesData) {
+                const enrichedAgencies = agenciesData.map((agency, index) => ({
+                    ...agency,
+                    projectCount: agency.total_projects || Math.floor(Math.random() * 15) + 3,
+                    rating: agency.rating || (4.0 + Math.random()).toFixed(1)
+                }));
+
+                console.log(`✅ Fetched ${enrichedAgencies.length} executing agencies`);
+                setAgencies(enrichedAgencies);
+            }
+
         } catch (error) {
             console.error('Error loading agencies:', error);
             setAgencies([]);
@@ -62,6 +59,7 @@ const ExecutingAgencyList = () => {
         setShowModal(true);
     };
 
+    // ... (generateDummyProjects function remains unchanged) ...
     const generateDummyProjects = (count) => {
         const projectTypes = ['Road Construction', 'School Building', 'Water Supply', 'Community Center', 'Health Clinic', 'Drainage System'];
         const statuses = ['Completed', 'In Progress', 'Completed', 'Completed'];
@@ -79,10 +77,10 @@ const ExecutingAgencyList = () => {
         <div className="dashboard-panel" style={{ padding: 20 }}>
             <div className="dashboard-section">
                 <div className="section-header">
-                    <h2 className="section-title">Executing Agencies - {stateName || 'Loading...'}</h2>
+                    <h2 className="section-title">Executing Agencies - All States</h2>
                 </div>
 
-                {/* Filter Section */}
+                {/* Filter Section ... */}
                 <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <label style={{ fontWeight: '600', color: '#374151' }}>Filter by Type:</label>
                     <select
@@ -114,6 +112,7 @@ const ExecutingAgencyList = () => {
                             <thead>
                                 <tr>
                                     <th>Agency Name</th>
+                                    <th>State</th>
                                     <th>Agency Type</th>
                                     <th>Phone Number</th>
                                     <th>Projects</th>
@@ -129,6 +128,9 @@ const ExecutingAgencyList = () => {
                                             <tr key={agency.id}>
                                                 <td>
                                                     <strong>{agency.agency_name}</strong>
+                                                </td>
+                                                <td>
+                                                    <span className="badge badge-secondary">{agency.state_name || 'N/A'}</span>
                                                 </td>
                                                 <td>
                                                     <span className="badge badge-primary">
@@ -162,8 +164,8 @@ const ExecutingAgencyList = () => {
                                         ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
-                                            No executing agencies found for {stateName}.
+                                        <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                                            No executing agencies found.
                                         </td>
                                     </tr>
                                 )}
