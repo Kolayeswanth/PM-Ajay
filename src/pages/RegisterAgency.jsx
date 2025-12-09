@@ -11,7 +11,6 @@ const RegisterAgency = () => {
         email: '',
         password: '',
         gstNumber: '',
-        address: '',
         state: '',
         districts: []
     });
@@ -53,19 +52,30 @@ const RegisterAgency = () => {
             console.log('=== REGISTRATION ATTEMPT ===');
             console.log('Form Data:', formData);
 
-            // Save to localStorage for demo
-            const pendingAgencies = JSON.parse(localStorage.getItem('pendingAgencies') || '[]');
-            const newAgency = {
-                id: Date.now().toString(),
-                ...formData,
-                status: 'Pending',
-                submittedAt: new Date().toISOString()
-            };
-            pendingAgencies.push(newAgency);
-            localStorage.setItem('pendingAgencies', JSON.stringify(pendingAgencies));
+            // Validate districts
+            if (formData.districts.length === 0) {
+                setError('Please select at least one district');
+                setLoading(false);
+                return;
+            }
 
-            console.log('✅ Registration successful (Mock)!');
-            alert('Registration Successful! Your application is pending approval from the State Admin.');
+            // Call backend API
+            const response = await fetch('http://localhost:5001/api/implementing-agencies/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Registration failed');
+            }
+
+            console.log('✅ Registration successful:', result);
+            alert(result.message || 'Registration Successful! Your application is pending approval from the State Admin.');
             navigate('/login');
 
         } catch (err) {
@@ -166,18 +176,7 @@ const RegisterAgency = () => {
                             />
                         </div>
 
-                        <div className="form-group">
-                            <label className="form-label">Address</label>
-                            <textarea
-                                className="form-control"
-                                placeholder="Enter full address"
-                                name="address"
-                                value={formData.address}
-                                onChange={handleChange}
-                                required
-                                rows="3"
-                            />
-                        </div>
+
 
                         <div className="form-group">
                             <label className="form-label">State</label>
