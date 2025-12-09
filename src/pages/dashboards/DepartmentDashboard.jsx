@@ -13,7 +13,11 @@ import DepartmentHelp from './department/DepartmentHelp';
 import ManageExecutingAgencies from './department/ManageExecutingAgencies';
 import AssignProjects from './department/AssignProjects';
 import AgencyProjects from './department/AgencyProjects';
+
 import ExecutingAgencyList from './department/ExecutingAgencyList';
+=======
+import CreateProposalAgency from './department/CreateProposalAgency';
+
 import { mockProjects } from '../../data/mockData';
 import {
     LayoutDashboard,
@@ -23,6 +27,7 @@ import {
     Activity,
     Upload,
     FileBarChart,
+    FileText,
     Bell,
     HelpCircle,
     LogOut
@@ -31,12 +36,111 @@ import {
 const DepartmentDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [districtName, setDistrictName] = useState('');
     const navigate = useNavigate();
     const { logout, user } = useAuth();
 
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
+    // Fetch district name for implementing agencies
+    useEffect(() => {
+        const fetchDistrictName = async () => {
+            if (!user) {
+                console.log('⏳ No user yet');
+                return;
+            }
+
+            console.log('👤 User role:', user.role);
+            console.log('📧 User email:', user.email);
+
+            if (user.role !== 'implementing_agency') {
+                console.log('⚠️ Not an implementing agency, skipping district fetch');
+                return;
+            }
+
+            try {
+                console.log('🔍 Fetching district name for user ID:', user.id);
+                const { supabase } = await import('../../lib/supabaseClient');
+
+                // District code mapping from email pattern
+                const districtCodeMap = {
+                    'eg': 'East Godavari',
+                    'wg': 'West Godavari',
+                    'kr': 'Kurnool',
+                    'vz': 'Vizianagaram',
+                    'vs': 'Visakhapatnam',
+                    'sk': 'Srikakulam',
+                    'gn': 'Guntur',
+                    'nl': 'Nellore',
+                    'cd': 'Chittoor',
+                    'ap': 'Anantapur',
+                    'kd': 'Kadapa'
+                };
+
+                // First, try to parse district from email pattern
+                // Email format: ap-eg.district@pmajay.gov.in
+                if (user.email && user.email.includes('.district@pmajay.gov.in')) {
+                    const emailPrefix = user.email.split('.district@')[0]; // e.g., "ap-eg"
+                    const parts = emailPrefix.split('-');
+                    if (parts.length >= 2) {
+                        const districtCode = parts[1]; // e.g., "eg"
+                        const districtFromCode = districtCodeMap[districtCode];
+                        console.log('📧 Parsed district from email:', districtCode, '->', districtFromCode);
+
+                        if (districtFromCode) {
+                            // Look up exact name from DB
+                            const { data: districtData } = await supabase
+                                .from('districts')
+                                .select('name')
+                                .ilike('name', `%${districtFromCode}%`)
+                                .limit(1);
+
+                            if (districtData && districtData.length > 0) {
+                                console.log('✅ District found from email:', districtData[0].name);
+                                setDistrictName(districtData[0].name);
+                                return;
+                            } else {
+                                // Use the mapped name if not found in DB
+                                setDistrictName(districtFromCode);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: try by user_id
+                let { data: agencies, error } = await supabase
+                    .from('implementing_agencies')
+                    .select(`
+                        district_id,
+                        agency_name,
+                        districts (
+                            name
+                        )
+                    `)
+                    .eq('user_id', user.id)
+                    .limit(1);
+
+                if (error) {
+                    console.error('❌ Error fetching district name:', error);
+                    return;
+                }
+
+                if (agencies && agencies.length > 0 && agencies[0].districts) {
+                    console.log('✅ District found:', agencies[0].districts.name);
+                    setDistrictName(agencies[0].districts.name);
+                } else {
+                    console.warn('⚠️ No agency found for user');
+                }
+            } catch (err) {
+                console.error('❌ Error loading district name:', err);
+            }
+        };
+
+        fetchDistrictName();
+    }, [user]);
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -144,6 +248,7 @@ const DepartmentDashboard = () => {
 
     const sidebarMenu = [
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <FileText size={20} />, label: 'Create Proposal', action: () => setActiveTab('create-proposal'), active: activeTab === 'create-proposal' },
         { icon: <Folder size={20} />, label: 'Projects', action: () => setActiveTab('projects'), active: activeTab === 'projects' },
         { icon: <Users size={20} />, label: 'Executing Agencies', action: () => setActiveTab('executing-agencies-list'), active: activeTab === 'executing-agencies-list' },
         { icon: <Users size={20} />, label: 'Manage Executing Agency', action: () => setActiveTab('executing-agencies'), active: activeTab === 'executing-agencies' },
@@ -170,6 +275,8 @@ const DepartmentDashboard = () => {
                     projects={workOrders}
                     onNavigate={handleTabChange}
                 />;
+            case 'create-proposal':
+                return <CreateProposalAgency />;
             case 'projects':
                 return <AgencyProjects />;
             case 'executing-agencies-list':
@@ -203,6 +310,7 @@ const DepartmentDashboard = () => {
     const getBreadcrumb = () => {
         const labels = {
             'dashboard': 'Dashboard',
+            'create-proposal': 'Create Proposal',
             'projects': 'Projects',
             'executing-agencies-list': 'Executing Agencies',
             'executing-agencies': 'Manage Executing Agencies',
@@ -229,9 +337,13 @@ const DepartmentDashboard = () => {
                 <div className="dashboard-header">
                     <div className="dashboard-title-section">
                         <h3 style={{ margin: 0 }}>
-                            {user?.email?.toLowerCase().includes('nod') ? 'NOD Dashboard' :
-                                user?.email?.toLowerCase().includes('ngo') ? 'NGO Dashboard' :
-                                    'Department Dashboard'}
+                            {user?.role === 'implementing_agency'
+                                ? districtName
+                                    ? `Implementing Agency - ${districtName}`
+                                    : 'Implementing Agency'
+                                : user?.email?.toLowerCase().includes('nod') ? 'NOD Dashboard'
+                                    : user?.email?.toLowerCase().includes('ngo') ? 'NGO Dashboard'
+                                        : 'Department Dashboard'}
                         </h3>
                     </div>
                     <div className="dashboard-actions">

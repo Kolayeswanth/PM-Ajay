@@ -80,7 +80,7 @@ async function ensureMinAgencies() {
                 const stateCode = state.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '');
                 const uniqueSuffix = Math.floor(Math.random() * 10000);
                 const email = `ia.${stateCode}.${uniqueSuffix}@pmajay.gov.in`;
-                const password = 'Password@123';
+                const password = process.env.DEFAULT_AGENCY_PASSWORD || 'Temp@' + Math.random().toString(36).slice(-8);
 
                 // 1. Create Auth User
                 let userId;

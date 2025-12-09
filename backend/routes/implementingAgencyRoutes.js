@@ -14,8 +14,17 @@ router.patch('/registrations/:id/reject', implementingAgencyController.rejectReg
 
 router.get('/', implementingAgencyController.getAllImplementingAgencies);
 router.post('/', implementingAgencyController.addImplementingAgency);
+=======
+// Get all implementing agencies for a state
+router.get('/', implementingAgencyController.getImplementingAgencies);
+
+// Create new implementing agency
+router.post('/', implementingAgencyController.createImplementingAgency);
+
+// Update implementing agency
 router.put('/:id', implementingAgencyController.updateImplementingAgency);
+
+// Activate implementing agency
 router.patch('/:id/activate', implementingAgencyController.activateImplementingAgency);
-router.delete('/:id', implementingAgencyController.deleteImplementingAgency);
 
 module.exports = router;
