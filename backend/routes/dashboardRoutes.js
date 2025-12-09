@@ -11,4 +11,7 @@ router.get('/district-stats/:districtId', dashboardController.getDistrictStats);
 // Get State Dashboard statistics
 router.get('/state-stats', dashboardController.getStateStats);
 
+// Get Unified Project List
+router.get('/projects', dashboardController.getAllProjects);
+
 module.exports = router;

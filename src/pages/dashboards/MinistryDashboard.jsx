@@ -14,6 +14,7 @@ import MonitorProgress from './ministry/MonitorProgress';
 import IssueNotifications from './ministry/IssueNotifications';
 import ReportsAnalytics from './ministry/ReportsAnalytics';
 import HelpSupport from './ministry/HelpSupport';
+import VillageProjectAllocation from './ministry/VillageProjectAllocation';
 
 import {
     LayoutDashboard,
@@ -26,7 +27,8 @@ import {
     FileBarChart,
     HelpCircle,
     LogOut,
-    FileText
+    FileText,
+    MapPin
 } from 'lucide-react';
 
 const MinistryDashboard = () => {
@@ -57,6 +59,7 @@ const MinistryDashboard = () => {
         { icon: <FileCheck size={20} />, label: 'Project Approval', action: () => setActiveTab('plans'), active: activeTab === 'plans' },
         { icon: <FileText size={20} />, label: 'Annual Plan Approvals', action: () => setActiveTab('aap'), active: activeTab === 'aap' },
         { icon: <LineChart size={20} />, label: 'Monitor Progress', action: () => setActiveTab('monitor'), active: activeTab === 'monitor' },
+        { icon: <MapPin size={20} />, label: 'Village Allocation', action: () => setActiveTab('village'), active: activeTab === 'village' },
         { icon: <Bell size={20} />, label: 'Notifications/Circulars', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
         { icon: <FileBarChart size={20} />, label: 'Reports & Analytics', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
         { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => setActiveTab('help'), active: activeTab === 'help' },
@@ -92,6 +95,8 @@ const MinistryDashboard = () => {
                 return <AnnualActionPlan />;
             case 'monitor':
                 return <MonitorProgress />;
+            case 'village':
+                return <VillageProjectAllocation />;
             case 'notifications':
                 return <IssueNotifications />;
             case 'reports':
@@ -120,6 +125,7 @@ const MinistryDashboard = () => {
             'plans': 'Project Approval',
             'aap': 'Annual Plan Approvals',
             'monitor': 'Monitor Progress',
+            'village': 'Village Allocation',
             'notifications': 'Notifications & Circulars',
             'reports': 'Reports & Analytics',
             'help': 'Help & Support'

@@ -336,3 +336,176 @@ exports.getDistrictStats = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+// Get All Projects (Unified)
+exports.getAllProjects = async (req, res) => {
+    try {
+        console.log('📊 Fetching all projects (unified)...');
+
+        // 1. Fetch work orders with related data
+        const { data: works, error: workError } = await supabase
+            .from('work_orders')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (workError) throw workError;
+
+        // 2. Fetch approved projects
+        const { data: approvedProjects, error: approvedError } = await supabase
+            .from('approved_projects')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (approvedError) {
+            console.error('Error fetching approved projects:', approvedError);
+            // Non-blocking error
+        }
+
+        // 3. Fetch village fund releases
+        const { data: villageFunds, error: villageError } = await supabase
+            .from('village_fund_releases')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (villageError) {
+            console.error('Error fetching village funds:', villageError);
+            // Non-blocking error
+        }
+
+        let allProjects = [];
+
+        // Process work orders
+        if (works && works.length > 0) {
+            // Get unique implementing agency IDs
+            const agencyIds = [...new Set(works.map(w => w.implementing_agency_id).filter(Boolean))];
+
+            // Fetch implementing agencies
+            let agencyMap = {};
+            if (agencyIds.length > 0) {
+                const { data: agencies, error: agencyError } = await supabase
+                    .from('implementing_agencies')
+                    .select('id, agency_name, district_name, state_name')
+                    .in('id', agencyIds);
+
+                if (!agencyError && agencies) {
+                    agencies.forEach(agency => {
+                        agencyMap[agency.id] = agency;
+                    });
+                }
+            }
+
+            // Fetch executing agencies
+            const eaIds = [...new Set(works.map(w => w.executing_agency_id).filter(Boolean))];
+
+            let eaMap = {};
+            if (eaIds.length > 0) {
+                const { data: eas, error: eaError } = await supabase
+                    .from('executing_agencies')
+                    .select('id, agency_name')
+                    .in('id', eaIds);
+
+                if (!eaError && eas) {
+                    eas.forEach(ea => {
+                        eaMap[ea.id] = ea;
+                    });
+                }
+            }
+
+            // Fetch district proposals manually for project names
+            const proposalIds = [...new Set(works.map(w => w.proposal_id).filter(Boolean))];
+            let proposalMap = {};
+
+            if (proposalIds.length > 0) {
+                const { data: proposals, error: proposalError } = await supabase
+                    .from('district_proposals')
+                    .select('id, project_name, component, district_id')
+                    .in('id', proposalIds);
+
+                if (!proposalError && proposals) {
+                    proposals.forEach(p => {
+                        proposalMap[p.id] = p;
+                    });
+                }
+            }
+
+            // Merge work order data
+            const enrichedWorks = works.map(work => {
+                const proposal = proposalMap[work.proposal_id] || {};
+                const agency = agencyMap[work.implementing_agency_id] || {};
+
+                return {
+                    id: work.id,
+                    project_type: 'work_order',
+                    title: proposal.project_name || work.title,
+                    location: work.location,
+                    component: [proposal.component || 'Infrastructure'],
+                    agency_name: agency.agency_name || 'Unassigned',
+                    executing_agency_name: eaMap[work.executing_agency_id]?.agency_name,
+                    amount: work.amount,
+                    funds_released: work.funds_released,
+                    status: work.status,
+                    deadline: work.deadline, // Explicitly expose deadline
+                    // Location data for filtering
+                    state_name: agency.state_name,
+                    district_name: agency.district_name || (proposal.district_id ? `District ${proposal.district_id}` : undefined),
+                    original_data: work
+                };
+            });
+
+            allProjects = [...allProjects, ...enrichedWorks];
+        }
+
+        // Process approved projects
+        if (approvedProjects && approvedProjects.length > 0) {
+            const enrichedApproved = approvedProjects.map(project => ({
+                id: project.id,
+                project_type: 'approved_project',
+                title: project.project_name,
+                location: project.district_name || project.state_name,
+                component: [project.component],
+                agency_name: project.approved_by || 'Ministry',
+                amount: project.total_amount,
+                funds_released: project.amount_released || project.released_amount,
+                status: project.status,
+                deadline: project.approved_at, // Use approved_at as deadline fallback
+                state_name: project.state_name,
+                district_name: project.district_name,
+                original_data: project
+            }));
+
+            allProjects = [...allProjects, ...enrichedApproved];
+        }
+
+        // Process village fund releases
+        if (villageFunds && villageFunds.length > 0) {
+            const enrichedVillageFunds = villageFunds.map(fund => ({
+                id: fund.id,
+                project_type: 'village_fund',
+                title: fund.village_name + ' Fund Allocation',
+                location: fund.village_name,
+                component: fund.component || [],
+                agency_name: 'District Admin',
+                amount: fund.amount_allocated,
+                funds_released: fund.amount_released,
+                status: fund.status,
+                deadline: fund.release_date, // Use release_date as deadline fallback
+                state_name: fund.state_name,
+                district_name: fund.district_name,
+                village_name: fund.village_name, // Specific for village filter
+                original_data: fund
+            }));
+
+            allProjects = [...allProjects, ...enrichedVillageFunds];
+        }
+
+        res.json({
+            success: true,
+            count: allProjects.length,
+            data: allProjects
+        });
+
+    } catch (error) {
+        console.error('Error fetching all projects:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
