@@ -9,7 +9,6 @@ import Home from './pages/Home';
 import AdarshGram from './pages/AdarshGram';
 import ContactUs from './pages/pm-contactUs/ContactUs';
 import Login from './pages/Login';
-import RegisterAgency from './pages/RegisterAgency';
 import DashboardRouter from './pages/dashboards/DashboardRouter';
 
 import './index.css';
@@ -74,7 +73,6 @@ function App() {
                             <Route path="/adarsh-gram" element={<AdarshGram />} />
                             <Route path="/contact-us" element={<ContactUs />} />
                             <Route path="/login" element={<Login />} />
-                            <Route path="/register-agency" element={<RegisterAgency />} />
 
                             {/* Protected Routes */}
                             <Route

@@ -46,15 +46,12 @@ const AssignedWorks = () => {
                 }
 
                 if (matchedAgency) {
-                    // Find all agencies with the same name
-                    const agencyName = matchedAgency.agency_name;
-                    const matchingAgencies = allAgencies.filter(agency =>
-                        agency.agency_name === agencyName
-                    );
-                    const matchingIds = matchingAgencies.map(a => a.id);
-
-                    console.log(`Found ${matchingAgencies.length} agencies with name "${agencyName}":`, matchingIds);
-                    setExecutingAgencyIds(matchingIds);
+                    // STRICT MODE: Only use the exact matched agency ID.
+                    // Previously we fetched all agencies with the same NAME, which could cause data leakage 
+                    // if multiple distinct agencies shared a generic name (e.g. "PWD").
+                    // Now we strictly use the ID associated with this login email/user.
+                    console.log(`✅ Identified Executing Agency: "${matchedAgency.agency_name}" (ID: ${matchedAgency.id})`);
+                    setExecutingAgencyIds([matchedAgency.id]);
                 } else {
                     setError('Could not identify your agency. Please contact support.');
                     setLoading(false);

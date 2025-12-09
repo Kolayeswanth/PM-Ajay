@@ -175,21 +175,31 @@ const AssignProjects = () => {
                 setProjects(transformedProjects);
             }
 
-            // 3. Fetch Executing Agencies from agency_assignments (agencies added by this implementing agency)
-            const { data: assignedAgencies, error: agenciesError } = await supabase
-                .from('agency_assignments')
-                .select('id, name, agency_officer, phone, email, status')
-                .eq('implementing_agency_id', user.id)
+            // 3. Fetch ALL Executing Agencies for the state (from executing_agencies table)
+            console.log('📋 Fetching ALL executing agencies for state:', userState);
+
+            let agencyQuery = supabase
+                .from('executing_agencies')
+                .select('id, agency_name, email, agency_officer, status, state_name')
                 .eq('status', 'Active');
 
+            // Filter by state if we know it
+            if (userState) {
+                agencyQuery = agencyQuery.eq('state_name', userState);
+            }
+
+            const { data: stateAgencies, error: agenciesError } = await agencyQuery
+                .order('agency_name', { ascending: true });
+
             if (agenciesError) {
-                console.error('Error fetching agencies from agency_assignments:', agenciesError);
+                console.error('Error fetching executing agencies:', agenciesError);
             } else {
-                console.log('✅ Fetched Executing Agencies from agency_assignments:', assignedAgencies);
-                // Transform to expected format
-                const transformedAgencies = (assignedAgencies || []).map(a => ({
+                console.log('✅ Fetched Executing Agencies for state:', stateAgencies?.length || 0, 'agencies');
+                // Transform to expected format with email for display
+                const transformedAgencies = (stateAgencies || []).map(a => ({
                     id: a.id,
-                    agency_name: a.name,
+                    agency_name: a.agency_name,
+                    email: a.email,
                     agency_officer: a.agency_officer
                 }));
                 setAgencies(transformedAgencies);
@@ -200,12 +210,32 @@ const AssignProjects = () => {
             console.log('📋 Fetching assigned projects history...');
             const { data: assignedData, error: assignedError } = await supabase
                 .from('district_proposals')
-                .select('id, project_name, component, estimated_cost, allocated_amount, status, approved_at, updated_at')
+                .select('id, project_name, component, estimated_cost, allocated_amount, status, approved_at, updated_at, executing_agency_id, executing_agency_name, assigned_to_ea_at')
                 .eq('status', 'ASSIGNED_TO_EA')
                 .order('updated_at', { ascending: false });
 
             if (assignedError) {
                 console.error('Error fetching assigned projects:', assignedError);
+                // Try simpler query if columns don't exist
+                const { data: simpleData } = await supabase
+                    .from('district_proposals')
+                    .select('id, project_name, component, estimated_cost, allocated_amount, status, approved_at, updated_at')
+                    .eq('status', 'ASSIGNED_TO_EA')
+                    .order('updated_at', { ascending: false });
+
+                if (simpleData) {
+                    const transformedAssigned = simpleData.map(p => ({
+                        id: p.id,
+                        title: p.project_name,
+                        component: p.component,
+                        amount: p.allocated_amount || p.estimated_cost,
+                        status: p.status,
+                        created_at: p.updated_at || p.approved_at,
+                        executing_agency_name: 'Assigned',
+                        progress_percentage: 0
+                    }));
+                    setAssignedProjects(transformedAssigned);
+                }
             } else {
                 console.log('✅ Assigned projects found:', assignedData?.length || 0);
 
@@ -216,9 +246,10 @@ const AssignProjects = () => {
                     component: p.component,
                     amount: p.allocated_amount || p.estimated_cost,
                     status: p.status,
-                    created_at: p.updated_at || p.approved_at,
-                    // We don't have executing agency stored in district_proposals yet
-                    executing_agencies: { agency_name: 'Assigned' }
+                    created_at: p.assigned_to_ea_at || p.updated_at || p.approved_at,
+                    executing_agency_name: p.executing_agency_name || 'Assigned',
+                    executing_agency_id: p.executing_agency_id,
+                    progress_percentage: 0
                 }));
 
                 setAssignedProjects(transformedAssigned);
@@ -248,11 +279,14 @@ const AssignProjects = () => {
             console.log('All projects:', projects);
             console.log('Agency data:', selectedAgencyData);
 
-            // Update the proposal status to ASSIGNED_TO_EA
+            // Update the proposal status to ASSIGNED_TO_EA and store executing agency info
             const { data: updatedData, error: proposalError } = await supabase
                 .from('district_proposals')
                 .update({
-                    status: 'ASSIGNED_TO_EA'
+                    status: 'ASSIGNED_TO_EA',
+                    executing_agency_id: selectedAgency,
+                    executing_agency_name: selectedAgencyData?.agency_name,
+                    assigned_to_ea_at: new Date().toISOString()
                 })
                 .eq('id', selectedProject)
                 .select();
@@ -261,14 +295,58 @@ const AssignProjects = () => {
 
             if (proposalError) {
                 console.error('Error updating proposal:', proposalError);
-                throw proposalError;
+                // If the columns don't exist, try simpler update
+                if (proposalError.message?.includes('column')) {
+                    console.log('Trying simpler update without new columns...');
+                    const { data: simpleData, error: simpleError } = await supabase
+                        .from('district_proposals')
+                        .update({ status: 'ASSIGNED_TO_EA' })
+                        .eq('id', selectedProject)
+                        .select();
+
+                    if (simpleError) throw simpleError;
+                    console.log('Simple update result:', simpleData);
+                } else {
+                    throw proposalError;
+                }
             }
 
             if (!updatedData || updatedData.length === 0) {
                 console.warn('⚠️ No rows were updated! The proposal ID might not exist or RLS is blocking.');
-                alert('Warning: Assignment may not have been saved. Please check the database.');
             } else {
-                console.log('✅ Database updated successfully:', updatedData);
+                console.log('✅ Proposal updated successfully:', updatedData);
+            }
+
+            // Also create/update a work_orders entry for tracking progress
+            try {
+                const workOrderData = {
+                    title: selectedProjectData?.title || 'Project',
+                    proposal_id: selectedProject,
+                    executing_agency_id: selectedAgency,
+                    executing_agency_name: selectedAgencyData?.agency_name,
+                    executing_agency_email: selectedAgencyData?.email,
+                    implementing_agency_id: user.id,
+                    status: 'ASSIGNED_TO_EA',
+                    amount: selectedProjectData?.amount || 0,
+                    component: selectedProjectData?.component,
+                    progress_percentage: 0,
+                    assigned_at: new Date().toISOString()
+                };
+
+                console.log('Creating work order:', workOrderData);
+
+                const { data: workOrder, error: workOrderError } = await supabase
+                    .from('work_orders')
+                    .upsert(workOrderData, { onConflict: 'proposal_id' })
+                    .select();
+
+                if (workOrderError) {
+                    console.warn('Work order creation failed (may need schema update):', workOrderError);
+                } else {
+                    console.log('✅ Work order created:', workOrder);
+                }
+            } catch (workOrderErr) {
+                console.warn('Work order creation error:', workOrderErr);
             }
 
             console.log('✅ Project assigned to executing agency:', selectedAgencyData?.agency_name);
@@ -337,16 +415,16 @@ const AssignProjects = () => {
                                     {agencies.length > 0 ? (
                                         agencies.map(a => (
                                             <option key={a.id} value={a.id}>
-                                                {a.agency_name} {a.agency_officer ? `(${a.agency_officer})` : ''}
+                                                {a.agency_name} - {a.email || 'No email'}
                                             </option>
                                         ))
                                     ) : (
-                                        <option disabled>No executing agencies added yet</option>
+                                        <option disabled>No executing agencies available for your state</option>
                                     )}
                                 </select>
                                 {agencies.length === 0 && !loading && (
                                     <small style={{ color: '#666', marginTop: 5, display: 'block' }}>
-                                        Add executing agencies from "Manage Executing Agency" first.
+                                        No executing agencies found for your state. Contact administrator.
                                     </small>
                                 )}
                             </div>
@@ -371,10 +449,10 @@ const AssignProjects = () => {
                                 <thead>
                                     <tr>
                                         <th>Project Title</th>
+                                        <th>Component</th>
                                         <th>Executing Agency</th>
-                                        <th>Location</th>
                                         <th>Amount</th>
-                                        <th>Deadline</th>
+                                        <th>Progress</th>
                                         <th>Status</th>
                                         <th>Assigned On</th>
                                     </tr>
@@ -388,17 +466,35 @@ const AssignProjects = () => {
                                                         {project.title || 'N/A'}
                                                     </div>
                                                 </td>
+                                                <td>{project.component || 'N/A'}</td>
                                                 <td>
-                                                    {project.executing_agencies?.agency_name || 'Unknown'}
+                                                    <div style={{ fontWeight: '500' }}>
+                                                        {project.executing_agency_name || 'Unknown'}
+                                                    </div>
                                                 </td>
-                                                <td>{project.location || 'N/A'}</td>
                                                 <td style={{ fontWeight: '600', color: '#10B981' }}>
                                                     ₹{project.amount?.toLocaleString('en-IN') || '0'}
                                                 </td>
                                                 <td>
-                                                    {project.deadline
-                                                        ? new Date(project.deadline).toLocaleDateString('en-IN')
-                                                        : 'N/A'}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <div style={{
+                                                            width: '60px',
+                                                            height: '8px',
+                                                            backgroundColor: '#E5E7EB',
+                                                            borderRadius: '4px',
+                                                            overflow: 'hidden'
+                                                        }}>
+                                                            <div style={{
+                                                                width: `${project.progress_percentage || 0}%`,
+                                                                height: '100%',
+                                                                backgroundColor: project.progress_percentage >= 100 ? '#10B981' : '#3B82F6',
+                                                                borderRadius: '4px'
+                                                            }} />
+                                                        </div>
+                                                        <span style={{ fontSize: '12px', color: '#666' }}>
+                                                            {project.progress_percentage || 0}%
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span className={`badge ${project.status === 'Completed' ? 'badge-success' :
@@ -409,7 +505,9 @@ const AssignProjects = () => {
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    {new Date(project.created_at).toLocaleDateString('en-IN')}
+                                                    {project.created_at
+                                                        ? new Date(project.created_at).toLocaleDateString('en-IN')
+                                                        : 'N/A'}
                                                 </td>
                                             </tr>
                                         ))

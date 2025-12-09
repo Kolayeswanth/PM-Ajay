@@ -76,20 +76,16 @@ const ContractorDashboard = () => {
 
                 console.log('✅ Matched agency:', matchedAgency.agency_name, matchedAgency.id);
 
-                // Find all agencies with the same name
-                const agencyName = matchedAgency.agency_name;
-                const matchingAgencies = allAgencies.filter(agency =>
-                    agency.agency_name === agencyName
-                );
-                const matchingIds = matchingAgencies.map(a => a.id);
+                console.log('✅ Matched agency:', matchedAgency.agency_name, matchedAgency.id);
 
-                console.log(`✅ Found ${matchingAgencies.length} agencies with name "${agencyName}":`, matchingIds);
+                // STRICT ISOLATION: Use only the exact matched ID
+                const matchingIds = [matchedAgency.id];
 
-                // 2. Fetch work orders assigned to ANY of these executing agencies
+                // 2. Fetch work orders assigned to THIS executing agency
                 const { data: workOrdersData, error: workOrdersError } = await supabase
                     .from('work_orders')
                     .select('*')
-                    .in('executing_agency_id', matchingIds)
+                    .eq('executing_agency_id', matchedAgency.id)
                     .order('created_at', { ascending: false });
 
                 if (workOrdersError) {

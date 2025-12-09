@@ -235,7 +235,7 @@ const FundAllocation = ({ formatCurrency, onNavigate }) => {
                     onClick={() => setShowVillageForm(true)}
                     style={{ whiteSpace: 'nowrap' }}
                 >
-                    🏘️ Release Village Funds
+                    🏘️ Allocate Village Funds
                 </InteractiveButton>
             </div>
 
