@@ -22,25 +22,23 @@ const ImplementingAgencyList = ({ stateName }) => {
         try {
             console.log('🔍 Fetching implementing agencies for state:', stateName);
 
-            const { data, error } = await supabase
-                .from('implementing_agencies')
-                .select('*')
-                .ilike('state_name', stateName)
-                .order('agency_name');
+            // Fetch from backend API instead of direct Supabase query
+            const response = await fetch(`http://localhost:5001/api/implementing-agencies?stateName=${encodeURIComponent(stateName)}`);
+            const result = await response.json();
 
-            if (error) {
-                console.error('Error fetching agencies:', error);
-                setAgencies([]);
-            } else {
-                console.log(`✅ Fetched ${data?.length || 0} agencies:`, data);
-                // Add dummy project counts and ratings to each agency
-                const agenciesWithData = (data || []).map((agency, index) => ({
-                    ...agency,
-                    projectCount: Math.floor(Math.random() * 15) + 5,
-                    rating: parseFloat((3.5 + Math.random() * 1.5).toFixed(1))
-                }));
-                setAgencies(agenciesWithData);
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to fetch agencies');
             }
+
+            console.log(`✅ Fetched ${result.data?.length || 0} agencies:`, result.data);
+
+            // Add dummy project counts and ratings (until real project data is available)
+            const agenciesWithData = (result.data || []).map((agency, index) => ({
+                ...agency,
+                projectCount: Math.floor(Math.random() * 15) + 5,
+                rating: parseFloat((3.5 + Math.random() * 1.5).toFixed(1))
+            }));
+            setAgencies(agenciesWithData);
         } catch (error) {
             console.error('Error fetching agencies:', error);
             setAgencies([]);
@@ -84,8 +82,8 @@ const ImplementingAgencyList = ({ stateName }) => {
                             <thead>
                                 <tr>
                                     <th>Agency Name</th>
-                                    <th>Agency Type</th>
                                     <th>Phone Number</th>
+                                    <th>GST Number</th>
                                     <th>Projects</th>
                                     <th>Rating</th>
                                     <th>Actions</th>
@@ -98,12 +96,12 @@ const ImplementingAgencyList = ({ stateName }) => {
                                             <td>
                                                 <strong>{agency.agency_name}</strong>
                                             </td>
+                                            <td>{agency.phone_number || 'N/A'}</td>
                                             <td>
-                                                <span className="badge badge-primary">
-                                                    {agency.agency_type || 'N/A'}
+                                                <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>
+                                                    {agency.gst_number || 'N/A'}
                                                 </span>
                                             </td>
-                                            <td>{agency.phone_number || `+91 ${9000000000 + index}${Math.floor(Math.random() * 100)}`}</td>
                                             <td>
                                                 <span style={{ color: 'var(--color-navy)', fontWeight: '600' }}>
                                                     {agency.projectCount}
