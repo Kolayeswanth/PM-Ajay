@@ -3,7 +3,7 @@ import Modal from '../../../components/Modal';
 import InteractiveButton from '../../../components/InteractiveButton';
 import { useAuth } from '../../../contexts/AuthContext';
 
-const FundReleased = ({ formatCurrency }) => {
+const FundReleased = ({ formatCurrency, initialTab }) => {
     const { user } = useAuth();
     const [releasedFunds, setReleasedFunds] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -11,12 +11,20 @@ const FundReleased = ({ formatCurrency }) => {
     const [selectedProject, setSelectedProject] = useState(null);
     const [bankAccount, setBankAccount] = useState('');
     const [toast, setToast] = useState(null);
+    const [activeSubTab, setActiveSubTab] = useState(initialTab || 'project'); // 'project' or 'village'
+    const [villageFunds, setVillageFunds] = useState([]);
     const [statesWithAdmins, setStatesWithAdmins] = useState([]);
 
     // Fetch Data on Mount
     useEffect(() => {
         fetchStatesWithAdmins();
-    }, []);
+        // Fetch village funds initially too, or only when tab changes
+        fetchVillageFunds();
+
+        if (initialTab) {
+            setActiveSubTab(initialTab);
+        }
+    }, [initialTab]);
 
     // Refetch projects when states with admins are loaded
     useEffect(() => {
@@ -58,6 +66,22 @@ const FundReleased = ({ formatCurrency }) => {
             console.error('Error fetching projects:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchVillageFunds = async () => {
+        try {
+            // For now, fetching for Andhra Pradesh as the primary use case, 
+            // but ideally this should be all or filtered by selected state context if available.
+            // Since there's no global "selectedState" passed here easily without prop drilling, 
+            // we will fetch for Andhra Pradesh as verified in the task.
+            const response = await fetch(`http://localhost:5001/api/villages/funds/state/Andhra%20Pradesh`);
+            const result = await response.json();
+            if (result.success) {
+                setVillageFunds(result.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching village funds:', error);
         }
     };
 
@@ -140,80 +164,192 @@ const FundReleased = ({ formatCurrency }) => {
                 </div>
             )}
 
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <InteractiveButton
+                    variant={activeSubTab === 'project' ? 'primary' : 'outline'}
+                    onClick={() => setActiveSubTab('project')}
+                >
+                    Project Funds
+                </InteractiveButton>
+                <InteractiveButton
+                    variant={activeSubTab === 'village' ? 'primary' : 'outline'}
+                    onClick={() => setActiveSubTab('village')}
+                >
+                    Village Funds
+                </InteractiveButton>
+            </div>
+
             {/* Table */}
             <div className="table-wrapper">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>STATE/UT</th>
-                            <th>SCHEME COMPONENT</th>
-                            <th style={{ textAlign: 'right' }}>PROJECT COST</th>
-                            <th style={{ textAlign: 'right' }}>MINIMUM ALLOCATION</th>
-                            <th style={{ textAlign: 'right' }}>AMOUNT RELEASED</th>
-                            <th style={{ textAlign: 'right' }}>REMAINING FUND</th>
-                            <th>PROJECT NAME</th>
-                            <th>ACTION</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
+                {activeSubTab === 'project' ? (
+                    <table className="table">
+                        <thead>
                             <tr>
-                                <td colSpan={8} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                                <th>STATE/UT</th>
+                                <th>SCHEME COMPONENT</th>
+                                <th style={{ textAlign: 'right' }}>PROJECT COST</th>
+                                <th style={{ textAlign: 'right' }}>MINIMUM ALLOCATION</th>
+                                <th style={{ textAlign: 'right' }}>AMOUNT RELEASED</th>
+                                <th style={{ textAlign: 'right' }}>REMAINING FUND</th>
+                                <th>PROJECT NAME</th>
+                                <th>ACTION</th>
                             </tr>
-                        ) : releasedFunds.length > 0 ? (
-                            releasedFunds.map((item) => (
-                                <tr key={item.id}>
-                                    <td style={{ fontWeight: 600 }}>{item.stateName}</td>
-                                    <td>
-                                        <span style={{
-                                            background: '#e3f2fd',
-                                            color: '#1976d2',
-                                            padding: '6px 12px',
-                                            borderRadius: '20px',
-                                            fontSize: '11px',
-                                            fontWeight: 'bold',
-                                            textTransform: 'uppercase',
-                                            display: 'inline-block'
-                                        }}>
-                                            {item.component}
-                                        </span>
-                                    </td>
-                                    <td style={{ textAlign: 'right', color: '#555', fontWeight: 600 }}>
-                                        ₹{item.estimatedCost} Lakhs
-                                    </td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#2c3e50' }}>
-                                        ₹{item.allocatedAmount} Lakhs
-                                    </td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#00B894' }}>
-                                        ₹{item.releasedAmount} Lakhs
-                                    </td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#EF4444' }}>
-                                        ₹{item.remainingAmount} Lakhs
-                                    </td>
-                                    <td style={{ color: '#555' }}>
-                                        {item.projectName}
-                                    </td>
-                                    <td style={{ whiteSpace: 'nowrap' }}>
-                                        <InteractiveButton
-                                            variant="primary"
-                                            size="sm"
-                                            onClick={() => handleReleaseClick(item)}
-                                            disabled={item.remainingAmount <= 0}
-                                        >
-                                            {item.remainingAmount <= 0 ? 'Fully Released' : 'Release Funds'}
-                                        </InteractiveButton>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={8} style={{ textAlign: 'center', padding: 30 }}>Loading data...</td>
+                                </tr>
+                            ) : releasedFunds.length > 0 ? (
+                                releasedFunds.map((item) => (
+                                    <tr key={item.id}>
+                                        <td style={{ fontWeight: 600 }}>{item.stateName}</td>
+                                        <td>
+                                            <span style={{
+                                                background: '#e3f2fd',
+                                                color: '#1976d2',
+                                                padding: '6px 12px',
+                                                borderRadius: '20px',
+                                                fontSize: '11px',
+                                                fontWeight: 'bold',
+                                                textTransform: 'uppercase',
+                                                display: 'inline-block'
+                                            }}>
+                                                {item.component}
+                                            </span>
+                                        </td>
+                                        <td style={{ textAlign: 'right', color: '#555', fontWeight: 600 }}>
+                                            ₹{item.estimatedCost} Lakhs
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#2c3e50' }}>
+                                            ₹{item.allocatedAmount} Lakhs
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#00B894' }}>
+                                            ₹{item.releasedAmount} Lakhs
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#EF4444' }}>
+                                            ₹{item.remainingAmount} Lakhs
+                                        </td>
+                                        <td style={{ color: '#555' }}>
+                                            {item.projectName}
+                                        </td>
+                                        <td style={{ whiteSpace: 'nowrap' }}>
+                                            <InteractiveButton
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => handleReleaseClick(item)}
+                                                disabled={item.remainingAmount <= 0}
+                                            >
+                                                {item.remainingAmount <= 0 ? 'Fully Released' : 'Release Funds'}
+                                            </InteractiveButton>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={8} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        No approved projects found.
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
+                            )}
+                        </tbody>
+                    </table>
+                ) : (
+                    <table className="table">
+                        <thead>
                             <tr>
-                                <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
-                                    No approved projects found.
-                                </td>
+                                <th>RELEASE DATE</th>
+                                <th>DISTRICT</th>
+                                <th>VILLAGE</th>
+                                <th>COMPONENTS</th>
+                                <th style={{ textAlign: 'right' }}>MINIMUM ALLOCATION</th>
+                                <th style={{ textAlign: 'right' }}>AMOUNT RELEASED</th>
+                                <th style={{ textAlign: 'right' }}>REMAINING FUNDS</th>
+                                <th>SANCTION ORDER</th>
+                                <th>STATUS</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {villageFunds.length > 0 ? (
+                                villageFunds.map((item) => (
+                                    <tr key={item.id}>
+                                        <td>{new Date(item.release_date).toLocaleDateString('en-GB')}</td>
+                                        <td>{item.district_name}</td>
+                                        <td style={{ fontWeight: 600 }}>{item.village_name}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                {/* Components Group */}
+                                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                    {item.component && item.component.filter(c => ['Adarsh Gram', 'GIA', 'Hostel'].includes(c)).map((comp, idx) => (
+                                                        <span key={`comp-${idx}`} style={{
+                                                            background: '#e3f2fd',
+                                                            color: '#1976d2',
+                                                            padding: '6px 12px',
+                                                            borderRadius: '20px',
+                                                            fontSize: '11px',
+                                                            fontWeight: 'bold',
+                                                            textTransform: 'uppercase',
+                                                            display: 'inline-block'
+                                                        }}>
+                                                            {comp}
+                                                        </span>
+                                                    ))}
+                                                </div>
+
+                                                {/* Projects Group */}
+                                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                    {(item.projects && item.projects.length > 0 ? item.projects : (item.component && item.component.filter(c => !['Adarsh Gram', 'GIA', 'Hostel'].includes(c))))?.map((comp, idx) => (
+                                                        <span key={`proj-${idx}`} style={{
+                                                            background: '#f3e5f5',  // Different color for Projects (Purple-ish) to distinguish
+                                                            color: '#7b1fa2',
+                                                            padding: '6px 12px',
+                                                            borderRadius: '20px',
+                                                            fontSize: '11px',
+                                                            fontWeight: 'bold',
+                                                            textTransform: 'uppercase',
+                                                            display: 'inline-block'
+                                                        }}>
+                                                            {comp}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#2c3e50' }}>
+                                            ₹{item.amount_allocated ? item.amount_allocated.toLocaleString('en-IN') : 0}
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#00B894' }}>
+                                            ₹{item.amount_released ? item.amount_released.toLocaleString('en-IN') : 0}
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#EF4444' }}>
+                                            ₹{((item.amount_released || 0) - (item.amount_utilized || 0)).toLocaleString('en-IN')}
+                                        </td>
+                                        <td>{item.sanction_order_no || '-'}</td>
+                                        <td>
+                                            <span style={{
+                                                background: '#dcfce7',
+                                                color: '#166534',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '12px',
+                                                fontWeight: 500
+                                            }}>
+                                                {item.status || 'Released'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={8} style={{ textAlign: 'center', padding: 30, color: '#888' }}>
+                                        No village releases found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {/* Release Modal */}

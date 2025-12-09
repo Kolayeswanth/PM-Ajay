@@ -328,7 +328,8 @@ exports.releaseFund = async (req, res) => {
             remarks,
             created_by,
             state_name,
-            bankAccount
+            bankAccount,
+            implementing_agency_id
         } = req.body;
 
         console.log('💰 Release Fund Request Received:');
@@ -355,7 +356,8 @@ exports.releaseFund = async (req, res) => {
                         release_date: releaseDate,
                         officer_id: officer_id || officerId,
                         remarks: bankAccount ? `${remarks} | Bank Account: ${bankAccount}` : remarks,
-                        created_by: created_by
+                        created_by: created_by,
+                        implementing_agency_id: implementing_agency_id || null
                     }
                 ])
                 .select('*, districts(name, id)');
@@ -367,7 +369,7 @@ exports.releaseFund = async (req, res) => {
 
             console.log('✅ Fund release saved to database');
 
-            // Send WhatsApp notification to District Admin
+            // Send WhatsApp & Push to District Admin
             try {
                 console.log('📱 Fetching District Admin details for district ID:', district_id);
 
@@ -386,10 +388,10 @@ exports.releaseFund = async (req, res) => {
 
                     console.log('📊 District:', districtName, 'State:', stateName);
 
-                    // Get District Admin phone number
+                    // Get District Admin details
                     const { data: districtAdmin, error: adminError } = await supabase
                         .from('district_assignment')
-                        .select('phone_no, admin_name, email, district_name')
+                        .select('phone_no, admin_name, email, district_name, status')
                         .ilike('district_name', districtName)
                         .eq('status', 'Activated')
                         .single();
@@ -401,7 +403,23 @@ exports.releaseFund = async (req, res) => {
                     } else {
                         console.log('📱 Found District Admin:', districtAdmin.admin_name, 'Phone:', districtAdmin.phone_no);
 
-                        // Format phone number
+                        // 1. In-App Notification (Realtime)
+                        const { error: notifError } = await supabase.from('notifications').insert([{
+                            user_role: 'district',
+                            district_name: districtName,
+                            state_name: stateName,
+                            title: 'Fund Released By State',
+                            message: `${stateName} has released ₹${amountCr.toFixed(2)} Cr to ${districtName}.`,
+                            type: 'success',
+                            read: false,
+                            created_at: new Date().toISOString()
+                        }]);
+
+                        if (notifError) console.error('Error creating in-app notification:', notifError);
+                        else console.log('✅ In-App Notification created in DB');
+
+
+                        // 2. WhatsApp Notification
                         let formattedPhone = districtAdmin.phone_no.replace(/\D/g, '');
                         if (formattedPhone.startsWith('91')) {
                             formattedPhone = formattedPhone.substring(2);
@@ -444,64 +462,86 @@ exports.releaseFund = async (req, res) => {
                         } else {
                             console.log('⚠️ WATI configuration missing');
                         }
+
+                        // Expo Push - Robust Official Account Lookup
+                        console.log(`🔍 Expo: Looking for Official District Admin profile for: ${districtName}`);
+
+                        // Search for role='district_admin' and full_name containing the district name
+                        let { data: officialProfile, error: profileErr } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name')
+                            .eq('role', 'district_admin')
+                            .ilike('full_name', `%${districtName}%`) // Matches "Lucknow District Admin"
+                            .maybeSingle();
+
+                        if (officialProfile) {
+                            console.log(`✅ Expo: Found Official Admin: ${officialProfile.email} (${officialProfile.full_name})`);
+
+                            if (officialProfile.push_token) {
+                                console.log(`✅ Expo: Found valid push token. Sending notification...`);
+                                try {
+                                    const pushResponse = await axios.post('https://exp.host/--/api/v2/push/send', {
+                                        to: officialProfile.push_token,
+                                        title: '💰 Fund Release Update',
+                                        body: `State has released funds to ${districtName}. Released: ₹${amountCr.toFixed(2)} Cr.`,
+                                        data: { type: 'fund_release', amount: amountCr },
+                                        sound: 'default',
+                                        priority: 'high'
+                                    });
+                                    console.log('✅ Expo: Notification sent successfully:', pushResponse.data?.data);
+                                } catch (err) {
+                                    console.error('❌ Expo: Error sending notification:', err.response?.data || err.message);
+                                }
+                            } else {
+                                console.log(`⚠️ Expo: Official Admin has no push token set (Token is null). User needs to login to app.`);
+                            }
+                        } else {
+                            console.log(`⚠️ Expo: Could not find an official profile for district: ${districtName}`);
+                            if (profileErr) console.error('Error details:', profileErr);
+                        }
                     }
                 }
             } catch (whatsappError) {
-                console.error('❌ Error sending WhatsApp:', whatsappError.message);
+                console.error('❌ Error sending Notification:', whatsappError.message);
             }
 
             return res.json({ success: true, message: 'Fund released to district successfully', data: data[0] });
 
         } else if (stateName) {
-            // MINISTRY → STATE RELEASE (existing logic)
+            // MINISTRY → STATE RELEASE
             console.log('💰 Processing Ministry→State fund release for state:', stateName);
             const amountCr = parseFloat(amount);
             const amountInRupees = Math.round(amountCr * 10000000);
-            console.log(`💵 Amount: ${amountCr} Cr = ${amountInRupees} Rupees`);
 
             // Get State ID
-            console.log('🔍 Looking up state ID for:', stateName);
             const { data: stateData, error: stateError } = await supabase
                 .from('states')
                 .select('id')
                 .eq('name', stateName)
                 .single();
 
-            if (stateError || !stateData) {
-                console.error('❌ State not found:', stateName, stateError);
-                return res.status(404).json({ success: false, error: 'State not found' });
-            }
+            if (stateError || !stateData) return res.status(404).json({ success: false, error: 'State not found' });
 
             const stateId = stateData.id;
-            console.log('✅ State ID found:', stateId);
 
-            // Check if this is a project-specific release
+            // Check if Project Release
             const isProjectRelease = officerId && officerId.startsWith('PROJ-');
-            console.log('🎯 Is Project Release?', isProjectRelease, 'Officer ID:', officerId);
-
-            // For project releases, we don't need to check fund_allocations
-            // We'll create the allocation record directly
-            let allocation;
             let currentReleased = 0;
             let totalAllocated = 0;
             let newReleased = 0; // Declare here so it's accessible later
 
             if (!isProjectRelease) {
-                // Get latest allocation for state-level releases
-                console.log('🔍 Checking fund allocations for state:', stateName);
-                const { data: allocations, error: fetchError } = await supabase
+                // Update Allocation
+                const { data: allocations } = await supabase
                     .from('fund_allocations')
                     .select('*')
                     .eq('state_name', stateName)
                     .order('allocation_date', { ascending: false })
                     .limit(1);
 
-                if (fetchError || !allocations || allocations.length === 0) {
-                    console.error('❌ State allocation not found for:', stateName);
-                    return res.status(404).json({ success: false, error: 'State allocation not found. Please allocate funds to the state first.' });
-                }
+                if (!allocations?.length) return res.status(404).json({ success: false, error: 'State allocation not found.' });
 
-                allocation = allocations[0];
+                const allocation = allocations[0];
                 currentReleased = parseInt(allocation.amount_released) || 0;
                 totalAllocated = parseInt(allocation.amount_allocated) || 0;
                 newReleased = currentReleased + amountInRupees;
@@ -529,311 +569,202 @@ exports.releaseFund = async (req, res) => {
                 newReleased = currentReleased + amountInRupees;
             }
 
-            // Insert into state_fund_releases
+            // Insert Release Log
             const { data: releaseLog, error: insertError } = await supabase
                 .from('state_fund_releases')
-                .insert([
-                    {
-                        state_id: stateId,
-                        component: component || [],
-                        amount_rupees: amountInRupees,
-                        amount_cr: amountCr,
-                        release_date: date || new Date().toISOString().split('T')[0],
-                        sanction_order_no: officerId,
-                        remarks: bankAccount ? `${remarks} | Bank Account: ${bankAccount}` : remarks
-                    }
-                ])
+                .insert([{
+                    state_id: stateId,
+                    component: component || [],
+                    amount_rupees: amountInRupees,
+                    amount_cr: amountCr,
+                    release_date: date || new Date().toISOString().split('T')[0],
+                    sanction_order_no: officerId,
+                    remarks: bankAccount ? `${remarks} | Bank Account: ${bankAccount}` : remarks
+                }])
                 .select();
 
-            if (insertError) {
-                console.error('Supabase insert log error:', insertError);
-                return res.status(500).json({ success: false, error: 'Allocation updated but failed to log release: ' + insertError.message });
-            }
+            if (insertError) return res.status(500).json({ success: false, error: insertError.message });
 
-            console.log('✅ Ministry→State fund release saved successfully');
-
-            // If this is a project-specific release (officerId starts with PROJ-), update the project record
-            if (officerId && officerId.startsWith('PROJ-')) {
+            // Update Project if needed
+            if (isProjectRelease) {
                 const projectId = officerId.replace('PROJ-', '');
-                console.log('Updating project released amount for Proposal ID:', projectId);
-
-                // Get current released amount for project from approved_projects
-                const { data: projectData, error: projFetchError } = await supabase
-                    .from('approved_projects')
-                    .select('released_amount')
-                    .eq('proposal_id', projectId)
-                    .single();
-
-                if (!projFetchError && projectData) {
-                    const currentProjectReleased = parseFloat(projectData.released_amount) || 0;
-                    const newProjectReleased = currentProjectReleased + (amountInRupees / 100000); // Convert back to Lakhs
-
-                    // Also update remaining_fund
-                    const { data: fullProjectData } = await supabase
-                        .from('approved_projects')
-                        .select('allocated_amount, released_amount')
-                        .eq('proposal_id', projectId)
-                        .single();
-
-                    const allocatedAmount = parseFloat(fullProjectData?.allocated_amount) || 0;
-                    const newRemainingFund = allocatedAmount - newProjectReleased;
-
-                    const { error: updateError } = await supabase
-                        .from('approved_projects')
-                        .update({
-                            released_amount: newProjectReleased,
-                            remaining_fund: newRemainingFund
-                        })
-                        .eq('proposal_id', projectId);
-
-                    if (updateError) {
-                        console.error('Error updating project amounts:', updateError);
-                    } else {
-                        console.log('✅ Project released amount and remaining fund updated in approved_projects');
-                    }
-                } else {
-                    console.log('⚠️ Could not find project in approved_projects to update released amount');
+                const { data: projectData } = await supabase.from('approved_projects').select('released_amount, allocated_amount').eq('proposal_id', projectId).single();
+                if (projectData) {
+                    const newProjReleased = (parseFloat(projectData.released_amount) || 0) + (amountInRupees / 100000);
+                    const newRemaining = (parseFloat(projectData.allocated_amount) || 0) - newProjReleased;
+                    await supabase.from('approved_projects').update({ released_amount: newProjReleased, remaining_fund: newRemaining }).eq('proposal_id', projectId);
                 }
             }
 
-
-            // Send WhatsApp notification to State Admin
+            // Notifications
             try {
-                console.log('📱 Fetching State Admin for Ministry→State release:', stateName);
-
-                // Get State Admin phone from state_assignment table
-                const { data: stateAdmin, error: adminError } = await supabase
+                const { data: stateAdmin } = await supabase
                     .from('state_assignment')
-                    .select('phone_no, admin_name, email, status, state_name')
+                    .select('phone_no, admin_name, email, status')
                     .ilike('state_name', stateName)
                     .eq('status', 'Activated')
                     .single();
 
-                console.log('📱 State Admin query result:', stateAdmin, 'Error:', adminError);
+                if (stateAdmin) {
+                    // In-App Notification (Reliable via Realtime)
+                    const { error: notifError } = await supabase.from('notifications').insert([{
+                        user_role: 'state',
+                        state_name: stateName,
+                        title: 'Fund Released By Ministry',
+                        message: `Ministry has released ₹${amountCr.toFixed(2)} Cr for ${stateName}.`,
+                        type: 'success',
+                        read: false,
+                        created_at: new Date().toISOString()
+                    }]);
 
-                if (adminError || !stateAdmin) {
-                    console.log('⚠️ No activated State Admin found for:', stateName);
-                } else {
-                    console.log('📱 Found State Admin:', stateAdmin.admin_name, 'Phone:', stateAdmin.phone_no);
+                    if (notifError) console.error('Error creating in-app notification:', notifError);
+                    else console.log('✅ In-App Notification created in DB');
 
-                    // Format phone number
-                    let formattedPhone = stateAdmin.phone_no.replace(/\D/g, '');
-                    if (formattedPhone.startsWith('91')) {
-                        formattedPhone = formattedPhone.substring(2);
+                    // WhatsApp & Push
+                    const formattedPhone = '91' + stateAdmin.phone_no.replace(/\D/g, '').slice(-10);
+                    const remainingBalance = !isProjectRelease ? ((totalAllocated - (currentReleased + amountInRupees)) / 10000000).toFixed(2) : 'N/A';
+
+                    // WhatsApp
+                    if (process.env.WATI_API_KEY) {
+                        const msg = `FUND RELEASE - Released: ₹${amountCr.toFixed(2)} Cr. Remaining: ₹${remainingBalance} Cr.`;
+                        axios.post(`${process.env.WATI_API_URL}/${process.env.TENANT_ID}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`, {
+                            template_name: process.env.WATI_TEMPLATE_NAME || 'sih',
+                            broadcast_name: 'Fund Release',
+                            parameters: [{ name: "message_body", value: msg }]
+                        }, { headers: { 'Authorization': `Bearer ${process.env.WATI_API_KEY}` } }).catch(console.error);
                     }
-                    formattedPhone = `91${formattedPhone}`;
 
-                    const watiApiBaseUrl = process.env.WATI_API_URL;
-                    const watiApiKey = process.env.WATI_API_KEY;
-                    const tenantId = process.env.TENANT_ID;
-                    const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
+                    // Expo Push - Robust Official Account Lookup with Multiple Strategies
+                    console.log(`🔍 Expo: Looking for Official State Admin profile for: ${stateName}`);
 
-                    if (watiApiBaseUrl && watiApiKey && tenantId) {
-                        const remainingBalance = ((totalAllocated - newReleased) / 10000000).toFixed(2);
+                    // Wait to ensure push token is saved (if just logged in)
+                    await new Promise(resolve => setTimeout(resolve, 1000));
 
-                        const messageContent =
-                            `FUND RELEASE NOTIFICATION - ` +
-                            `Dear ${stateAdmin.admin_name}, ` +
-                            `The Ministry has released ₹${amountCr.toFixed(2)} Crores from your allocated funds for ${stateName}. ` +
-                            `Release Date: ${date || new Date().toISOString().split('T')[0]}. ` +
-                            `Remaining Balance: ₹${remainingBalance} Crores. ` +
-                            `Scheme Components: ${Array.isArray(component) ? component.join(', ') : component || 'General'}. ` +
-                            `Sanction Order: ${officerId || 'N/A'}. ` +
-                            `Please login to the PM-AJAY portal to view details and utilize the released funds for district allocation. ` +
-                            `Thank you, Ministry of Social Justice & Empowerment`;
+                    let officialProfile = null;
+                    let profileErr = null;
 
-                        const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
-                        const payload = {
-                            template_name: templateName,
-                            broadcast_name: 'Fund Release Notification',
-                            parameters: [{ name: "message_body", value: messageContent }]
-                        };
-
-                        console.log('📱 Sending WhatsApp notification to State Admin:', formattedPhone);
-
-                        await axios.post(endpoint, payload, {
-                            headers: {
-                                'Authorization': `Bearer ${watiApiKey}`,
-                                'Content-Type': 'application/json'
+                    // Strategy 1: Try finding by state_assignment email first (most reliable)
+                    console.log(`📧 Strategy 1: Looking up by state_assignment email...`);
+                    if (stateAdmin?.email) {
+                        const { data: profileByEmail, error: emailErr } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name, role, updated_at')
+                            .eq('email', stateAdmin.email)
+                            .maybeSingle();
+                        
+                        if (profileByEmail) {
+                            officialProfile = profileByEmail;
+                            console.log(`✅ Found profile by email: ${profileByEmail.email}`);
+                            console.log(`📊 Profile details: ID=${profileByEmail.id}, Role=${profileByEmail.role}, Updated=${profileByEmail.updated_at}`);
+                            console.log(`🔑 Push token status: ${profileByEmail.push_token ? 'EXISTS' : 'NULL'}`);
+                            if (profileByEmail.push_token) {
+                                console.log(`🔑 Push token value: ${profileByEmail.push_token.substring(0, 30)}...`);
                             }
-                        });
+                        } else {
+                            console.log(`⚠️ Strategy 1 failed:`, emailErr?.message || 'No profile found');
+                        }
+                    }
 
-                        console.log('✅ WhatsApp notification sent to State Admin for fund release!');
+                    // Strategy 2: If not found or no token, try by full_name (fallback)
+                    if (!officialProfile || !officialProfile.push_token) {
+                        console.log(`📝 Strategy 2: Looking up by full_name pattern...`);
+                        const { data: profileByName, error: nameErr } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name, role, updated_at')
+                            .eq('role', 'state_admin')
+                            .ilike('full_name', `%${stateName}%`)
+                            .maybeSingle();
+                        
+                        if (profileByName && (!officialProfile || profileByName.push_token)) {
+                            officialProfile = profileByName;
+                            console.log(`✅ Found profile by name: ${profileByName.full_name}`);
+                            console.log(`🔑 Push token status: ${profileByName.push_token ? 'EXISTS' : 'NULL'}`);
+                        } else {
+                            console.log(`⚠️ Strategy 2 failed:`, nameErr?.message || 'No profile with token found');
+                        }
+                    }
+
+                    // Strategy 3: Last resort - manual refresh and retry
+                    if (officialProfile && !officialProfile.push_token) {
+                        console.log(`🔄 Strategy 3: Retrying fetch after additional delay (token may be saving)...`);
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        
+                        const { data: refreshedProfile } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name')
+                            .eq('id', officialProfile.id)
+                            .single();
+                        
+                        if (refreshedProfile?.push_token) {
+                            officialProfile = refreshedProfile;
+                            console.log(`✅ Push token found after retry!`);
+                        } else {
+                            console.log(`⚠️ Push token still null after retry`);
+                        }
+                    }
+
+                    if (officialProfile) {
+                        console.log(`✅ Expo: Found Official Admin: ${officialProfile.email} (${officialProfile.full_name})`);
+
+                        if (officialProfile.push_token) {
+                            console.log(`✅ Expo: Found valid push token. Sending notification...`);
+                            console.log(`📤 Push notification payload: Title: "💰 Fund Released by Ministry", Amount: ₹${amountCr.toFixed(2)} Cr, Remaining: ₹${remainingBalance} Cr`);
+                            try {
+                                const pushResponse = await axios.post('https://exp.host/--/api/v2/push/send', {
+                                    to: officialProfile.push_token,
+                                    title: '💰 Fund Released by Ministry',
+                                    body: `Ministry has released ₹${amountCr.toFixed(2)} Cr for ${stateName}. Remaining balance: ₹${remainingBalance} Cr.`,
+                                    data: { 
+                                        type: 'fund_release', 
+                                        amount: amountCr, 
+                                        stateName: stateName,
+                                        remainingBalance: remainingBalance
+                                    },
+                                    sound: 'default',
+                                    priority: 'high',
+                                    channelId: 'default'
+                                });
+                                console.log('✅ Expo: Push notification sent successfully');
+                                console.log('📊 Expo Response:', JSON.stringify(pushResponse.data, null, 2));
+                            } catch (err) {
+                                console.error('❌ Expo: Error sending push notification:', err.response?.data || err.message);
+                                if (err.response) {
+                                    console.error('❌ Response status:', err.response.status);
+                                    console.error('❌ Response data:', JSON.stringify(err.response.data, null, 2));
+                                }
+                            }
+                        } else {
+                            console.log(`⚠️ Expo: Official Admin has no push token set (Token is null). User needs to login to app.`);
+                            console.log(`💡 Tip: Ask the state admin to login to the mobile app to register their device.`);
+                        }
+
                     } else {
-                        console.log('⚠️ WATI configuration missing');
+                        console.log(`⚠️ Expo: Could not find an official profile for state: ${stateName}`);
+                        if (profileErr) console.error('Error details:', profileErr);
+                        
+                        // Try alternative search with more flexible matching
+                        console.log(`🔄 Attempting alternative profile search...`);
+                        const { data: alternativeProfiles } = await supabase
+                            .from('profiles')
+                            .select('push_token, id, email, full_name, role')
+                            .eq('role', 'state_admin');
+                        
+                        console.log(`📋 All state admin profiles:`, alternativeProfiles?.map(p => ({
+                            email: p.email,
+                            fullName: p.full_name,
+                            hasToken: !!p.push_token
+                        })));
                     }
                 }
-            } catch (whatsappError) {
-                console.error('❌ Error sending WhatsApp for Ministry→State release:', whatsappError.message);
-            }
+            } catch (e) { console.error('Notification error:', e); }
 
-            return res.json({ success: true, message: 'Fund released to state successfully', data: releaseLog[0] });
+            return res.json({ success: true, message: 'Fund released successfully', data: releaseLog[0] });
+
         } else {
-            return res.status(400).json({ success: false, error: 'Either district_id or stateName must be provided' });
+            return res.status(400).json({ success: false, error: 'Target not specified' });
         }
-
     } catch (error) {
-        console.error('Error releasing fund:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-// Get all state fund releases
-exports.getAllStateFundReleases = async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('state_fund_releases')
-            .select('*, states(name, id)')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Supabase error fetching releases:', error);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-
-        res.json({ success: true, data });
-
-    } catch (error) {
-        console.error('Error fetching state fund releases:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-// Get district fund releases filtered by state
-exports.getDistrictFundReleasesByState = async (req, res) => {
-    try {
-        const { stateName } = req.query;
-
-        if (!stateName) {
-            return res.status(400).json({ success: false, error: 'State name is required' });
-        }
-
-        // Clean the state name
-        let cleanStateName = stateName.replace(' State Admin', '').replace(' Admin', '').replace(' State', '').trim();
-        console.log('📊 Fetching district fund releases for state:', cleanStateName);
-
-        // 1. Get state ID
-        const { data: stateData, error: stateError } = await supabase
-            .from('states')
-            .select('id')
-            .eq('name', cleanStateName)
-            .single();
-
-        if (stateError || !stateData) {
-            return res.status(404).json({ success: false, error: 'State not found' });
-        }
-
-        const stateId = stateData.id;
-
-        // 2. Get all districts for this state
-        const { data: districts, error: districtError } = await supabase
-            .from('districts')
-            .select('id, name')
-            .eq('state_id', stateId);
-
-        if (districtError) {
-            return res.status(500).json({ success: false, error: districtError.message });
-        }
-
-        const districtIds = districts.map(d => d.id);
-        console.log(`📊 Found ${districtIds.length} districts for ${cleanStateName}`);
-
-        // 3. Get fund releases for these districts only
-        const { data: releases, error: releasesError } = await supabase
-            .from('fund_releases')
-            .select('*, districts(name)')
-            .in('district_id', districtIds)
-            .order('created_at', { ascending: false });
-
-        if (releasesError) {
-            return res.status(500).json({ success: false, error: releasesError.message });
-        }
-
-        console.log(`📊 Found ${releases ? releases.length : 0} fund releases`);
-
-        res.json({ success: true, data: releases || [] });
-
-    } catch (error) {
-        console.error('Error fetching district fund releases:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-// Get fund statistics for a specific district
-exports.getDistrictStats = async (req, res) => {
-    try {
-        const { districtId } = req.query;
-
-        if (!districtId) {
-            return res.status(400).json({ success: false, error: 'District ID is required' });
-        }
-
-        console.log('📊 Fetching comprehensive stats for district ID:', districtId);
-
-        // 1. Get Gram Panchayats count for this district
-        const { data: gpData, error: gpError } = await supabase
-            .from('gram_panchayats')
-            .select('id', { count: 'exact', head: true })
-            .eq('district_id', districtId);
-
-        const gramPanchayats = gpError ? 0 : (gpData?.length || 0);
-
-        // 2. Get total projects (district_proposals) for this district
-        const { data: proposalsData, error: proposalsError, count: proposalsCount } = await supabase
-            .from('district_proposals')
-            .select('id, status, estimated_cost', { count: 'exact' })
-            .eq('district_id', districtId);
-
-        const totalProjects = proposalsError ? 0 : (proposalsCount || 0);
-
-        // 3. Get completed projects count
-        const completedProjects = proposalsData
-            ? proposalsData.filter(p => p.status === 'COMPLETED').length
-            : 0;
-
-        // 4. Get total fund allocated (from fund_releases)
-        const { data: releases, error: releasesError } = await supabase
-            .from('fund_releases')
-            .select('amount_cr, release_date')
-            .eq('district_id', districtId);
-
-        const fundAllocated = releasesError ? 0 : releases.reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0);
-
-        // Find last release date
-        const lastRelease = releases && releases.length > 0
-            ? releases.reduce((latest, item) => new Date(item.release_date) > new Date(latest) ? item.release_date : latest, releases[0].release_date)
-            : null;
-
-        console.log('✅ District stats calculated:', {
-            gramPanchayats,
-            totalProjects,
-            fundAllocated,
-            completedProjects
-        });
-
-        // 5. Get total released to agencies
-        const { data: agencyReleases, error: agencyReleasesError } = await supabase
-            .from('agency_fund_releases')
-            .select('amount_cr')
-            .eq('district_id', districtId);
-
-        const fundReleased = agencyReleasesError ? 0 : (agencyReleases || []).reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0);
-
-        res.json({
-            success: true,
-            data: {
-                gramPanchayats,
-                totalProjects,
-                completedProjects,
-                fundAllocated: (fundAllocated || 0).toFixed(2),
-                fundReleased: (fundReleased || 0).toFixed(2),
-                availableBalance: ((fundAllocated || 0) - (fundReleased || 0)).toFixed(2),
-                lastReleaseDate: lastRelease ? lastRelease.release_date : 'N/A'
-            }
-        });
-
-    } catch (error) {
-        console.error('Error fetching district stats:', error);
+        console.error('Release error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };
@@ -841,100 +772,44 @@ exports.getDistrictStats = async (req, res) => {
 // Release fund to Agency (District -> Agency)
 exports.releaseFundToAgency = async (req, res) => {
     try {
-        const {
-            districtId,
-            agencyId,
-            component,
-            amount,
-            date,
-            remarks,
-            bankAccount,
-            createdBy,
-            districtName
-        } = req.body;
-
+        const { districtId, agencyId, component, amount, date, remarks, createdBy, districtName } = req.body;
         const amountCr = parseFloat(amount);
         const amountInRupees = Math.round(amountCr * 10000000);
 
-        // Check district balance
-        // 1. Get total received
-        const { data: receivedData } = await supabase
-            .from('fund_releases')
-            .select('amount_cr')
-            .eq('district_id', districtId);
-        const totalReceived = receivedData ? receivedData.reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0) : 0;
+        // Check balance
+        const { data: received } = await supabase.from('fund_releases').select('amount_cr').eq('district_id', districtId);
+        const totalReceived = received?.reduce((sum, i) => sum + (parseFloat(i.amount_cr) || 0), 0) || 0;
 
-        // 2. Get total released
-        const { data: releasedData } = await supabase
-            .from('agency_fund_releases')
-            .select('amount_cr')
-            .eq('district_id', districtId);
-        const totalReleased = releasedData ? releasedData.reduce((sum, item) => sum + (parseFloat(item.amount_cr) || 0), 0) : 0;
+        const { data: released } = await supabase.from('agency_fund_releases').select('amount_cr').eq('district_id', districtId);
+        const totalReleased = released?.reduce((sum, i) => sum + (parseFloat(i.amount_cr) || 0), 0) || 0;
 
         const available = totalReceived - totalReleased;
+        if (amountCr > available) return res.status(400).json({ success: false, error: `Insufficient balance. Available: ₹${available.toFixed(2)} Cr` });
 
-        if (amountCr > available) {
-            return res.status(400).json({ success: false, error: `Insufficient balance. Available: ₹${available.toFixed(2)} Cr` });
-        }
-
-        const { data, error } = await supabase
-            .from('agency_fund_releases')
-            .insert([{
-                district_id: districtId,
-                agency_id: agencyId,
-                component: [component],
-                amount_cr: amountCr,
-                amount_rupees: amountInRupees,
-                release_date: date,
-                remarks: remarks,
-                created_by: createdBy
-            }])
-            .select('*, implementing_agencies_assignment(admin_name, agency_name, phone_no, email)');
+        // Insert
+        const { data, error } = await supabase.from('agency_fund_releases').insert([{
+            district_id: districtId, agency_id: agencyId, component: [component], amount_cr: amountCr,
+            amount_rupees: amountInRupees, release_date: date, remarks: remarks, created_by: createdBy
+        }]).select('*, implementing_agencies_assignment(admin_name, agency_name, phone_no)');
 
         if (error) throw error;
 
-        // Send WhatsApp to Agency
+        // WhatsApp
         try {
             const agency = data[0].implementing_agencies_assignment;
-            if (agency && agency.phone_no) {
-                let formattedPhone = agency.phone_no.replace(/\D/g, '');
-                if (formattedPhone.startsWith('91')) formattedPhone = formattedPhone.substring(2);
-                formattedPhone = `91${formattedPhone}`;
-
-                const watiApiBaseUrl = process.env.WATI_API_URL;
-                const watiApiKey = process.env.WATI_API_KEY;
-                const tenantId = process.env.TENANT_ID;
-                const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
-
-                if (watiApiBaseUrl && watiApiKey && tenantId) {
-                    const messageContent =
-                        `FUND RELEASE NOTIFICATION - ` +
-                        `Dear ${agency.admin_name}, ` +
-                        `The District Administration (${districtName}) has released ₹${amountCr.toFixed(2)} Cr to your agency (${agency.agency_name}). ` +
-                        `Component: ${component}. ` +
-                        `Date: ${date}. ` +
-                        `Please utilize the funds as per guidelines. ` +
-                        `Thank you, PM-AJAY`;
-
-                    const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
-                    const payload = {
-                        template_name: templateName,
-                        broadcast_name: 'Agency Fund Release',
-                        parameters: [{ name: "message_body", value: messageContent }]
-                    };
-
-                    await axios.post(endpoint, payload, {
-                        headers: { 'Authorization': `Bearer ${watiApiKey}`, 'Content-Type': 'application/json' }
-                    });
-                }
+            if (agency?.phone_no && process.env.WATI_API_KEY) {
+                const phone = '91' + agency.phone_no.replace(/\D/g, '').slice(-10);
+                const msg = `AGENCY FUND RELEASE - Released ₹${amountCr.toFixed(2)} Cr to ${agency.agency_name}.`;
+                axios.post(`${process.env.WATI_API_URL}/${process.env.TENANT_ID}/api/v1/sendTemplateMessage?whatsappNumber=${phone}`, {
+                    template_name: process.env.WATI_TEMPLATE_NAME,
+                    broadcast_name: 'Agency Release',
+                    parameters: [{ name: "message_body", value: msg }]
+                }, { headers: { 'Authorization': `Bearer ${process.env.WATI_API_KEY}` } }).catch(console.error);
             }
-        } catch (err) {
-            console.error('WhatsApp error:', err);
-        }
+        } catch (e) { console.error('Agency notification error:', e); }
 
         res.json({ success: true, data: data[0] });
     } catch (error) {
-        console.error('Error releasing to agency:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };
@@ -1015,9 +890,6 @@ exports.fixFundAllocations = async (req, res) => {
         console.log('✅ Fixed fund allocations:', results);
         res.json({ success: true, message: 'Fund allocations fixed', data: results });
 
-        console.log('✅ Fixed fund allocations:', results);
-        res.json({ success: true, message: 'Fund allocations fixed', data: results });
-
     } catch (error) {
         console.error('Error fixing fund allocations:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -1037,4 +909,47 @@ exports.getReleasesToDistrict = async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
+};
+
+// Get all Ministry -> State fund releases
+exports.getAllStateFundReleases = async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('state_fund_releases').select('*, states(name)').order('release_date', { ascending: false });
+        if (error) throw error;
+        res.json({ success: true, data });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// Get releases to districts in a specific state
+exports.getDistrictFundReleasesByState = async (req, res) => {
+    try {
+        const { stateName } = req.query;
+        let query = supabase.from('fund_releases').select('*, districts(name, state_id, states(name))').order('release_date', { ascending: false });
+        if (stateName) {
+            const { data: stateData } = await supabase.from('states').select('id').eq('name', stateName).single();
+            if (stateData) {
+                const { data: districts } = await supabase.from('districts').select('id').eq('state_id', stateData.id);
+                const districtIds = districts?.map(d => d.id) || [];
+                query = query.in('district_id', districtIds);
+            }
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        res.json({ success: true, data });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// Get funds overview/stats for a district
+exports.getDistrictStats = async (req, res) => {
+    try {
+        const { districtId } = req.query;
+        if (!districtId) return res.status(400).json({ success: false, error: 'District ID required' });
+        const { data: received } = await supabase.from('fund_releases').select('amount_cr').eq('district_id', districtId);
+        const totalReceived = received?.reduce((sum, r) => sum + (r.amount_cr || 0), 0) || 0;
+        const { data: released } = await supabase.from('agency_fund_releases').select('amount_cr').eq('district_id', districtId);
+        const totalReleased = released?.reduce((sum, r) => sum + (r.amount_cr || 0), 0) || 0;
+        const { data: ucs } = await supabase.from('uc_submissions').select('fund_utilized').eq('district_id', districtId).eq('status', 'Verified');
+        const totalUtilized = (ucs?.reduce((sum, u) => sum + (u.fund_utilized || 0), 0) || 0) / 10000000;
+        res.json({ success: true, data: { totalReceived, totalReleased, totalUtilized, balance: totalReceived - totalReleased } });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
 };

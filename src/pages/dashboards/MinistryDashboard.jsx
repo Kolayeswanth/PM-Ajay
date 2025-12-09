@@ -33,6 +33,7 @@ const MinistryDashboard = () => {
     const [selectedState, setSelectedState] = useState(null);
     const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [fundReleasedTab, setFundReleasedTab] = useState('project'); // 'project' or 'village'
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const navigate = useNavigate();
     const { user, logout } = useAuth();
@@ -43,26 +44,29 @@ const MinistryDashboard = () => {
     }, []);
 
     const toggleSidebar = () => {
-        console.log('Toggle sidebar clicked! Current state:', isSidebarOpen);
         setIsSidebarOpen(!isSidebarOpen);
-        console.log('New state will be:', !isSidebarOpen);
+    };
+    
+    const handleNavigate = (tab, subTab = null) => {
+        setActiveTab(tab);
+        if (subTab) {
+            if (tab === 'released') setFundReleasedTab(subTab);
+        }
     };
 
-
     const sidebarMenu = [
-        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
-        { icon: <Users size={20} />, label: 'Manage State Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
-        { icon: <Wallet size={20} />, label: 'Fund Allocation', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
-        { icon: <Send size={20} />, label: 'Fund Released', action: () => setActiveTab('released'), active: activeTab === 'released' },
-        { icon: <FileCheck size={20} />, label: 'Project Approval', action: () => setActiveTab('plans'), active: activeTab === 'plans' },
-        { icon: <FileText size={20} />, label: 'Annual Plan Approvals', action: () => setActiveTab('aap'), active: activeTab === 'aap' },
-        { icon: <LineChart size={20} />, label: 'Monitor Progress', action: () => setActiveTab('monitor'), active: activeTab === 'monitor' },
-        { icon: <Bell size={20} />, label: 'Notifications/Circulars', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
-        { icon: <FileBarChart size={20} />, label: 'Reports & Analytics', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
-        { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => handleNavigate('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <Users size={20} />, label: 'Manage State Admins', action: () => handleNavigate('admins'), active: activeTab === 'admins' },
+        { icon: <Wallet size={20} />, label: 'Fund Allocation', action: () => handleNavigate('funds'), active: activeTab === 'funds' },
+        { icon: <Send size={20} />, label: 'Fund Released', action: () => handleNavigate('released'), active: activeTab === 'released' },
+        { icon: <FileCheck size={20} />, label: 'Project Approval', action: () => handleNavigate('plans'), active: activeTab === 'plans' },
+        { icon: <FileText size={20} />, label: 'Annual Plan Approvals', action: () => handleNavigate('aap'), active: activeTab === 'aap' },
+        { icon: <LineChart size={20} />, label: 'Monitor Progress', action: () => handleNavigate('monitor'), active: activeTab === 'monitor' },
+        { icon: <Bell size={20} />, label: 'Notifications/Circulars', action: () => handleNavigate('notifications'), active: activeTab === 'notifications' },
+        { icon: <FileBarChart size={20} />, label: 'Reports & Analytics', action: () => handleNavigate('reports'), active: activeTab === 'reports' },
+        { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => handleNavigate('help'), active: activeTab === 'help' },
         { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
-
 
     const formatCurrency = (amount) => {
         return `₹${(amount / 10000000).toFixed(2)} Cr`;
@@ -83,9 +87,9 @@ const MinistryDashboard = () => {
             case 'admins':
                 return <ManageStateAdmins />;
             case 'funds':
-                return <FundAllocation formatCurrency={formatCurrency} />;
+                return <FundAllocation formatCurrency={formatCurrency} onNavigate={handleNavigate} />;
             case 'released':
-                return <FundReleased formatCurrency={formatCurrency} />;
+                return <FundReleased formatCurrency={formatCurrency} initialTab={fundReleasedTab} />;
             case 'plans':
                 return <AnnualPlansApproval />;
             case 'aap':

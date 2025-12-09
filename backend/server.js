@@ -1,6 +1,25 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
+const dotenv = require('dotenv');
+
+// Try loading .env from backend folder first, then root folder
+const localEnvPath = path.resolve(__dirname, '.env');
+const rootEnvPath = path.resolve(__dirname, '..', '.env');
+
+if (fs.existsSync(localEnvPath)) {
+  dotenv.config({ path: localEnvPath });
+  console.log('✅ Loaded environment from backend/.env');
+} else if (fs.existsSync(rootEnvPath)) {
+  dotenv.config({ path: rootEnvPath });
+  console.log('✅ Loaded environment from ../.env (root)');
+} else {
+  console.log('⚠️ No .env file found!');
+  dotenv.config();
+}
+
+console.log('Supabase Config Check:', process.env.SUPABASE_URL ? 'URL Found' : 'URL Missing');
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
@@ -29,6 +48,7 @@ app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/monitor', require('./routes/monitorRoutes'));
 app.use('/api/circulars', require('./routes/circularRoutes'));
 app.use('/api/ucs', require('./routes/ucRoutes'));
+app.use('/api/villages', require('./routes/villageRoutes'));
 
 
 // Health check endpoint
