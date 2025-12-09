@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import StateDashboardPanel from './state/StateDashboardPanel';
 import ManageImplementingAgencies from './state/ManageImplementingAgencies';
 import AssignProjectsState from './state/AssignProjectsState'; // New Component
+import CentralProjectsAssignment from './state/CentralProjectsAssignment';
 import FundRelease from './state/FundRelease';
 import ApproveProposals from './state/ApproveProposals';
 import VerifyUCs from './state/VerifyUCs';
@@ -103,6 +104,7 @@ const StateDashboard = () => {
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
         { icon: <Activity size={20} />, label: 'Monitor Progress', action: () => setActiveTab('monitor'), active: activeTab === 'monitor' },
         { icon: <Wallet size={20} />, label: 'Funds Received from Ministry', action: () => setActiveTab('received'), active: activeTab === 'received' },
+        { icon: <Briefcase size={20} />, label: 'Central Projects Assignment', action: () => setActiveTab('central-projects'), active: activeTab === 'central-projects' },
         { icon: <Users size={20} />, label: 'Manage Implementing Agencies', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
         { icon: <Send size={20} />, label: 'Fund Release to Implementing Agencies', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
         { icon: <FileCheck size={20} />, label: 'Approve Implementing Agency Proposals', action: () => setActiveTab('proposals'), active: activeTab === 'proposals' },
@@ -127,6 +129,8 @@ const StateDashboard = () => {
 
             case 'received':
                 return <FundsReceivedFromMinistry formatCurrency={formatCurrency} />;
+            case 'central-projects':
+                return <CentralProjectsAssignment stateName={stateName} stateId={stateId} />;
             case 'admins':
                 return <ManageImplementingAgencies />;
             case 'funds':
@@ -153,6 +157,7 @@ const StateDashboard = () => {
             'dashboard': 'Dashboard',
             'monitor': 'Monitor Progress',
             'received': 'Funds Received from Ministry',
+            'central-projects': 'Central Projects Assignment',
             'admins': 'Manage Implementing Agencies',
             'funds': 'Fund Release to Implementing Agencies',
             'proposals': 'Approve Implementing Agency Proposals',

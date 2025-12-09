@@ -15,6 +15,7 @@ import IssueNotifications from './ministry/IssueNotifications';
 import ReportsAnalytics from './ministry/ReportsAnalytics';
 import HelpSupport from './ministry/HelpSupport';
 
+import ProjectTrackingLayout from './tracking/ProjectTrackingLayout';
 import {
     LayoutDashboard,
     Users,
@@ -26,7 +27,8 @@ import {
     FileBarChart,
     HelpCircle,
     LogOut,
-    FileText
+    FileText,
+    Map // Import Map icon
 } from 'lucide-react';
 
 const MinistryDashboard = () => {
@@ -46,7 +48,7 @@ const MinistryDashboard = () => {
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
-    
+
     const handleNavigate = (tab, subTab = null) => {
         setActiveTab(tab);
         if (subTab) {
@@ -56,6 +58,7 @@ const MinistryDashboard = () => {
 
     const sidebarMenu = [
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => handleNavigate('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <Map size={20} />, label: 'Track Projects', action: () => handleNavigate('tracking'), active: activeTab === 'tracking' }, // New Item
         { icon: <Users size={20} />, label: 'Manage State Admins', action: () => handleNavigate('admins'), active: activeTab === 'admins' },
         { icon: <Wallet size={20} />, label: 'Fund Allocation', action: () => handleNavigate('funds'), active: activeTab === 'funds' },
         { icon: <Send size={20} />, label: 'Fund Released', action: () => handleNavigate('released'), active: activeTab === 'released' },
@@ -84,6 +87,8 @@ const MinistryDashboard = () => {
                         formatCurrency={formatCurrency}
                     />
                 );
+            case 'tracking': // New Case
+                return <ProjectTrackingLayout />;
             case 'admins':
                 return <ManageStateAdmins />;
             case 'funds':

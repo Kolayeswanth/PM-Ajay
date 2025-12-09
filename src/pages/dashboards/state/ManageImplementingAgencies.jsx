@@ -285,22 +285,6 @@ const ManageImplementingAgencies = () => {
                                     <td>{agency.email}</td>
                                     <td>{agency.phone || 'N/A'}</td>
                                     <td>
-                                        <button
-                                            onClick={() => handleStatusClick(agency)}
-                                            disabled={agency.status !== 'Active' || loading}
-                                            style={{
-                                                padding: '6px 16px',
-                                                borderRadius: '6px',
-                                                border: 'none',
-                                                cursor: agency.status === 'Active' ? 'pointer' : 'not-allowed',
-                                                backgroundColor: agency.status === 'Active' ? '#10B981' : '#E5E7EB',
-                                                color: agency.status === 'Active' ? 'white' : '#6B7280',
-                                                fontWeight: '500',
-                                                marginRight: '8px'
-                                            }}
-                                        >
-                                            {agency.status === 'Active' ? 'Activate' : 'Activated'}
-                                        </button>
                                         <InteractiveButton variant="success" size="sm" onClick={() => handleEdit(agency)}>Edit</InteractiveButton>
                                     </td>
                                 </tr>

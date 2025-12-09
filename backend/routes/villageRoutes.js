@@ -7,11 +7,15 @@ const {
     getVillagesByDistrict,
     getVillageDetails,
     updateVillageFundUtilization,
-    getVillageFundStats
+    getVillageFundStats,
+    releaseInstallment
 } = require('../controllers/villageController');
 
 // Release funds to villages
 router.post('/release-funds', releaseVillageFunds);
+
+// Release installment
+router.post('/release-installment', releaseInstallment);
 
 // Get village funds by state
 router.get('/funds/state/:state', getVillageFundsByState);

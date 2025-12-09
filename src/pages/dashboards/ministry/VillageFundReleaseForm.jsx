@@ -11,27 +11,17 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
         state: '',
         district: '',
         village: '',
-        allocationAmount: '',
+        allocationAmount: '', // Now represents Total Allocation Amount
         releasedAmount: '',
-        components: [],
+        selectedComponent: '', // Changed from array 'components' to single string
+        selectedProject: '',   // Changed from 'projects' array logic to single string
+        otherProjectName: '',  // For "Other" input
         releaseDate: new Date().toISOString().split('T')[0],
         sanctionOrderNo: '',
         remarks: ''
     });
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
-
-    const componentOptions = [
-        'Adarsh Gram',
-        'GIA',
-        'Hostel',
-        'Infrastructure',
-        'Skill Development',
-        'Education',
-        'Health',
-        'Agriculture',
-        'Income Generation'
-    ];
 
     // Fetch states on mount
     useEffect(() => {
@@ -89,22 +79,15 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
         setVillages([]);
 
         if (!districtName) {
-            console.log('⚠️ No district selected, return');
             return;
         }
 
         try {
             const url = `http://localhost:5001/api/villages/district/${encodeURIComponent(districtName)}`;
-            console.log('📡 Fetching villages from:', url);
-
             const response = await fetch(url);
-            console.log('📡 Response status:', response.status);
-
             const result = await response.json();
-            console.log('📡 Data received:', result);
 
             if (result.success) {
-                console.log(`✅ Loaded ${result.data ? result.data.length : 0} villages`);
                 setVillages(result.data || []);
             } else {
                 console.error('❌ API Error:', result.message);
@@ -114,14 +97,9 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
         }
     };
 
-    // Toggle component selection
-    const toggleComponent = (component) => {
-        setFormData(prev => ({
-            ...prev,
-            components: prev.components.includes(component)
-                ? prev.components.filter(c => c !== component)
-                : [...prev.components, component]
-        }));
+    // Helper for radio changes
+    const handleRadioChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
     };
 
     // Validate form
@@ -138,7 +116,12 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
         if (isNaN(released) || released <= 0) errs.releasedAmount = 'Enter valid amount (> 0)';
         if (released > alloc) errs.releasedAmount = 'Release cannot exceed allocation';
 
-        if (formData.components.length === 0) errs.components = 'Select at least one component';
+        if (!formData.selectedComponent) errs.selectedComponent = 'Select a component';
+        if (!formData.selectedProject) errs.selectedProject = 'Select a project';
+
+        if (formData.selectedProject === 'Other' && !formData.otherProjectName.trim()) {
+            errs.selectedProject = 'Please specify the project name';
+        }
 
         setErrors(errs);
         return Object.keys(errs).length === 0;
@@ -155,17 +138,18 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
         try {
             const selectedVillage = villages.find(v => v.village_code === formData.village);
 
-            const componentList = ['Adarsh Gram', 'GIA', 'Hostel'];
-            const startComponents = formData.components.filter(c => componentList.includes(c));
-            const startProjects = formData.components.filter(c => !componentList.includes(c));
+            // Determine final project name
+            const finalProject = formData.selectedProject === 'Other'
+                ? formData.otherProjectName
+                : formData.selectedProject;
 
             const payload = {
                 village_code: selectedVillage.village_code,
                 village_name: selectedVillage.village_name,
                 district_name: formData.district,
                 state_name: formData.state,
-                component: startComponents,
-                projects: startProjects,
+                component: [formData.selectedComponent], // Backend expects array
+                projects: [finalProject],               // Backend expects array
                 amount_allocated: parseFloat(formData.allocationAmount),
                 amount_released: parseFloat(formData.releasedAmount),
                 release_date: formData.releaseDate,
@@ -190,7 +174,9 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
                     village: '',
                     allocationAmount: '',
                     releasedAmount: '',
-                    components: [],
+                    selectedComponent: '',
+                    selectedProject: '',
+                    otherProjectName: '',
                     releaseDate: new Date().toISOString().split('T')[0],
                     sanctionOrderNo: '',
                     remarks: ''
@@ -198,7 +184,6 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
                 setDistricts([]);
                 setVillages([]);
 
-                // Redirect if onNavigate is provided
                 if (onNavigate) {
                     onNavigate('released', 'village');
                 }
@@ -297,9 +282,9 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
 
                         {/* Amounts Row */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, gridColumn: 'span 2' }}>
-                            {/* Minimum Allocation */}
+                            {/* Total Allocation -- RENAMED */}
                             <div className="form-group">
-                                <label className="form-label">Minimum Allocation Amount (₹) *</label>
+                                <label className="form-label">Total Allocation Amount (₹) *</label>
                                 <input
                                     type="number"
                                     className="form-control"
@@ -348,9 +333,9 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
                         </div>
                     </div>
 
-                    {/* Components */}
+                    {/* Components - RADIO BUTTONS */}
                     <div className="form-group" style={{ marginTop: 20 }}>
-                        <label className="form-label">Select Components *</label>
+                        <label className="form-label">Select Component *</label>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
                             {['Adarsh Gram', 'GIA', 'Hostel'].map(component => (
                                 <label
@@ -361,50 +346,68 @@ const VillageFundReleaseForm = ({ onBack, onNavigate }) => {
                                         gap: 8,
                                         padding: '10px',
                                         borderRadius: '6px',
-                                        border: `2px solid ${formData.components.includes(component) ? '#3B82F6' : '#E5E7EB'}`,
-                                        backgroundColor: formData.components.includes(component) ? '#EFF6FF' : 'white',
+                                        border: `2px solid ${formData.selectedComponent === component ? '#3B82F6' : '#E5E7EB'}`,
+                                        backgroundColor: formData.selectedComponent === component ? '#EFF6FF' : 'white',
                                         cursor: 'pointer'
                                     }}
                                 >
                                     <input
-                                        type="checkbox"
-                                        checked={formData.components.includes(component)}
-                                        onChange={() => toggleComponent(component)}
+                                        type="radio"
+                                        name="component"
+                                        checked={formData.selectedComponent === component}
+                                        onChange={() => handleRadioChange('selectedComponent', component)}
+                                        style={{ accentColor: '#3B82F6' }}
                                     />
                                     <span style={{ fontSize: 14 }}>{component}</span>
                                 </label>
                             ))}
                         </div>
+                        {errors.selectedComponent && <div className="form-error">{errors.selectedComponent}</div>}
                     </div>
 
-                    {/* Projects (formerly mixed with components) */}
+                    {/* Projects - RADIO BUTTONS + OTHER */}
                     <div className="form-group" style={{ marginTop: 20 }}>
-                        <label className="form-label">Select Projects *</label>
+                        <label className="form-label">Select Project *</label>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-                            {['Infrastructure', 'Skill Development', 'Education', 'Health', 'Agriculture', 'Income Generation'].map(component => (
+                            {['Infrastructure', 'Skill Development', 'Education', 'Health', 'Agriculture', 'Income Generation', 'Other'].map(projectOpt => (
                                 <label
-                                    key={component}
+                                    key={projectOpt}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 8,
                                         padding: '10px',
                                         borderRadius: '6px',
-                                        border: `2px solid ${formData.components.includes(component) ? '#3B82F6' : '#E5E7EB'}`,
-                                        backgroundColor: formData.components.includes(component) ? '#EFF6FF' : 'white',
+                                        border: `2px solid ${formData.selectedProject === projectOpt ? '#3B82F6' : '#E5E7EB'}`,
+                                        backgroundColor: formData.selectedProject === projectOpt ? '#EFF6FF' : 'white',
                                         cursor: 'pointer'
                                     }}
                                 >
                                     <input
-                                        type="checkbox"
-                                        checked={formData.components.includes(component)}
-                                        onChange={() => toggleComponent(component)}
+                                        type="radio"
+                                        name="project"
+                                        checked={formData.selectedProject === projectOpt}
+                                        onChange={() => handleRadioChange('selectedProject', projectOpt)}
+                                        style={{ accentColor: '#3B82F6' }}
                                     />
-                                    <span style={{ fontSize: 14 }}>{component}</span>
+                                    <span style={{ fontSize: 14 }}>{projectOpt}</span>
                                 </label>
                             ))}
                         </div>
-                        {errors.components && <div className="form-error">{errors.components}</div>}
+
+                        {/* OTHER INPUT FIELD */}
+                        {formData.selectedProject === 'Other' && (
+                            <div style={{ marginTop: 12 }}>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Enter other project name"
+                                    value={formData.otherProjectName}
+                                    onChange={(e) => setFormData({ ...formData, otherProjectName: e.target.value })}
+                                />
+                            </div>
+                        )}
+                        {errors.selectedProject && <div className="form-error">{errors.selectedProject}</div>}
                     </div>
 
                     {/* Remarks */}

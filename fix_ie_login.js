@@ -66,38 +66,7 @@ async function fixLogin() {
 
     console.log(`🆔 User ID: ${userId}`);
 
-    // 2. Ensure Profile exists in public.profiles
-    // Many apps require a profile. Even if the schema says FK to auth.users, sometimes triggers or logic fail if profile is missing.
-    // Or maybe the foreign key actually points to profiles(id) in the live DB.
-    console.log('👤 Checking/Creating Profile...');
-    const { data: profileCheck, error: profileCheckError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .single();
-
-    if (!profileCheck) {
-        console.log('   Creating new profile...');
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-                id: userId,
-                email: TEST_EMAIL,
-                role: 'implementing_agency',
-                full_name: 'West Godavari Agency Admin'
-            });
-
-        if (profileError) {
-            console.error('   ❌ Error creating profile:', profileError.message);
-            // Proceeding anyway, as it might exist but failed select?
-        } else {
-            console.log('   ✅ Profile created.');
-        }
-    } else {
-        console.log('   ✅ Profile already exists.');
-    }
-
-    // 3. Find West Godavari Agency
+    // 2. Find West Godavari Agency
     const { data: agencies, error: findError } = await supabase
         .from('implementing_agencies')
         .select('id, agency_name')
@@ -111,7 +80,11 @@ async function fixLogin() {
     const agency = agencies[0];
     console.log(`🏢 Linking to Agency: ${agency.agency_name}`);
 
-    // 4. Update the agency to link to the test user
+    // 3. Clear any existing link for this email/user (to be safe)
+    // Actually, we just want to update this specific agency to this user.
+    // But if this user is linked elsewhere, we might want to clear it? 
+    // Let's just update the target agency. Prior scripts handled cleanup if needed.
+
     const { error: updateError } = await supabase
         .from('implementing_agencies')
         .update({
@@ -122,7 +95,6 @@ async function fixLogin() {
 
     if (updateError) {
         console.error('❌ Error updating agency:', updateError.message);
-        console.error('   Details:', updateError);
     } else {
         console.log('--------------------------------------------------');
         console.log('✅ FIX COMPLETE!');

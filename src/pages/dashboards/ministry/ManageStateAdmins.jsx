@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MessageCircle } from 'lucide-react';
 import Modal from '../../../components/Modal';
 import InteractiveButton from '../../../components/InteractiveButton';
 
@@ -276,6 +277,18 @@ const ManageStateAdmins = () => {
                                         >
                                             {admin.status}
                                         </InteractiveButton>
+                                        
+                                        <InteractiveButton
+                                            variant="outline" 
+                                            size="sm"
+                                            onClick={() => window.open(`https://wa.me/91${admin.phone_no}?text=Hello ${admin.admin_name},`, '_blank')}
+                                            style={{ marginRight: '8px', borderColor: '#25D366', color: '#25D366' }}
+                                            title="Message on WhatsApp"
+                                        >
+                                            <MessageCircle size={14} style={{ marginRight: 4 }} />
+                                            Message
+                                        </InteractiveButton>
+
                                         <InteractiveButton
                                             variant="success"
                                             size="sm"
