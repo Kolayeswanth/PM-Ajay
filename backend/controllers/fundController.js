@@ -526,6 +526,7 @@ exports.releaseFund = async (req, res) => {
             const isProjectRelease = officerId && officerId.startsWith('PROJ-');
             let currentReleased = 0;
             let totalAllocated = 0;
+            let newReleased = 0; // Declare here so it's accessible later
 
             if (!isProjectRelease) {
                 // Update Allocation
@@ -541,7 +542,7 @@ exports.releaseFund = async (req, res) => {
                 const allocation = allocations[0];
                 currentReleased = parseInt(allocation.amount_released) || 0;
                 totalAllocated = parseInt(allocation.amount_allocated) || 0;
-                const newReleased = currentReleased + amountInRupees;
+                newReleased = currentReleased + amountInRupees;
 
                 if (newReleased > totalAllocated) {
                     return res.status(400).json({
@@ -550,7 +551,20 @@ exports.releaseFund = async (req, res) => {
                     });
                 }
 
-                await supabase.from('fund_allocations').update({ amount_released: newReleased }).eq('id', allocation.id);
+                // Update allocation
+                const { error: updateError } = await supabase
+                    .from('fund_allocations')
+                    .update({ amount_released: newReleased })
+                    .eq('id', allocation.id);
+
+                if (updateError) {
+                    console.error('Supabase update error:', updateError);
+                    return res.status(500).json({ success: false, error: updateError.message });
+                }
+            } else {
+                console.log('✅ Skipping fund allocation check for project release');
+                // For project releases, just calculate newReleased for the message
+                newReleased = currentReleased + amountInRupees;
             }
 
             // Insert Release Log
