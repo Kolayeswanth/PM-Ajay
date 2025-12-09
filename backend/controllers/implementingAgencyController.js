@@ -114,6 +114,58 @@ exports.registerAgency = async (req, res) => {
 
         console.log('✅ Agency registration successful:', data[0]);
 
+        // Send WhatsApp notification to State Admin
+        try {
+            // You can configure state admin phone numbers in environment variables
+            const stateAdminPhone = process.env.STATE_ADMIN_PHONE; // Add this to your .env file
+
+            if (stateAdminPhone) {
+                let formattedPhone = stateAdminPhone.replace(/\D/g, '');
+                if (formattedPhone.startsWith('91')) formattedPhone = formattedPhone.substring(2);
+                formattedPhone = `91${formattedPhone}`;
+
+                const watiApiBaseUrl = process.env.WATI_API_URL;
+                const watiApiKey = process.env.WATI_API_KEY;
+                const tenantId = process.env.TENANT_ID;
+                const templateName = process.env.WATI_TEMPLATE_NAME || 'sih';
+
+                if (watiApiBaseUrl && watiApiKey && tenantId) {
+                    const messageContent =
+                        `⚠️ *New Agency Registration* - ` +
+                        `AGENCY NAME: ${agencyName} - ` +
+                        `EMAIL: ${email} - ` +
+                        `PHONE: ${phoneNumber} - ` +
+                        `STATE: ${state} - ` +
+                        `DISTRICTS: ${districts.join(', ')} - ` +
+                        `GST: ${gstNumber} - ` +
+                        `STATUS: Pending Approval - ` +
+                        `Please login to the State Admin dashboard to review and approve this agency registration. ` +
+                        `Thank you, PM-AJAY Portal`;
+
+                    const sanitizedMessage = messageContent.replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
+                    const endpoint = `${watiApiBaseUrl}/${tenantId}/api/v1/sendTemplateMessage?whatsappNumber=${formattedPhone}`;
+                    const payload = {
+                        template_name: templateName,
+                        broadcast_name: 'Agency Registration Notification',
+                        parameters: [{ name: "message_body", value: sanitizedMessage }]
+                    };
+
+                    const response = await axios.post(endpoint, payload, {
+                        headers: { 'Authorization': `Bearer ${watiApiKey}`, 'Content-Type': 'application/json' }
+                    });
+                    console.log('✅ WhatsApp notification sent to State Admin:', formattedPhone);
+                } else {
+                    console.log('⚠️ WhatsApp API credentials not configured');
+                }
+            } else {
+                console.log('⚠️ State Admin phone number not configured');
+            }
+        } catch (whatsappError) {
+            console.error('❌ Error sending WhatsApp notification:', whatsappError.message);
+            // Don't fail the registration if WhatsApp fails
+        }
+
         res.status(201).json({
             success: true,
             message: 'Registration successful! Your application is pending approval from the State Admin.',
