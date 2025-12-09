@@ -744,80 +744,80 @@ exports.releaseFund = async (req, res) => {
                         }
                     }
 
-        // 3. Get fund releases for these districts only
-        const { data: releases, error: releasesError } = await supabase
-            .from('fund_releases')
-            .select('*, districts(name), implementing_agencies(agency_name)')
-            .in('district_id', districtIds)
-            .order('created_at', { ascending: false });
+                    // 3. Get fund releases for these districts only
+                    const { data: releases, error: releasesError } = await supabase
+                        .from('fund_releases')
+                        .select('*, districts(name), implementing_agencies(agency_name)')
+                        .in('district_id', districtIds)
+                        .order('created_at', { ascending: false });
 
-                        const { data: refreshedProfile } = await supabase
-                            .from('profiles')
-                            .select('push_token, id, email, full_name')
-                            .eq('id', officialProfile.id)
-                            .single();
+                    const { data: refreshedProfile } = await supabase
+                        .from('profiles')
+                        .select('push_token, id, email, full_name')
+                        .eq('id', officialProfile.id)
+                        .single();
 
-                        if (refreshedProfile?.push_token) {
-                            officialProfile = refreshedProfile;
-                            console.log(`✅ Push token found after retry!`);
-                        } else {
-                            console.log(`⚠️ Push token still null after retry`);
-                        }
-                    }
-
-                    if (officialProfile) {
-                        console.log(`✅ Expo: Found Official Admin: ${officialProfile.email} (${officialProfile.full_name})`);
-
-                        if (officialProfile.push_token) {
-                            console.log(`✅ Expo: Found valid push token. Sending notification...`);
-                            console.log(`📤 Push notification payload: Title: "💰 Fund Released by Ministry", Amount: ₹${amountCr.toFixed(2)} Cr, Remaining: ₹${remainingBalance} Cr`);
-                            try {
-                                const pushResponse = await axios.post('https://exp.host/--/api/v2/push/send', {
-                                    to: officialProfile.push_token,
-                                    title: '💰 Fund Released by Ministry',
-                                    body: `Ministry has released ₹${amountCr.toFixed(2)} Cr for ${stateName}. Remaining balance: ₹${remainingBalance} Cr.`,
-                                    data: {
-                                        type: 'fund_release',
-                                        amount: amountCr,
-                                        stateName: stateName,
-                                        remainingBalance: remainingBalance
-                                    },
-                                    sound: 'default',
-                                    priority: 'high',
-                                    channelId: 'default'
-                                });
-                                console.log('✅ Expo: Push notification sent successfully');
-                                console.log('📊 Expo Response:', JSON.stringify(pushResponse.data, null, 2));
-                            } catch (err) {
-                                console.error('❌ Expo: Error sending push notification:', err.response?.data || err.message);
-                                if (err.response) {
-                                    console.error('❌ Response status:', err.response.status);
-                                    console.error('❌ Response data:', JSON.stringify(err.response.data, null, 2));
-                                }
-                            }
-                        } else {
-                            console.log(`⚠️ Expo: Official Admin has no push token set (Token is null). User needs to login to app.`);
-                            console.log(`💡 Tip: Ask the state admin to login to the mobile app to register their device.`);
-                        }
-
+                    if (refreshedProfile?.push_token) {
+                        officialProfile = refreshedProfile;
+                        console.log(`✅ Push token found after retry!`);
                     } else {
-                        console.log(`⚠️ Expo: Could not find an official profile for state: ${stateName}`);
-                        if (profileErr) console.error('Error details:', profileErr);
-
-                        // Try alternative search with more flexible matching
-                        console.log(`🔄 Attempting alternative profile search...`);
-                        const { data: alternativeProfiles } = await supabase
-                            .from('profiles')
-                            .select('push_token, id, email, full_name, role')
-                            .eq('role', 'state_admin');
-
-                        console.log(`📋 All state admin profiles:`, alternativeProfiles?.map(p => ({
-                            email: p.email,
-                            fullName: p.full_name,
-                            hasToken: !!p.push_token
-                        })));
+                        console.log(`⚠️ Push token still null after retry`);
                     }
                 }
+
+                if (officialProfile) {
+                    console.log(`✅ Expo: Found Official Admin: ${officialProfile.email} (${officialProfile.full_name})`);
+
+                    if (officialProfile.push_token) {
+                        console.log(`✅ Expo: Found valid push token. Sending notification...`);
+                        console.log(`📤 Push notification payload: Title: "💰 Fund Released by Ministry", Amount: ₹${amountCr.toFixed(2)} Cr, Remaining: ₹${remainingBalance} Cr`);
+                        try {
+                            const pushResponse = await axios.post('https://exp.host/--/api/v2/push/send', {
+                                to: officialProfile.push_token,
+                                title: '💰 Fund Released by Ministry',
+                                body: `Ministry has released ₹${amountCr.toFixed(2)} Cr for ${stateName}. Remaining balance: ₹${remainingBalance} Cr.`,
+                                data: {
+                                    type: 'fund_release',
+                                    amount: amountCr,
+                                    stateName: stateName,
+                                    remainingBalance: remainingBalance
+                                },
+                                sound: 'default',
+                                priority: 'high',
+                                channelId: 'default'
+                            });
+                            console.log('✅ Expo: Push notification sent successfully');
+                            console.log('📊 Expo Response:', JSON.stringify(pushResponse.data, null, 2));
+                        } catch (err) {
+                            console.error('❌ Expo: Error sending push notification:', err.response?.data || err.message);
+                            if (err.response) {
+                                console.error('❌ Response status:', err.response.status);
+                                console.error('❌ Response data:', JSON.stringify(err.response.data, null, 2));
+                            }
+                        }
+                    } else {
+                        console.log(`⚠️ Expo: Official Admin has no push token set (Token is null). User needs to login to app.`);
+                        console.log(`💡 Tip: Ask the state admin to login to the mobile app to register their device.`);
+                    }
+
+                } else {
+                    console.log(`⚠️ Expo: Could not find an official profile for state: ${stateName}`);
+                    if (profileErr) console.error('Error details:', profileErr);
+
+                    // Try alternative search with more flexible matching
+                    console.log(`🔄 Attempting alternative profile search...`);
+                    const { data: alternativeProfiles } = await supabase
+                        .from('profiles')
+                        .select('push_token, id, email, full_name, role')
+                        .eq('role', 'state_admin');
+
+                    console.log(`📋 All state admin profiles:`, alternativeProfiles?.map(p => ({
+                        email: p.email,
+                        fullName: p.full_name,
+                        hasToken: !!p.push_token
+                    })));
+                }
+
             } catch (e) { console.error('Notification error:', e); }
 
             return res.json({ success: true, message: 'Fund released successfully', data: releaseLog[0] });
@@ -1158,3 +1158,4 @@ exports.getDistrictStats = async (req, res) => {
         res.json({ success: true, data: { totalReceived, totalReleased, totalUtilized, balance: totalReceived - totalReleased } });
     } catch (error) { res.status(500).json({ success: false, error: error.message }); }
 };
+

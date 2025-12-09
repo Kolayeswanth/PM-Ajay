@@ -322,9 +322,7 @@ exports.rejectRegistration = async (req, res) => {
     }
 };
 
-// Get all implementing agencies
-exports.getAllImplementingAgencies = async (req, res) => {
-=======
+
 // Get all implementing agencies for a state
 exports.getImplementingAgencies = async (req, res) => {
 
@@ -445,9 +443,9 @@ exports.createImplementingAgency = async (req, res) => {
             .single();
 
         if (existingDistrictAgency) {
-            return res.status(400).json({ 
-                success: false, 
-                error: `Implementing agency already exists for ${district} district (${existingDistrictAgency.agency_name})` 
+            return res.status(400).json({
+                success: false,
+                error: `Implementing agency already exists for ${district} district (${existingDistrictAgency.agency_name})`
             });
         }
 
@@ -511,9 +509,9 @@ exports.updateImplementingAgency = async (req, res) => {
                 .single();
 
             if (existingDistrictAgency) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: `Another implementing agency already exists for ${district} district (${existingDistrictAgency.agency_name})` 
+                return res.status(400).json({
+                    success: false,
+                    error: `Another implementing agency already exists for ${district} district (${existingDistrictAgency.agency_name})`
                 });
             }
         }
