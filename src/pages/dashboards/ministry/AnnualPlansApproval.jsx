@@ -393,7 +393,7 @@ const AnnualPlansApproval = () => {
 
                     <div className="form-group">
                         <label className="form-label" style={{ fontWeight: '600', color: '#2c3e50' }}>
-                            Minimum Allocation Amount (in Lakhs) <span style={{ color: '#e74c3c' }}>*</span>
+                            Total Allocation Amount (in Lakhs) <span style={{ color: '#e74c3c' }}>*</span>
                         </label>
                         <input
                             type="number"

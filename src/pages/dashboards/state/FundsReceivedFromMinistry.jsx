@@ -218,7 +218,7 @@ const FundsReceivedFromMinistry = ({ formatCurrency }) => {
                                 <th>District</th>
                                 <th>Village</th>
                                 <th>Components</th>
-                                <th style={{ textAlign: 'right' }}>Minimum Allocation</th>
+                                <th style={{ textAlign: 'right' }}>Total Allocation</th>
                                 <th style={{ textAlign: 'right' }}>Amount Released</th>
                                 <th>Sanction Order</th>
                                 <th>Status</th>

@@ -719,10 +719,12 @@ exports.releaseFund = async (req, res) => {
                         }
                     }
 
-                    // Strategy 3: Last resort - manual refresh and retry
-                    if (officialProfile && !officialProfile.push_token) {
-                        console.log(`🔄 Strategy 3: Retrying fetch after additional delay (token may be saving)...`);
-                        await new Promise(resolve => setTimeout(resolve, 1500));
+        // 3. Get fund releases for these districts only
+        const { data: releases, error: releasesError } = await supabase
+            .from('fund_releases')
+            .select('*, districts(name), implementing_agencies(agency_name)')
+            .in('district_id', districtIds)
+            .order('created_at', { ascending: false });
 
                         const { data: refreshedProfile } = await supabase
                             .from('profiles')
@@ -852,23 +854,72 @@ exports.releaseFundToAgency = async (req, res) => {
 // Get Agency Fund Releases
 exports.getAgencyFundReleases = async (req, res) => {
     try {
-        const { districtId } = req.query;
-        let query = supabase
+        const { districtId, agencyId } = req.query;
+        let allReleases = [];
+
+        // 1. Fetch District -> Agency Releases
+        let query1 = supabase
             .from('agency_fund_releases')
-            .select('*, implementing_agencies_assignment(admin_name, agency_name)')
+            .select('*, implementing_agencies(agency_name), districts(name)')
             .order('created_at', { ascending: false });
 
         if (districtId) {
-            query = query.eq('district_id', districtId);
+            query1 = query1.eq('district_id', districtId);
+        }
+        if (agencyId) {
+            query1 = query1.eq('agency_id', agencyId);
         }
 
-        const { data, error } = await query;
-        if (error) {
-            if (error.code === '42P01') return res.json({ success: true, data: [] });
-            throw error;
+        const { data: districtReleases, error: error1 } = await query1;
+
+        if (error1 && error1.code !== '42P01') {
+            throw error1;
         }
-        res.json({ success: true, data });
+
+        if (districtReleases) {
+            const mappedDistrictReleases = districtReleases.map(r => ({
+                ...r,
+                source: 'District',
+                sourceName: r.districts?.name ? `${r.districts.name} District` : 'District Admin'
+            }));
+            allReleases = [...allReleases, ...mappedDistrictReleases];
+        }
+
+        // 2. Fetch State -> Agency Releases (if agencyId provided)
+        if (agencyId) {
+            console.log('🔍 Fetching State Releases for Agency ID:', agencyId);
+            const { data: stateReleases, error: error2 } = await supabase
+                .from('state_agency_fund_releases')
+                .select('*, states(name)')
+                .eq('agency_id', agencyId)
+                .order('created_at', { ascending: false });
+
+            if (error2 && error2.code !== '42P01') {
+                console.error('Error fetching state releases for agency:', error2);
+            }
+
+            console.log('📄 State Releases Found:', stateReleases ? stateReleases.length : 0);
+
+            if (stateReleases) {
+                const mappedStateReleases = stateReleases.map(r => ({
+                    ...r,
+                    source: 'State',
+                    sourceName: r.states?.name ? `${r.states.name} State Department` : 'State Department',
+                    // Map key fields to ensure consistency in frontend
+                    district_name: r.states?.name, // Use state name where district name typically goes
+                    amount_utilized: 0 // Placeholder as this might not be tracked here yet
+                }));
+                allReleases = [...allReleases, ...mappedStateReleases];
+            }
+        }
+
+        // Sort combined results by date
+        allReleases.sort((a, b) => new Date(b.release_date || b.created_at) - new Date(a.release_date || a.created_at));
+
+        res.json({ success: true, data: allReleases });
+
     } catch (error) {
+        console.error('Error in getAgencyFundReleases:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };

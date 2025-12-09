@@ -26,4 +26,13 @@ router.patch('/:id/deactivate', stateAdminController.deactivateStateAdmin);
 // Delete state admin (hard delete)
 router.delete('/:id', stateAdminController.deleteStateAdmin);
 
+// Get central projects for state
+router.get('/central-projects', stateAdminController.getCentralProjects);
+
+// Get available executing agencies for a district
+router.get('/available-eas', stateAdminController.getAvailableEAs);
+
+// Assign executing agency to project
+router.post('/assign-ea', stateAdminController.assignEAToProject);
+
 module.exports = router;

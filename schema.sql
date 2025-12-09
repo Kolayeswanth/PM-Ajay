@@ -109,6 +109,9 @@ CREATE TABLE public.district_proposals (
   released_amount numeric DEFAULT 0,
   phone_number character varying,
   implementing_agency_id uuid,
+  executing_agency_id uuid,
+  executing_agency_name text,
+  assigned_to_ea_at timestamp with time zone,
   CONSTRAINT district_proposals_pkey PRIMARY KEY (id),
   CONSTRAINT district_proposals_implementing_agency_id_fkey FOREIGN KEY (implementing_agency_id) REFERENCES public.implementing_agencies(id)
 );
@@ -189,8 +192,10 @@ CREATE TABLE public.fund_releases (
   remarks text,
   created_at timestamp with time zone DEFAULT now(),
   created_by uuid,
+  implementing_agency_id uuid,
   CONSTRAINT fund_releases_pkey PRIMARY KEY (id),
-  CONSTRAINT fund_releases_district_id_fkey FOREIGN KEY (district_id) REFERENCES public.districts(id)
+  CONSTRAINT fund_releases_district_id_fkey FOREIGN KEY (district_id) REFERENCES public.districts(id),
+  CONSTRAINT fund_releases_implementing_agency_id_fkey FOREIGN KEY (implementing_agency_id) REFERENCES public.implementing_agencies(id)
 );
 CREATE TABLE public.implementing_agencies (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -251,6 +256,112 @@ CREATE TABLE public.profiles (
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.project_assignments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  assigned_to_id uuid NOT NULL,
+  assigned_to_role text NOT NULL CHECK (assigned_to_role = ANY (ARRAY['executing_agency'::text, 'implementing_agency'::text])),
+  assigned_by_id uuid,
+  work_scope text,
+  components ARRAY,
+  allocated_amount numeric DEFAULT 0,
+  released_amount numeric DEFAULT 0,
+  utilized_amount numeric DEFAULT 0,
+  status text DEFAULT 'ASSIGNED'::text CHECK (status = ANY (ARRAY['ASSIGNED'::text, 'ACCEPTED'::text, 'IN_PROGRESS'::text, 'COMPLETED'::text, 'REJECTED'::text])),
+  progress_percentage numeric DEFAULT 0,
+  assigned_date timestamp with time zone DEFAULT now(),
+  accepted_date timestamp with time zone,
+  completion_date timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT project_assignments_pkey PRIMARY KEY (id),
+  CONSTRAINT project_assignments_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id),
+  CONSTRAINT project_assignments_assigned_to_id_fkey FOREIGN KEY (assigned_to_id) REFERENCES auth.users(id),
+  CONSTRAINT project_assignments_assigned_by_id_fkey FOREIGN KEY (assigned_by_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.project_fund_releases (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  release_level text NOT NULL CHECK (release_level = ANY (ARRAY['CENTRE_TO_STATE'::text, 'STATE_TO_EA'::text, 'EA_TO_IA'::text])),
+  from_user_id uuid,
+  from_user_role text,
+  to_user_id uuid,
+  to_user_role text,
+  amount numeric NOT NULL,
+  components ARRAY,
+  release_date date NOT NULL DEFAULT CURRENT_DATE,
+  sanction_order_no text,
+  remarks text,
+  status text DEFAULT 'RELEASED'::text CHECK (status = ANY (ARRAY['PENDING'::text, 'RELEASED'::text, 'ACKNOWLEDGED'::text, 'UTILIZED'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT project_fund_releases_pkey PRIMARY KEY (id),
+  CONSTRAINT project_fund_releases_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id),
+  CONSTRAINT project_fund_releases_from_user_id_fkey FOREIGN KEY (from_user_id) REFERENCES auth.users(id),
+  CONSTRAINT project_fund_releases_to_user_id_fkey FOREIGN KEY (to_user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.project_progress_updates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  assignment_id uuid,
+  updated_by uuid NOT NULL,
+  updated_by_role text NOT NULL,
+  progress_percentage numeric NOT NULL,
+  work_completed text,
+  funds_utilized numeric DEFAULT 0,
+  photos ARRAY,
+  documents ARRAY,
+  status text DEFAULT 'SUBMITTED'::text CHECK (status = ANY (ARRAY['SUBMITTED'::text, 'APPROVED'::text, 'REJECTED'::text, 'NEEDS_REVISION'::text])),
+  remarks text,
+  approved_by uuid,
+  approved_at timestamp with time zone,
+  rejection_reason text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT project_progress_updates_pkey PRIMARY KEY (id),
+  CONSTRAINT project_progress_updates_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id),
+  CONSTRAINT project_progress_updates_assignment_id_fkey FOREIGN KEY (assignment_id) REFERENCES public.project_assignments(id),
+  CONSTRAINT project_progress_updates_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES auth.users(id),
+  CONSTRAINT project_progress_updates_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES auth.users(id)
+);
+CREATE TABLE public.project_status_history (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  old_status text,
+  new_status text NOT NULL,
+  changed_by uuid,
+  changed_by_role text,
+  remarks text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT project_status_history_pkey PRIMARY KEY (id),
+  CONSTRAINT project_status_history_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id),
+  CONSTRAINT project_status_history_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES auth.users(id)
+);
+CREATE TABLE public.projects (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_code character varying NOT NULL UNIQUE,
+  village_code text NOT NULL,
+  village_name text NOT NULL,
+  district_name text NOT NULL,
+  state_name text NOT NULL,
+  project_name text NOT NULL,
+  description text,
+  components ARRAY NOT NULL,
+  total_allocated_amount numeric NOT NULL DEFAULT 0,
+  total_released_amount numeric NOT NULL DEFAULT 0,
+  total_utilized_amount numeric NOT NULL DEFAULT 0,
+  status text DEFAULT 'CREATED'::text CHECK (status = ANY (ARRAY['CREATED'::text, 'ASSIGNED_TO_STATE'::text, 'EA_ASSIGNED'::text, 'IN_PROGRESS'::text, 'PARTIALLY_COMPLETED'::text, 'COMPLETED'::text, 'ON_HOLD'::text, 'CANCELLED'::text])),
+  progress_percentage numeric DEFAULT 0,
+  created_by uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  expected_completion_date date,
+  actual_completion_date date,
+  remarks text,
+  CONSTRAINT projects_pkey PRIMARY KEY (id),
+  CONSTRAINT projects_village_code_fkey FOREIGN KEY (village_code) REFERENCES public.villages(village_code),
+  CONSTRAINT projects_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+);
 CREATE TABLE public.proposal_history (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   proposal_id bigint,
@@ -272,6 +383,21 @@ CREATE TABLE public.reports (
   submitted_by uuid,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT reports_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.state_admin_credentials (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  state_admin_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  username text NOT NULL UNIQUE,
+  email text NOT NULL UNIQUE,
+  phone_number text,
+  is_active boolean DEFAULT true,
+  last_login timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT state_admin_credentials_pkey PRIMARY KEY (id),
+  CONSTRAINT state_admin_credentials_state_admin_id_fkey FOREIGN KEY (state_admin_id) REFERENCES public.state_admins(id),
+  CONSTRAINT state_admin_credentials_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.state_admins (
   id uuid NOT NULL,
