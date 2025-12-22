@@ -15,6 +15,7 @@ import IssueNotifications from './ministry/IssueNotifications';
 import ReportsAnalytics from './ministry/ReportsAnalytics';
 import HelpSupport from './ministry/HelpSupport';
 
+import ChatAssistant from '../ChatAssistant';
 import {
     LayoutDashboard,
     Users,
@@ -26,7 +27,8 @@ import {
     FileBarChart,
     HelpCircle,
     LogOut,
-    FileText
+    FileText,
+    Bot
 } from 'lucide-react';
 
 const MinistryDashboard = () => {
@@ -60,6 +62,7 @@ const MinistryDashboard = () => {
         { icon: <Bell size={20} />, label: 'Notifications/Circulars', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
         { icon: <FileBarChart size={20} />, label: 'Reports & Analytics', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
         { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: <Bot size={20} />, label: 'AI Assistant', action: () => setActiveTab('ai-assistant'), active: activeTab === 'ai-assistant' },
         { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
 
@@ -98,6 +101,8 @@ const MinistryDashboard = () => {
                 return <ReportsAnalytics />;
             case 'help':
                 return <HelpSupport />;
+            case 'ai-assistant':
+                return <ChatAssistant embedded={true} />;
             default:
                 return (
                     <DashboardPanel
@@ -122,7 +127,8 @@ const MinistryDashboard = () => {
             'monitor': 'Monitor Progress',
             'notifications': 'Notifications & Circulars',
             'reports': 'Reports & Analytics',
-            'help': 'Help & Support'
+            'help': 'Help & Support',
+            'ai-assistant': 'AI Assistant'
         };
         return `Home > ${labels[activeTab] || 'Dashboard'}`;
     };

@@ -10,6 +10,7 @@ import AdarshGram from './pages/AdarshGram';
 import ContactUs from './pages/pm-contactUs/ContactUs';
 import Login from './pages/Login';
 import RegisterAgency from './pages/RegisterAgency';
+import ChatAssistant from './pages/ChatAssistant';
 import DashboardRouter from './pages/dashboards/DashboardRouter';
 
 import './index.css';
@@ -75,6 +76,7 @@ function App() {
                             <Route path="/contact-us" element={<ContactUs />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register-agency" element={<RegisterAgency />} />
+                            <Route path="/chat" element={<ChatAssistant />} />
 
                             {/* Protected Routes */}
                             <Route
