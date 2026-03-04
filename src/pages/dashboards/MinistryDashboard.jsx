@@ -35,6 +35,7 @@ const MinistryDashboard = () => {
     const [selectedState, setSelectedState] = useState(null);
     const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [fundReleasedTab, setFundReleasedTab] = useState('project'); // 'project' or 'village'
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const navigate = useNavigate();
     const { user, logout } = useAuth();
@@ -45,11 +46,15 @@ const MinistryDashboard = () => {
     }, []);
 
     const toggleSidebar = () => {
-        console.log('Toggle sidebar clicked! Current state:', isSidebarOpen);
         setIsSidebarOpen(!isSidebarOpen);
-        console.log('New state will be:', !isSidebarOpen);
     };
 
+    const handleNavigate = (tab, subTab = null) => {
+        setActiveTab(tab);
+        if (subTab) {
+            if (tab === 'released') setFundReleasedTab(subTab);
+        }
+    };
 
     const sidebarMenu = [
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
@@ -65,7 +70,6 @@ const MinistryDashboard = () => {
         { icon: <Bot size={20} />, label: 'AI Assistant', action: () => setActiveTab('ai-assistant'), active: activeTab === 'ai-assistant' },
         { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
-
 
     const formatCurrency = (amount) => {
         return `₹${(amount / 10000000).toFixed(2)} Cr`;
@@ -83,12 +87,14 @@ const MinistryDashboard = () => {
                         formatCurrency={formatCurrency}
                     />
                 );
+            case 'tracking': // New Case
+                return <ProjectTrackingLayout />;
             case 'admins':
                 return <ManageStateAdmins />;
             case 'funds':
-                return <FundAllocation formatCurrency={formatCurrency} />;
+                return <FundAllocation formatCurrency={formatCurrency} onNavigate={handleNavigate} />;
             case 'released':
-                return <FundReleased formatCurrency={formatCurrency} />;
+                return <FundReleased formatCurrency={formatCurrency} initialTab={fundReleasedTab} />;
             case 'plans':
                 return <AnnualPlansApproval />;
             case 'aap':

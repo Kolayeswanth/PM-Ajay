@@ -632,10 +632,19 @@ exports.updateProposalStatus = async (req, res) => {
 exports.getApprovedProjects = async (req, res) => {
     try {
         // Fetch approved projects from approved_projects table
-        // No need for joins as we store names directly now
+        // Join with district_proposals to get implementing_agency_id and agency details
         const { data: projects, error } = await supabase
             .from('approved_projects')
-            .select('*')
+            .select(`
+                *,
+                district_proposals (
+                    implementing_agency_id,
+                    implementing_agencies (
+                        id,
+                        agency_name
+                    )
+                )
+            `)
             .order('approved_at', { ascending: false });
 
         if (error) {
@@ -646,27 +655,57 @@ exports.getApprovedProjects = async (req, res) => {
         // Format the data for frontend
         const formattedProjects = projects.map(p => ({
             id: p.proposal_id, // Use proposal_id as the main ID for frontend
-            approvedProjectId: p.id, // Keep the approved_projects ID if needed
+            approvedProjectId: p.id,
             projectName: p.project_name,
             component: p.component,
             estimatedCost: p.estimated_cost,
             allocatedAmount: p.allocated_amount,
-            minimumAllocation: p.minimum_allocation || p.allocated_amount, // Add this field
+            minimumAllocation: p.minimum_allocation || p.allocated_amount,
             districtName: p.district_name || 'Unknown',
             stateName: p.state_name || 'Unknown',
-            // stateId and districtId might be missing if we don't join, but frontend might not need them for display
-            // If needed, we'd have to store them or fetch them. 
-            // For now, let's assume names are enough for the table display.
             approvedAt: p.approved_at,
             releasedAmount: p.released_amount || 0,
-            // Remaining fund = Allocated Amount - Amount Released (never negative)
-            remainingAmount: Math.max(0, (p.allocated_amount || 0) - (p.released_amount || 0))
+            remainingAmount: Math.max(0, (p.allocated_amount || 0) - (p.released_amount || 0)),
+            // Agency details from the joined proposal
+            implementingAgencyId: p.district_proposals?.implementing_agency_id || null,
+            implementingAgencyName: p.district_proposals?.implementing_agencies?.agency_name || null
         }));
 
         res.json({ success: true, data: formattedProjects });
 
     } catch (error) {
         console.error('Error fetching approved projects:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+exports.assignImplementingAgency = async (req, res) => {
+    try {
+        const { id } = req.params; // Proposal ID
+        const { implementingAgencyId } = req.body;
+
+        if (!implementingAgencyId) {
+            return res.status(400).json({ success: false, error: 'Implementing Agency ID is required' });
+        }
+
+        console.log(`🔗 Assigning Agency ${implementingAgencyId} to Proposal ${id}`);
+
+        // Update district_proposals table
+        const { data, error } = await supabase
+            .from('district_proposals')
+            .update({ implementing_agency_id: implementingAgencyId })
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            console.error('Error assigning agency:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+
+        res.json({ success: true, message: 'Agency assigned successfully', data: data[0] });
+
+    } catch (error) {
+        console.error('Error in assignImplementingAgency:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };

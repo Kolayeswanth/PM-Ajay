@@ -1,408 +1,555 @@
-import React, { useState } from 'react';
-import StatCard from '../../../components/StatCard';
-import InteractiveButton from '../../../components/InteractiveButton';
-import { Download } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import {
+    BarChart as RBarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    Legend,
+    LineChart,
+    Line,
+    RadarChart as RRadarChart,
+    Radar,
+    PolarGrid,
+    PolarAngleAxis,
+    PolarRadiusAxis
+    , AreaChart, Area
+} from 'recharts';
+import { reportsMockData } from '../../../data/reportsMockData';
 
-const ReportsAnalytics = () => {
-    const [reportType, setReportType] = useState('Fund Utilization');
-    const [toast, setToast] = useState(null);
-
-    const showToast = (message) => {
-        setToast(message);
-        setTimeout(() => setToast(null), 3000);
-    };
-
-    // Sample data for different report types
-    const reportData = {
-        'Fund Utilization': {
-            totalAllocated: '₹5000 Cr',
-            totalReleased: '₹3500 Cr',
-            totalUtilized: '₹2800 Cr',
-            utilizationRate: '80%',
-            states: [
-                { name: 'Maharashtra', allocated: '₹500 Cr', utilized: '₹420 Cr', rate: '84%' },
-                { name: 'Karnataka', allocated: '₹450 Cr', utilized: '₹360 Cr', rate: '80%' },
-                { name: 'Gujarat', allocated: '₹400 Cr', utilized: '₹300 Cr', rate: '75%' },
-            ]
-        },
-        'Project Progress': {
-            totalProjects: 1250,
-            completed: 450,
-            ongoing: 650,
-            pending: 150
-        },
-        'Annual Plan Summary': {
-            totalPlans: 36,
-            approved: 28,
-            pending: 8,
-            totalBudget: '₹5000 Cr'
-        },
-        'UCs submitted': {
-            totalUCs: 850,
-            verified: 720,
-            pending: 130,
-            verificationRate: '85%'
-        },
-        'State-wise Comparison': {
-            topPerformers: ['Maharashtra', 'Karnataka', 'Gujarat'],
-            needsAttention: ['Bihar', 'Jharkhand', 'Odisha']
-        }
-    };
-
-    const handleExportPDF = () => {
-        try {
-            console.log('Exporting report:', reportType);
-
-            const printWindow = window.open('', '_blank');
-            const data = reportData[reportType];
-
-            let reportContent = '';
-
-            // Generate content based on report type
-            if (reportType === 'Fund Utilization') {
-                reportContent = `
-                    <div class="section">
-                        <div class="section-title">Summary</div>
-                        <div class="info-row">
-                            <div class="info-label">Total Allocated:</div>
-                            <div class="info-value">${data.totalAllocated}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Total Released:</div>
-                            <div class="info-value">${data.totalReleased}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Total Utilized:</div>
-                            <div class="info-value">${data.totalUtilized}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Utilization Rate:</div>
-                            <div class="info-value"><strong>${data.utilizationRate}</strong></div>
-                        </div>
-                    </div>
-                    
-                    <div class="section">
-                        <div class="section-title">State-wise Breakdown</div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>State</th>
-                                    <th>Allocated</th>
-                                    <th>Utilized</th>
-                                    <th>Rate</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.states.map(state => `
-                                    <tr>
-                                        <td>${state.name}</td>
-                                        <td>${state.allocated}</td>
-                                        <td>${state.utilized}</td>
-                                        <td><strong>${state.rate}</strong></td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            } else if (reportType === 'Project Progress') {
-                reportContent = `
-                    <div class="section">
-                        <div class="section-title">Project Statistics</div>
-                        <div class="info-row">
-                            <div class="info-label">Total Projects:</div>
-                            <div class="info-value"><strong>${data.totalProjects}</strong></div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Completed:</div>
-                            <div class="info-value" style="color: green;">${data.completed}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Ongoing:</div>
-                            <div class="info-value" style="color: orange;">${data.ongoing}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Pending:</div>
-                            <div class="info-value" style="color: red;">${data.pending}</div>
-                        </div>
-                    </div>
-                `;
-            } else if (reportType === 'Annual Plan Summary') {
-                reportContent = `
-                    <div class="section">
-                        <div class="section-title">Annual Plan Overview</div>
-                        <div class="info-row">
-                            <div class="info-label">Total Plans Submitted:</div>
-                            <div class="info-value">${data.totalPlans}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Approved:</div>
-                            <div class="info-value" style="color: green;">${data.approved}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Pending Approval:</div>
-                            <div class="info-value" style="color: orange;">${data.pending}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Total Budget:</div>
-                            <div class="info-value"><strong>${data.totalBudget}</strong></div>
-                        </div>
-                    </div>
-                `;
-            } else if (reportType === 'UCs submitted') {
-                reportContent = `
-                    <div class="section">
-                        <div class="section-title">Utilization Certificates Status</div>
-                        <div class="info-row">
-                            <div class="info-label">Total UCs Submitted:</div>
-                            <div class="info-value">${data.totalUCs}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Verified:</div>
-                            <div class="info-value" style="color: green;">${data.verified}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Pending Verification:</div>
-                            <div class="info-value" style="color: orange;">${data.pending}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Verification Rate:</div>
-                            <div class="info-value"><strong>${data.verificationRate}</strong></div>
-                        </div>
-                    </div>
-                `;
-            } else if (reportType === 'State-wise Comparison') {
-                reportContent = `
-                    <div class="section">
-                        <div class="section-title">Top Performing States</div>
-                        <ul>
-                            ${data.topPerformers.map(state => `<li style="color: green; font-weight: bold;">${state}</li>`).join('')}
-                        </ul>
-                    </div>
-                    
-                    <div class="section">
-                        <div class="section-title">States Needing Attention</div>
-                        <ul>
-                            ${data.needsAttention.map(state => `<li style="color: orange;">${state}</li>`).join('')}
-                        </ul>
-                    </div>
-                `;
-            }
-
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>${reportType} Report - PM-AJAY</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            padding: 40px;
-                            max-width: 900px;
-                            margin: 0 auto;
-                        }
-                        .header {
-                            text-align: center;
-                            border-bottom: 3px solid #3498db;
-                            padding-bottom: 20px;
-                            margin-bottom: 30px;
-                        }
-                        h1 {
-                            color: #2c3e50;
-                            margin: 0;
-                        }
-                        .report-type {
-                            color: #666;
-                            font-size: 18px;
-                            margin-top: 10px;
-                        }
-                        .section {
-                            margin-bottom: 30px;
-                        }
-                        .section-title {
-                            font-weight: bold;
-                            color: #2c3e50;
-                            font-size: 18px;
-                            margin-bottom: 15px;
-                            border-bottom: 2px solid #ecf0f1;
-                            padding-bottom: 8px;
-                        }
-                        .info-row {
-                            display: flex;
-                            margin-bottom: 12px;
-                            padding: 8px;
-                            background-color: #f9f9f9;
-                        }
-                        .info-label {
-                            font-weight: bold;
-                            width: 250px;
-                            color: #555;
-                        }
-                        .info-value {
-                            color: #333;
-                        }
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin-top: 15px;
-                        }
-                        th {
-                            background-color: #3498db;
-                            color: white;
-                            padding: 12px;
-                            text-align: left;
-                        }
-                        td {
-                            padding: 10px;
-                            border: 1px solid #ddd;
-                        }
-                        tr:nth-child(even) {
-                            background-color: #f9f9f9;
-                        }
-                        ul {
-                            list-style-type: none;
-                            padding-left: 0;
-                        }
-                        li {
-                            padding: 8px;
-                            margin-bottom: 5px;
-                            background-color: #f9f9f9;
-                        }
-                        .footer {
-                            margin-top: 50px;
-                            padding-top: 20px;
-                            border-top: 2px solid #ecf0f1;
-                            text-align: center;
-                            color: #666;
-                            font-size: 12px;
-                        }
-                        @media print {
-                            body {
-                                padding: 20px;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>PM-AJAY Portal</h1>
-                        <div class="report-type">${reportType} Report</div>
-                    </div>
-
-                    ${reportContent}
-
-                    <div class="footer">
-                        <p>Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
-                        <p>Ministry of Social Justice & Empowerment</p>
-                    </div>
-                </body>
-                </html>
-            `;
-
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-
-            printWindow.onload = function () {
-                printWindow.print();
-            };
-
-            showToast('PDF preview opened! Use "Save as PDF" to download.');
-            console.log('PDF window opened successfully');
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            showToast('Error generating PDF. Please try again.');
-        }
-    };
-
-    const InfoCard = ({ icon, value, label, colorBg, colorText }) => (
-        <div className="card" style={{
-            padding: '1.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem',
-            border: 'none',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            backgroundColor: '#FFFFFF',
-            borderRadius: 'var(--radius-lg)'
-        }}>
-            <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                backgroundColor: colorBg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: colorText,
-                fontSize: '1.5rem'
-            }}>
-                {icon}
-            </div>
-            <div>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-            </div>
-        </div>
-    );
-
-
+const Sparkline = ({ values, color }) => {
+    const points = useMemo(() => {
+        if (!values?.length) return '';
+        const max = Math.max(...values);
+        const min = Math.min(...values);
+        const range = max - min || 1;
+        return values
+            .map((v, i) => {
+                const x = (i / (values.length - 1 || 1)) * 120;
+                const y = 40 - ((v - min) / range) * 40;
+                return `${x},${y}`;
+            })
+            .join(' ');
+    }, [values]);
 
     return (
-        <div className="dashboard-panel" style={{ backgroundColor: '#FFFFFF', padding: 20 }}>
-            <h2 style={{ margin: '0 0 1.5rem 0' }}>Reports & Analytics</h2>
+        <svg width="120" height="40" aria-hidden>
+            <polyline
+                fill="none"
+                stroke={color}
+                strokeWidth="2"
+                strokeLinecap="round"
+                points={points}
+            />
+        </svg>
+    );
+};
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <select
-                    className="form-control"
-                    value={reportType}
-                    onChange={(e) => setReportType(e.target.value)}
-                    style={{ width: '200px' }}
-                >
-                    <option value="Fund Utilization">Fund Utilization</option>
-                    <option value="Project Progress">Project Progress</option>
-                    <option value="Annual Plan Summary">Annual Plan Summary</option>
-                    <option value="UCs submitted">UCs submitted</option>
-                    <option value="State-wise Comparison">State-wise Comparison</option>
-                </select>
-                <InteractiveButton variant="secondary" size="sm" onClick={handleExportPDF}>
-                    <Download size={16} style={{ marginRight: '5px' }} />
-                    Export Report
-                </InteractiveButton>
+const SummaryCard = ({ label, primaryValue, secondaryValue, color, accent, trend }) => (
+    <div style={{
+        background: color,
+        borderRadius: '14px',
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.05)'
+    }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+                <div style={{ fontSize: '26px', fontWeight: 700, color: '#0F172A' }}>{primaryValue}</div>
+                <div style={{ color: '#475569', fontSize: '14px', marginTop: 4 }}>{secondaryValue}</div>
             </div>
+            <div style={{
+                width: 12,
+                height: 12,
+                borderRadius: 999,
+                background: accent,
+                marginTop: 4
+            }} />
+        </div>
+        <div style={{ color: '#0F172A', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+        <Sparkline values={trend} color={accent} />
+    </div>
+);
 
-            {toast && (
-                <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'inline-block', background: '#00B894', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{toast}</div>
+const AnalyticsBarChart = ({ title, subtitle, data, showPercent, valueSuffix }) => {
+    const customTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            const val = payload[0].value;
+            return (
+                <div style={{
+                    background: 'rgba(15,23,42,0.92)',
+                    color: '#fff',
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    boxShadow: '0 10px 24px rgba(0,0,0,0.16)'
+                }}>
+                    <div style={{ fontWeight: 700 }}>{label}</div>
+                    <div>{val}{showPercent ? '%' : ''}{valueSuffix || ''}</div>
                 </div>
-            )}
+            );
+        }
+        return null;
+    };
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                <InfoCard
-                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>}
-                    value="12"
-                    label="Reports Generated"
-                    colorBg="#F5F3FF"
-                    colorText="#7C3AED"
-                />
-                <InfoCard
-                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>}
-                    value="45"
-                    label="Downloads"
-                    colorBg="#DBEAFE"
-                    colorText="#2563EB"
-                />
+    return (
+        <div style={chartCardStyle}>
+            <ChartHeader title={title} subtitle={subtitle} />
+            <div style={{ width: '100%', height: 280, marginTop: 8 }}>
+                <ResponsiveContainer>
+                    <RBarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 12 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis dataKey="label" tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <YAxis tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <Tooltip content={customTooltip} />
+                        <Bar dataKey="value" fill="#3B82F6" barSize={46} radius={[4, 4, 0, 0]} />
+                    </RBarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+const AnalyticsPieChart = ({ title, subtitle, slices, valueSuffix }) => {
+    const customTooltip = ({ active, payload }) => {
+        if (active && payload && payload.length) {
+            const { name, value } = payload[0];
+            return (
+                <div style={{
+                    background: 'rgba(15,23,42,0.92)',
+                    color: '#fff',
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    boxShadow: '0 10px 24px rgba(0,0,0,0.16)'
+                }}>
+                    <div style={{ fontWeight: 700 }}>{name}</div>
+                    <div>{value}{valueSuffix || ''}</div>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <div style={chartCardStyle}>
+            <ChartHeader title={title} subtitle={subtitle} />
+            <div style={{ width: '100%', height: 280 }}>
+                <ResponsiveContainer>
+                    <PieChart>
+                        <Tooltip content={customTooltip} />
+                        <Legend verticalAlign="bottom" height={32} />
+                        <Pie
+                            data={slices}
+                            dataKey="value"
+                            nameKey="label"
+                            cx="50%"
+                            cy="45%"
+                            outerRadius={90}
+                            innerRadius={50}
+                            paddingAngle={2}
+                        >
+                            {slices.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+const AnalyticsGroupedBarChart = ({ title, subtitle, data }) => {
+    const customTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div style={{
+                    background: 'rgba(15,23,42,0.92)',
+                    color: '#fff',
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    boxShadow: '0 10px 24px rgba(0,0,0,0.16)'
+                }}>
+                    <div style={{ fontWeight: 700 }}>{label}</div>
+                    {payload.map(p => (
+                        <div key={p.dataKey} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <span style={{ width: 10, height: 10, borderRadius: 999, background: p.color }} />
+                            <span>{p.name}: ₹{(p.value).toFixed(2)} Cr</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <div style={chartCardStyle}>
+            <ChartHeader title={title} subtitle={subtitle} />
+            <div style={{ width: '100%', height: 320, marginTop: 8 }}>
+                <ResponsiveContainer>
+                    <RBarChart data={data} margin={{ top: 12, right: 12, left: 12, bottom: 12 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis dataKey="label" tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <YAxis tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <Tooltip content={customTooltip} />
+                        <Legend />
+                        <Bar dataKey="allocatedCr" name="Allocated" fill="#2563EB" barSize={36} />
+                        <Bar dataKey="releasedCr" name="Released" fill="#22C55E" barSize={36} />
+                        <Bar dataKey="utilizedCr" name="Utilized" fill="#F97316" barSize={36} />
+                    </RBarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+const AnalyticsAreaChart = ({ title, subtitle, months, series }) => {
+    const combined = months.map((m, i) => {
+        const entry = { month: m };
+        series.forEach((s) => {
+            entry[s.dataKey] = s.data[i];
+        });
+        return entry;
+    });
+
+    return (
+        <div style={chartCardStyle}>
+            <ChartHeader title={title} subtitle={subtitle} />
+            <div style={{ width: '100%', height: 320, marginTop: 8 }}>
+                <ResponsiveContainer>
+                    <AreaChart data={combined} margin={{ top: 12, right: 12, left: 0, bottom: 12 }}>
+                        <defs>
+                            <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#22C55E" stopOpacity={0.9}/>
+                                <stop offset="95%" stopColor="#22C55E" stopOpacity={0.1}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis dataKey="month" tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <YAxis tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <Tooltip />
+                        <Legend />
+                        <Area type="monotone" dataKey={series[0].dataKey} stroke="#22C55E" fillOpacity={1} fill="url(#colorArea)" strokeWidth={3} />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+const AnalyticsRadarChart = ({ title, subtitle, metrics }) => {
+    const data = metrics.map(m => ({ subject: m.label, value: m.value }));
+    return (
+        <div style={chartCardStyle}>
+            <ChartHeader title={title} subtitle={subtitle} />
+            <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                    <RRadarChart data={data}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 12 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#475569', fontSize: 11 }} />
+                        <Tooltip />
+                        <Legend />
+                        <Radar dataKey="value" stroke="#2563EB" fill="rgba(37,99,235,0.25)" fillOpacity={0.7} />
+                    </RRadarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+const AnalyticsLineChart = ({ title, subtitle, months, series }) => {
+    const combined = months.map((m, i) => {
+        const entry = { month: m };
+        series.forEach((s) => {
+            entry[s.dataKey] = s.data[i];
+        });
+        return entry;
+    });
+
+    return (
+        <div style={chartCardStyle}>
+            <ChartHeader title={title} subtitle={subtitle} />
+            <div style={{ width: '100%', height: 320 }}>
+                <ResponsiveContainer>
+                    <LineChart data={combined} margin={{ top: 12, right: 12, left: 0, bottom: 12 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis dataKey="month" tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <YAxis tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <Tooltip />
+                        <Legend />
+                        {series.map((s, idx) => (
+                            <Line
+                                key={s.dataKey}
+                                type="monotone"
+                                dataKey={s.dataKey}
+                                stroke={s.color || '#2563EB'}
+                                strokeWidth={3}
+                                dot={false}
+                                strokeDasharray={idx === 0 ? undefined : '6 4'}
+                            />
+                        ))}
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+const AnalyticsHorizontalBarChart = ({ title, subtitle, data, valueSuffix }) => {
+    const customTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            const val = payload[0].value;
+            return (
+                <div style={{
+                    background: 'rgba(15,23,42,0.92)',
+                    color: '#fff',
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    boxShadow: '0 10px 24px rgba(0,0,0,0.16)'
+                }}>
+                    <div style={{ fontWeight: 700 }}>{label}</div>
+                    <div>{val}{valueSuffix || ''}</div>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <div style={chartCardStyle}>
+            <ChartHeader title={title} subtitle={subtitle} />
+            <div style={{ width: '100%', height: 300, marginTop: 8 }}>
+                <ResponsiveContainer>
+                    <RBarChart data={data} layout="vertical" margin={{ top: 12, right: 12, left: 24, bottom: 12 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis type="number" tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} />
+                        <YAxis dataKey="label" type="category" tick={{ fill: '#475569', fontSize: 12 }} axisLine={{ stroke: '#CBD5E1' }} width={110} />
+                        <Tooltip content={customTooltip} />
+                        <Bar dataKey="value" fill={data[0]?.color || '#F97316'} barSize={24} />
+                    </RBarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+
+const ChartHeader = ({ title, subtitle }) => (
+    <div>
+        <div style={{ fontWeight: 700, color: '#0F172A' }}>{title}</div>
+        {subtitle && <div style={{ color: '#64748B', fontSize: 13 }}>{subtitle}</div>}
+    </div>
+);
+
+const chartCardStyle = {
+    background: '#FFFFFF',
+    borderRadius: 14,
+    padding: 16,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.05)',
+    border: '1px solid #E2E8F0',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8
+};
+
+const ReportsAnalytics = () => {
+    const [activeTab, setActiveTab] = useState('overview');
+
+    const downloadExcel = async () => {
+        try {
+            const url = '/projects.xlsx';
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Network response was not ok');
+            const blob = await res.blob();
+            const objectUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = 'projects.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(objectUrl);
+        } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Download failed', err);
+            alert('Failed to download file. Make sure projects.xlsx exists in the public folder.');
+        }
+    };
+
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case 'overview':
+                return (
+                    <div style={tabGridStyle}>
+                        <AnalyticsBarChart
+                            title="Projects by Status"
+                            subtitle="Portfolio snapshot"
+                            data={reportsMockData.overview.projectsByStatus}
+                        />
+                        <AnalyticsPieChart
+                            title="Budget by Component"
+                            subtitle="Distribution across key components"
+                            slices={reportsMockData.overview.budgetByComponent}
+                            valueSuffix="%"
+                        />
+                        <AnalyticsHorizontalBarChart
+                            title="State-wise Project Distribution"
+                            subtitle="Projects spread across key states"
+                            data={reportsMockData.overview.stateWiseProjectDistribution}
+                            valueSuffix=" projects"
+                        />
+                        <AnalyticsLineChart
+                            title="Component Performance"
+                            subtitle="Performance across components"
+                            months={reportsMockData.overview.componentPerformance.map(i => i.label)}
+                            series={[
+                                {
+                                    label: 'Value',
+                                    dataKey: 'value',
+                                    data: reportsMockData.overview.componentPerformance.map(i => i.value),
+                                    color: '#10B981'
+                                }
+                            ]}
+                        />
+                    </div>
+                );
+            case 'financial':
+                return (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <AnalyticsGroupedBarChart
+                                title="Fund Utilization by State"
+                                subtitle="Allocated vs Released vs Utilized (₹ Cr)"
+                                data={reportsMockData.financial.utilizationByState}
+                            />
+                        </div>
+                        <AnalyticsPieChart
+                            title="Budget Allocation vs Utilization"
+                            subtitle="Allocation compared to current utilization"
+                            slices={reportsMockData.financial.allocationVsUtilization}
+                            valueSuffix=" Cr"
+                        />
+                        <AnalyticsAreaChart
+                            title="Fund Release Timeline"
+                            subtitle="Cumulative releases across months (₹ Cr)"
+                            months={reportsMockData.financial.fundReleaseTimeline.months}
+                            series={[
+                                {
+                                    label: 'Released (₹ Cr)',
+                                    dataKey: 'currencyCr',
+                                    data: reportsMockData.financial.fundReleaseTimeline.currencyCr,
+                                    color: '#22C55E'
+                                }
+                            ]}
+                        />
+                    </div>
+                );
+            case 'performance':
+                return (
+                    <div style={tabGridStyle}>
+                        <AnalyticsBarChart
+                            title="Progress Distribution"
+                            subtitle="Projects by completion range"
+                            data={reportsMockData.performance.progressDistribution}
+                        />
+                        <AnalyticsRadarChart
+                            title="Performance Metrics"
+                            subtitle="Overall programme performance"
+                            metrics={reportsMockData.performance.radarMetrics}
+                        />
+                    </div>
+                );
+            case 'trends':
+                return (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                        <AnalyticsLineChart
+                            title="Monthly Project Initiation & Budget Trend"
+                            subtitle="Projects started vs monthly allocated budget"
+                            months={reportsMockData.trends.months}
+                            series={[
+                                { label: 'Projects Started', dataKey: 'projects', data: reportsMockData.trends.projectsStarted, color: '#2563EB' },
+                                { label: 'Budget (Cr)', dataKey: 'budget', data: reportsMockData.trends.monthlyBudgetCr, color: '#F97316' }
+                            ]}
+                        />
+                        <AnalyticsAreaChart
+                            title="Cumulative Fund Release"
+                            subtitle="Cumulative releases over months (₹ Cr)"
+                            months={reportsMockData.financial.fundReleaseTimeline.months}
+                            series={[
+                                {
+                                    label: 'Released (₹ Cr)',
+                                    dataKey: 'currencyCr',
+                                    data: reportsMockData.financial.fundReleaseTimeline.currencyCr,
+                                    color: '#22C55E'
+                                }
+                            ]}
+                        />
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="dashboard-panel" style={{ background: '#F8FAFC', padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                    <h2 style={{ margin: 0, color: '#0F172A' }}>Reports & Analytics</h2>
+                    <p style={{ margin: 0, color: '#475569' }}>Portfolio insights powered by  realistic data</p>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={downloadExcel} className="btn btn-primary" style={{ background: '#2563EB', border: 'none' }}>Download Excel</button>
+                    <button className="btn btn-secondary" style={{ background: '#E2E8F0', border: 'none', color: '#0F172A' }}>Share</button>
+                </div>
             </div>
 
-            <div className="dashboard-section">
-                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: '600' }}>{reportType} Report</h3>
-                <div className="card" style={{ padding: 'var(--space-4)', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border-light)' }}>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Graphical representation and detailed data for <strong>{reportType}</strong> will be displayed here.
-                    </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16, marginBottom: 20, overflow: 'hidden' }}>
+                {reportsMockData.kpis.map(kpi => (
+                    <SummaryCard key={kpi.label} {...kpi} />
+                ))}
+            </div>
+
+            <div style={{ background: '#FFFFFF', borderRadius: 14, padding: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.05)', border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid #E2E8F0', padding: '6px' }}>
+                    {['overview', 'financial', 'performance', 'trends'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            style={{
+                                border: 'none',
+                                background: activeTab === tab ? '#2563EB' : 'transparent',
+                                color: activeTab === tab ? '#FFFFFF' : '#0F172A',
+                                borderRadius: 10,
+                                padding: '10px 14px',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        </button>
+                    ))}
+                </div>
+                <div style={{ padding: 12 }}>
+                    {renderTabContent()}
                 </div>
             </div>
         </div>
     );
+};
+
+const tabGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 16
 };
 
 export default ReportsAnalytics;

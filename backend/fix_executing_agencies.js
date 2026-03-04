@@ -106,7 +106,7 @@ async function fixExecutingAgencies() {
                     // Clean codes
                     const stateCode = state.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '');
                     const email = `ea.${stateCode}.${uniqueSuffix}@pmajay.gov.in`;
-                    const password = 'Password@123';
+                    const password = process.env.DEFAULT_AGENCY_PASSWORD || 'Temp@' + Math.random().toString(36).slice(-8);
 
                     // 1. Create Auth User
                     let userId;

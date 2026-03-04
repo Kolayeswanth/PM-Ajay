@@ -13,5 +13,6 @@ router.get('/state', proposalController.getProposalsByState);
 router.get('/ministry', proposalController.getMinistryProposals);
 router.get('/approved', proposalController.getApprovedProjects);
 router.patch('/:id/status', proposalController.updateProposalStatus);
+router.patch('/:id/assign-agency', proposalController.assignImplementingAgency);
 
 module.exports = router;

@@ -131,6 +131,13 @@ const Login = () => {
                 console.warn('Profile fetch error:', profileError);
             }
 
+            // Check if user is implementing agency by email pattern
+            // Pattern: {state-code}-{district-code}.district@pmajay.gov.in
+            if (email.includes('.district@pmajay.gov.in')) {
+                console.log('✅ Detected implementing agency by email pattern');
+                userRole = 'implementing_agency';
+            }
+
             if (!userRole) {
                 throw new Error('Could not retrieve user role. Please contact support.');
             }

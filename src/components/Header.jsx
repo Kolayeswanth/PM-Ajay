@@ -30,8 +30,12 @@ const Header = () => {
         if (!isAuthenticated) {
             return [
                 { path: '/', label: 'Home' },
+
                 { path: '/contact-us', label: 'Contact Us' },
-                { path: '/register-agency', label: 'Register Agency' }
+                { path: '/register-agency', label: 'Register Agency' },
+
+                { path: '/register-agency', label: 'Register as Agency' },
+                { path: '/contact-us', label: 'Contact Us' }
             ];
         }
 

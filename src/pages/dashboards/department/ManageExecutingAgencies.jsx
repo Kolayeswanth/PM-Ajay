@@ -28,36 +28,26 @@ const ManageExecutingAgencies = () => {
     }, [user?.id]);
 
     const fetchExecutingAgenciesList = async () => {
-        if (!user?.id) return;
         try {
-            // 1. Get User's State
-            const { data: userData, error: userError } = await supabase
-                .from('implementing_agencies')
-                .select('state_name')
-                .eq('user_id', user.id)
-                .single();
+            console.log('📋 Fetching ALL executing agencies for dropdown...');
 
-            if (userError) {
-                console.error('Error fetching user state:', userError);
-                return;
-            }
-
-            const userState = userData?.state_name;
-
-            if (!userState) {
-                console.warn('User has no state assigned.');
-                return;
-            }
-
-            // 2. Fetch Executing Agencies for that State
+            // Fetch ALL executing agencies without state filter
             const { data, error } = await supabase
                 .from('executing_agencies')
                 .select('agency_name')
-                .eq('state_name', userState)
                 .order('agency_name', { ascending: true });
 
-            if (error) throw error;
-            if (data) setExecutingAgenciesList(data);
+            if (error) {
+                console.error('Error fetching executing agencies:', error);
+                return;
+            }
+
+            console.log('✅ Found', data?.length || 0, 'executing agencies');
+            if (data && data.length > 0) {
+                setExecutingAgenciesList(data);
+            } else {
+                console.warn('⚠️ No executing agencies found in database');
+            }
         } catch (error) {
             console.error('Error fetching executing agencies list:', error);
         }
@@ -136,15 +126,43 @@ const ManageExecutingAgencies = () => {
                 }
             }
         } else {
-            // Adding new item -> Local Only (Inactive)
-            const newAgency = {
-                id: `local-${Date.now()}`,
-                ...formData,
-                status: 'Inactive',
-                implementing_agency_id: user.id
-            };
-            setAgencies([newAgency, ...agencies]);
-            handleCloseModal();
+            // Adding new item -> Save directly to DB
+            try {
+                const payload = {
+                    name: formData.name,
+                    agency_officer: formData.agency_officer,
+                    phone: formData.phone,
+                    email: formData.email,
+                    work_assigned: formData.work_assigned,
+                    status: 'Active',
+                    implementing_agency_id: user.id
+                };
+
+                console.log('📤 Saving new executing agency:', payload);
+
+                const { data, error } = await supabase
+                    .from('agency_assignments')
+                    .insert([payload])
+                    .select();
+
+                if (error) {
+                    console.error('Error saving agency:', error);
+                    alert('Failed to save agency: ' + error.message);
+                    return;
+                }
+
+                console.log('✅ Agency saved:', data);
+
+                if (data && data.length > 0) {
+                    setAgencies([data[0], ...agencies]);
+                }
+
+                handleCloseModal();
+                alert('Executing Agency added successfully!');
+            } catch (error) {
+                console.error('Error adding agency:', error);
+                alert('Failed to add agency: ' + error.message);
+            }
         }
     };
 
@@ -345,14 +363,23 @@ const ManageExecutingAgencies = () => {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     >
-                        <option value="">Select Agency</option>
-                        {executingAgenciesList.map((agency, index) => (
-                            <option key={index} value={agency.agency_name}>
-                                {agency.agency_name}
-                            </option>
-                        ))}
+                        <option value="">-- Select Agency --</option>
+                        {executingAgenciesList.length > 0 ? (
+                            executingAgenciesList.map((agency, index) => (
+                                <option key={index} value={agency.agency_name}>
+                                    {agency.agency_name}
+                                </option>
+                            ))
+                        ) : (
+                            <option disabled>No agencies available</option>
+                        )}
                     </select>
                     {errors.name && <div className="form-error">{errors.name}</div>}
+                    {executingAgenciesList.length === 0 && (
+                        <small style={{ color: '#666', marginTop: 5, display: 'block' }}>
+                            Loading agencies or no agencies found in database.
+                        </small>
+                    )}
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 15 }}>

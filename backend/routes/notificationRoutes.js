@@ -8,4 +8,13 @@ router.post('/send-allocation', notificationController.sendAllocationNotificatio
 router.post('/send-release', notificationController.sendReleaseNotification);
 router.post('/send-activation-email', notificationController.sendActivationWhatsApp);
 
+// Get notifications for a user
+router.get('/', notificationController.getNotifications);
+
+// Mark notification as read
+router.put('/:id/read', notificationController.markAsRead);
+
+// Create test notification
+router.post('/create-test', notificationController.createTestNotification);
+
 module.exports = router;

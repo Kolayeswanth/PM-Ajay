@@ -1,4 +1,150 @@
 const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+/**
+ * Get notifications for a user based on role and filters
+ */
+exports.getNotifications = async (req, res) => {
+    try {
+        const { userRole, stateName, districtName, limit = 20 } = req.query;
+
+        if (!userRole) {
+            return res.status(400).json({
+                success: false,
+                error: 'userRole is required'
+            });
+        }
+
+        let query = supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_role', userRole)
+            .order('created_at', { ascending: false })
+            .limit(parseInt(limit));
+
+        if (stateName) {
+            query = query.eq('state_name', stateName);
+        }
+
+        if (districtName) {
+            query = query.eq('district_name', districtName);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Error fetching notifications:', error);
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+
+        res.json({
+            success: true,
+            data: data || []
+        });
+
+    } catch (error) {
+        console.error('Error in getNotifications:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Mark notification as read
+ */
+exports.markAsRead = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { error } = await supabase
+            .from('notifications')
+            .update({ read: true })
+            .eq('id', id);
+
+        if (error) {
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Notification marked as read'
+        });
+
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Create test notification (for testing purposes)
+ */
+exports.createTestNotification = async (req, res) => {
+    try {
+        const { userRole, stateName, districtName, title, message, type = 'info' } = req.body;
+
+        if (!userRole || !title || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'userRole, title, and message are required'
+            });
+        }
+
+        const notification = {
+            user_role: userRole,
+            title,
+            message,
+            type,
+            read: false,
+            created_at: new Date().toISOString()
+        };
+
+        if (stateName) notification.state_name = stateName;
+        if (districtName) notification.district_name = districtName;
+
+        const { data, error } = await supabase
+            .from('notifications')
+            .insert([notification])
+            .select();
+
+        if (error) {
+            console.error('Error creating notification:', error);
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Test notification created',
+            data: data[0]
+        });
+
+    } catch (error) {
+        console.error('Error creating test notification:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
 
 /**
  * Send WhatsApp notification for fund allocation using WATI API
