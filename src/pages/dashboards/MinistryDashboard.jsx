@@ -15,7 +15,7 @@ import IssueNotifications from './ministry/IssueNotifications';
 import ReportsAnalytics from './ministry/ReportsAnalytics';
 import HelpSupport from './ministry/HelpSupport';
 
-import ProjectTrackingLayout from './tracking/ProjectTrackingLayout';
+import ChatAssistant from '../ChatAssistant';
 import {
     LayoutDashboard,
     Users,
@@ -28,7 +28,7 @@ import {
     HelpCircle,
     LogOut,
     FileText,
-    Map // Import Map icon
+    Bot
 } from 'lucide-react';
 
 const MinistryDashboard = () => {
@@ -57,17 +57,17 @@ const MinistryDashboard = () => {
     };
 
     const sidebarMenu = [
-        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => handleNavigate('dashboard'), active: activeTab === 'dashboard' },
-        { icon: <Map size={20} />, label: 'Track Projects', action: () => handleNavigate('tracking'), active: activeTab === 'tracking' }, // New Item
-        { icon: <Users size={20} />, label: 'Manage State Admins', action: () => handleNavigate('admins'), active: activeTab === 'admins' },
-        { icon: <Wallet size={20} />, label: 'Fund Allocation', action: () => handleNavigate('funds'), active: activeTab === 'funds' },
-        { icon: <Send size={20} />, label: 'Fund Released', action: () => handleNavigate('released'), active: activeTab === 'released' },
-        { icon: <FileCheck size={20} />, label: 'Project Approval', action: () => handleNavigate('plans'), active: activeTab === 'plans' },
-        { icon: <FileText size={20} />, label: 'Annual Plan Approvals', action: () => handleNavigate('aap'), active: activeTab === 'aap' },
-        { icon: <LineChart size={20} />, label: 'Monitor Progress', action: () => handleNavigate('monitor'), active: activeTab === 'monitor' },
-        { icon: <Bell size={20} />, label: 'Notifications/Circulars', action: () => handleNavigate('notifications'), active: activeTab === 'notifications' },
-        { icon: <FileBarChart size={20} />, label: 'Reports & Analytics', action: () => handleNavigate('reports'), active: activeTab === 'reports' },
-        { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => handleNavigate('help'), active: activeTab === 'help' },
+        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', action: () => setActiveTab('dashboard'), active: activeTab === 'dashboard' },
+        { icon: <Users size={20} />, label: 'Manage State Admins', action: () => setActiveTab('admins'), active: activeTab === 'admins' },
+        { icon: <Wallet size={20} />, label: 'Fund Allocation', action: () => setActiveTab('funds'), active: activeTab === 'funds' },
+        { icon: <Send size={20} />, label: 'Fund Released', action: () => setActiveTab('released'), active: activeTab === 'released' },
+        { icon: <FileCheck size={20} />, label: 'Project Approval', action: () => setActiveTab('plans'), active: activeTab === 'plans' },
+        { icon: <FileText size={20} />, label: 'Annual Plan Approvals', action: () => setActiveTab('aap'), active: activeTab === 'aap' },
+        { icon: <LineChart size={20} />, label: 'Monitor Progress', action: () => setActiveTab('monitor'), active: activeTab === 'monitor' },
+        { icon: <Bell size={20} />, label: 'Notifications/Circulars', action: () => setActiveTab('notifications'), active: activeTab === 'notifications' },
+        { icon: <FileBarChart size={20} />, label: 'Reports & Analytics', action: () => setActiveTab('reports'), active: activeTab === 'reports' },
+        { icon: <HelpCircle size={20} />, label: 'Help/Support', action: () => setActiveTab('help'), active: activeTab === 'help' },
+        { icon: <Bot size={20} />, label: 'AI Assistant', action: () => setActiveTab('ai-assistant'), active: activeTab === 'ai-assistant' },
         { icon: <LogOut size={20} />, label: 'Logout', action: () => { logout(); navigate('/login'); }, isLogout: true }
     ];
 
@@ -107,6 +107,8 @@ const MinistryDashboard = () => {
                 return <ReportsAnalytics />;
             case 'help':
                 return <HelpSupport />;
+            case 'ai-assistant':
+                return <ChatAssistant embedded={true} />;
             default:
                 return (
                     <DashboardPanel
@@ -131,7 +133,8 @@ const MinistryDashboard = () => {
             'monitor': 'Monitor Progress',
             'notifications': 'Notifications & Circulars',
             'reports': 'Reports & Analytics',
-            'help': 'Help & Support'
+            'help': 'Help & Support',
+            'ai-assistant': 'AI Assistant'
         };
         return `Home > ${labels[activeTab] || 'Dashboard'}`;
     };
