@@ -180,9 +180,8 @@ const RegisterAgency = () => {
                             Already have an account? <Link to="/login" style={{ color: 'var(--color-primary)' }}>Login here</Link>
                         </p>
                     </div>
-                </form>
+                </div>
             </div>
-        </div >
             <Footer />
         </>
     );
